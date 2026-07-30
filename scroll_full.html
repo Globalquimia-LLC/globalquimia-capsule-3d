@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Globalquimia — Cápsulas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root {
+    --navy: #1c405d;
+    --blue: #006f9e;
+    --cyan: #1dbadf;
+    --yellow: #fdc400;
+    --bg: #fdfaf5;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); font-family: Arial, Helvetica, sans-serif; color: var(--navy); overflow-x: hidden; }
+
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 28px;
+    mix-blend-mode: normal;
+  }
+  header img { height: 28px; display: block; }
+  header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-transform: uppercase; }
+
+  .intro {
+    height: 90vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 0 24px;
+  }
+  .intro h1 { font-size: clamp(28px, 5vw, 48px); margin: 0 0 14px 0; max-width: 720px; line-height: 1.15; }
+  .intro p { font-size: 15px; color: #5b6b74; max-width: 480px; margin: 0 0 26px 0; }
+  .intro .hint { font-size: 12px; color: #9aa7ad; letter-spacing: 0.5px; }
+  .intro .hint::after { content: "↓"; display: block; margin-top: 8px; animation: bob 1.6s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+
+  #story { position: relative; height: 100vh; overflow: hidden; }
+  #canvas-container { position: absolute; inset: 0; }
+  #canvas-container canvas { display: block; width: 100% !important; height: 100% !important; }
+
+  /* Text sits at the SIDES (never over the capsule, which stays centered) and
+     scales up/down via GSAP as it enters/exits — the outer element only
+     handles fixed side positioning, the inner .inner is what GSAP scales, so
+     the two transforms never fight each other. */
+  .story-text {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: min(360px, 38vw);
+    z-index: 5;
+    pointer-events: none;
+  }
+  .story-text.side-left { left: 5%; text-align: left; }
+  .story-text.side-right { right: 5%; text-align: right; }
+  .story-text .inner { opacity: 0; transform: scale(0.7); transform-origin: center; }
+  .story-text .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--blue); margin: 0 0 10px 0;
+  }
+  .story-text h2 { font-size: clamp(20px, 2.8vw, 30px); margin: 0 0 10px 0; line-height: 1.25; color: var(--navy); }
+  .story-text p { font-size: 14px; line-height: 1.5; color: #5b6b74; margin: 0; }
+
+  .designer {
+    position: absolute;
+    left: 50%; bottom: 6%;
+    transform: translate(-50%, 0);
+    text-align: center;
+    z-index: 6;
+    opacity: 0;
+    pointer-events: none;
+    width: min(560px, 92vw);
+  }
+  .designer.active { pointer-events: auto; }
+  .designer .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--blue); margin: 0 0 4px 0;
+  }
+  .designer h2 { font-size: clamp(18px, 2.6vw, 24px); margin: 0 0 16px 0; color: var(--navy); }
+  .designer .rows { display: flex; flex-direction: column; gap: 12px; }
+  .designer .row {
+    display: flex; align-items: center; gap: 12px; justify-content: center;
+    background: rgba(255,255,255,0.7); backdrop-filter: blur(6px);
+    padding: 8px 14px; border-radius: 30px;
+  }
+  .designer .row label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    color: #5b6b74; width: 44px; text-align: right;
+  }
+  .color-picker {
+    -webkit-appearance: none; appearance: none;
+    width: 32px; height: 32px; border: 2px solid rgba(28,64,93,0.2); border-radius: 50%;
+    padding: 0; cursor: pointer; background: none; overflow: hidden;
+  }
+  .color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+  .color-picker::-webkit-color-swatch { border: none; border-radius: 50%; }
+  .quick-swatches { display: flex; gap: 6px; }
+  .swatch {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid rgba(28,64,93,0.15);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.selected { border-color: var(--navy); }
+  .color-readout {
+    font-size: 11px; font-family: 'Courier New', monospace; color: var(--navy);
+    min-width: 150px; text-align: left;
+  }
+
+  .closing {
+    min-height: 70vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 60px 24px;
+    background-color: var(--navy);
+    color: #fff;
+  }
+  .closing h2 { font-size: clamp(22px, 4vw, 34px); margin: 0 0 14px 0; max-width: 640px; }
+  .closing p { font-size: 14px; color: #a9bccb; margin: 0 0 26px 0; }
+  .closing a.cta {
+    display: inline-block; background: var(--yellow); color: var(--navy);
+    font-weight: 700; font-size: 14px; text-decoration: none;
+    padding: 13px 30px; border-radius: 4px;
+  }
+  .closing .contact { margin-top: 30px; font-size: 12px; color: #7d93a4; }
+
+  .progress-rail {
+    position: fixed; right: 22px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 140px; background: rgba(28,64,93,0.12); border-radius: 2px;
+    z-index: 40;
+  }
+  .progress-fill {
+    width: 100%; height: 0%; background: var(--cyan); border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="assets/logo-color.png" alt="Globalquimia" />
+  <span>Línea de cápsulas</span>
+</header>
+
+<section class="intro">
+  <p class="eyebrow" style="color:var(--blue); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; font-size:12px;">Insumos farmacéuticos</p>
+  <h1>Acompañamiento integral para procesos farmacéuticos</h1>
+  <p>Diseñamos soluciones integrales para laboratorios farmacéuticos y relacionados, acompañando su proyecto desde las etapas iniciales hasta materializar sus ideas de negocio.</p>
+  <span class="hint">Scrolleá para explorar la cápsula</span>
+</section>
+
+<section id="story">
+  <div id="canvas-container"></div>
+
+  <div class="story-text side-left" id="stage-1" data-stage="1">
+    <div class="inner">
+      <p class="eyebrow">Cápsulas duras de gelatina vacías</p>
+      <h2>Formas farmacéuticas sólidas diseñadas para la dosificación oral precisa</h2>
+    </div>
+  </div>
+
+  <div class="story-text side-right" id="stage-2" data-stage="2">
+    <div class="inner">
+      <p class="eyebrow">Diseño de dos piezas</p>
+      <h2>Dos partes cilíndricas que encajan perfectamente para contener polvos</h2>
+      <p>Cápsulas vacías para formulaciones estándar, con opción de recubrimiento entérico posterior.</p>
+    </div>
+  </div>
+
+  <div class="story-text side-left" id="stage-3" data-stage="3">
+    <div class="inner">
+      <p class="eyebrow">Todo lo que necesita, en un solo proveedor</p>
+      <h2>FDA, DMF, ISO 9001:2015, KOSHER, HALAL, BSE/TSE free certificadas</h2>
+      <p>Asesoría técnica especializada para seleccionar la cápsula ideal para tu formulación.</p>
+    </div>
+  </div>
+
+  <div class="designer" id="designer">
+    <p class="eyebrow">Personalización</p>
+    <h2>Diseña tu cápsula</h2>
+    <div class="rows">
+      <div class="row" id="row-cap">
+        <label>Tapa</label>
+        <input type="color" class="color-picker" id="picker-cap" value="#2e8ad6" />
+        <div class="quick-swatches" data-target="cap"></div>
+        <span class="color-readout" id="readout-cap">#2E8AD6 · rgb(46, 138, 214)</span>
+      </div>
+      <div class="row" id="row-body">
+        <label>Cuerpo</label>
+        <input type="color" class="color-picker" id="picker-body" value="#f8f8f8" />
+        <div class="quick-swatches" data-target="body"></div>
+        <span class="color-readout" id="readout-body">#F8F8F8 · rgb(248, 248, 248)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <img src="assets/logo-blanco.png" alt="Globalquimia" style="height:30px; margin-bottom:22px;" />
+  <h2>Disponibilidad inmediata con opciones de personalización sin costo de muestra</h2>
+  <p>Soluciones integrales para producir, proteger, acondicionar y controlar tu producto terminado.</p>
+  <a class="cta" href="https://wa.me/573217408144">Solicita tu cotización</a>
+  <p class="contact">info@globalquimia.com.co · +57 321 740 8144 · www.globalquimia.com.co</p>
+</section>
+
+<div class="progress-rail"><div class="progress-fill" id="progress-fill"></div></div>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // How far the cap travels along its own local axis to go from fully CLOSED to
+  // the reference OPEN pose. Derived directly from build_capsule.py's geometry:
+  // open_z(28.42mm) - closed_z(11.7mm) = 16.72mm = 0.01672m. Both nodes are
+  // exported with an IDENTITY transform (verified against the GLB) so this is a
+  // pure additive local offset on top of the baked closed-pose vertices.
+  const CAP_OPEN_DELTA = 0.01672;
+
+  const container = document.getElementById('canvas-container');
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.001, 10);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  container.appendChild(renderer.domElement);
+
+  const key = new THREE.DirectionalLight(0xffffff, 3.2);
+  key.position.set(1, 1.4, 1.2);
+  scene.add(key);
+  const fillLight = new THREE.DirectionalLight(0xcfe0ff, 1.3);
+  fillLight.position.set(-1.2, 0.3, -0.7);
+  scene.add(fillLight);
+  const rim = new THREE.DirectionalLight(0xffffff, 1.6);
+  rim.position.set(0.2, -0.9, -1.4);
+  scene.add(rim);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+
+  let capsuleGroup, capNode, capMaterial, bodyMaterial;
+
+  // Quick shortcuts (brand + common capsule colors). The picker itself (native
+  // <input type="color">, wired up below) covers the FULL color spectrum —
+  // these are just one-click favorites layered on top of it.
+  const PALETTE = [
+    { name: 'Azul Globalquimia', hex: 0x006f9e },
+    { name: 'Cian',              hex: 0x1dbadf },
+    { name: 'Amarillo',          hex: 0xfdc400 },
+    { name: 'Verde',             hex: 0x95c11f },
+    { name: 'Navy',              hex: 0x1c405d },
+    { name: 'Blanco',            hex: 0xf8f8f8 },
+    { name: 'Negro',             hex: 0x2b2b2b },
+    { name: 'Gris',              hex: 0x9aa7ad },
+    { name: 'Rojo',              hex: 0xd63b3b },
+    { name: 'Naranja',           hex: 0xf28c28 },
+    { name: 'Rosa',              hex: 0xe36ca0 },
+    { name: 'Morado',            hex: 0x7d5ba6 },
+    { name: 'Turquesa',          hex: 0x2ec4b6 },
+    { name: 'Beige',             hex: 0xe4d5b7 },
+  ];
+
+  const loader = new GLTFLoader();
+  loader.load('capsule.glb', (gltf) => {
+    const root = gltf.scene;
+    root.traverse((obj) => {
+      if (obj.name === 'capsule_cap') capNode = obj;
+      // The GLB has no material at all (only per-vertex COLOR_0) — GLTFLoader's
+      // fallback for that renders as translucent. Assign an explicit opaque
+      // material with a plain color (not vertexColors) so each piece can be
+      // recolored live from the palette without fighting baked vertex color.
+      if (obj.isMesh) {
+        // The GLB also has no NORMAL attribute (only POSITION + COLOR_0), so
+        // there's nothing for lighting to shade against — compute smooth
+        // normals directly from the geometry.
+        obj.geometry.computeVertexNormals();
+        const isCap = obj.name === 'capsule_cap';
+        const mat = new THREE.MeshStandardMaterial({
+          color: isCap ? 0x2e8ad6 : 0xf8f8f8,
+          roughness: 0.35,
+          metalness: 0.05,
+          transparent: false,
+          opacity: 1,
+          side: THREE.DoubleSide,
+        });
+        obj.material = mat;
+        if (isCap) capMaterial = mat; else bodyMaterial = mat;
+      }
+    });
+
+    const box = new THREE.Box3().setFromObject(root);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+
+    root.position.sub(center); // center the whole capsule at the origin
+    capsuleGroup = new THREE.Group();
+    capsuleGroup.add(root);
+    scene.add(capsuleGroup);
+
+    buildColorControls('cap', capMaterial);
+    buildColorControls('body', bodyMaterial);
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    // The capsule's long axis is local Z — a camera placed straight along Z
+    // stares end-on into the rounded tip (looks like a flat circle). Use a
+    // 3/4 angled position instead, same yaw/pitch approach as the static
+    // product renders (render_capsule.py) so it actually shows the capsule's
+    // elongated shape.
+    const camDist = maxDim * 2.6;
+    const yaw = THREE.MathUtils.degToRad(35);
+    const pitch = THREE.MathUtils.degToRad(-20);
+    camera.position.set(
+      camDist * Math.cos(pitch) * Math.sin(yaw),
+      camDist * Math.sin(pitch) * -1,
+      camDist * Math.cos(pitch) * Math.cos(yaw)
+    );
+    camera.lookAt(0, 0, 0);
+    camera.userData.baseDir = camera.position.clone().normalize();
+
+    initScrollStory(maxDim, camDist);
+    window.__capsuleReady = true; // hook for automated testing
+  });
+
+  function hexToRgbString(hexStr) {
+    const n = parseInt(hexStr.replace('#', ''), 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  function setPieceColor(target, hexStr, material) {
+    material.color.set(hexStr);
+    const picker = document.getElementById('picker-' + target);
+    const readout = document.getElementById('readout-' + target);
+    picker.value = hexStr;
+    readout.textContent = hexStr.toUpperCase() + ' · ' + hexToRgbString(hexStr);
+    document.querySelectorAll(`.quick-swatches[data-target="${target}"] .swatch`).forEach((s) => {
+      s.classList.toggle('selected', s.dataset.hex === hexStr.toLowerCase());
+    });
+  }
+
+  function buildColorControls(target, material) {
+    const quickRow = document.querySelector(`.quick-swatches[data-target="${target}"]`);
+    PALETTE.forEach((c) => {
+      const hexStr = '#' + c.hex.toString(16).padStart(6, '0');
+      const btn = document.createElement('div');
+      btn.className = 'swatch';
+      btn.title = c.name;
+      btn.dataset.hex = hexStr;
+      btn.style.backgroundColor = hexStr;
+      btn.addEventListener('click', () => setPieceColor(target, hexStr, material));
+      quickRow.appendChild(btn);
+    });
+
+    const picker = document.getElementById('picker-' + target);
+    picker.addEventListener('input', (e) => setPieceColor(target, e.target.value, material));
+  }
+
+  function initScrollStory(maxDim, camDist) {
+    const designerEl = document.getElementById('designer');
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#story',
+        start: 'top top',
+        end: '+=380%',
+        scrub: 1,
+        pin: true,
+        onUpdate: (self) => {
+          document.getElementById('progress-fill').style.height = (self.progress * 100) + '%';
+          designerEl.classList.toggle('active', self.progress > 0.93);
+        },
+      },
+    });
+
+    // Camera dolly: scale ALONG the fixed viewing direction (baseDir), not a
+    // single axis — the camera sits at an angled 3/4 position, so animating
+    // camera.position.z alone would drift off-angle instead of zooming.
+    const dollyState = { dist: camDist };
+    function applyDolly() {
+      camera.position.copy(camera.userData.baseDir).multiplyScalar(dollyState.dist);
+      camera.lookAt(0, 0, 0);
+    }
+
+    // Stage 1 (0 -> 0.29): closed, slow spin
+    tl.to(capsuleGroup.rotation, { y: Math.PI * 0.85, duration: 0.29, ease: 'none' }, 0);
+
+    // Stage 2 (0.29 -> 0.58): zoom in while the cap slides open
+    tl.to(dollyState, { dist: maxDim * 1.35, duration: 0.29, ease: 'power1.inOut', onUpdate: applyDolly }, 0.29);
+    tl.to({ p: 0 }, {
+      p: 1,
+      duration: 0.29,
+      ease: 'power1.inOut',
+      onUpdate: function () {
+        if (capNode) capNode.position.z = CAP_OPEN_DELTA * this.targets()[0].p;
+      },
+    }, 0.29);
+
+    // Stage 3 (0.58 -> 0.72): open, continued spin, ease out a touch
+    tl.to(capsuleGroup.rotation, { y: Math.PI * 1.35, duration: 0.14, ease: 'none' }, 0.58);
+    tl.to(dollyState, { dist: maxDim * 1.9, duration: 0.14, ease: 'power1.inOut', onUpdate: applyDolly }, 0.58);
+
+    // Stage 4 (0.72 -> 0.87): the cap slides back CLOSED, settling to a clean
+    // angle + comfortable distance for the color picker
+    tl.to({ p: 1 }, {
+      p: 0,
+      duration: 0.15,
+      ease: 'power1.inOut',
+      onUpdate: function () {
+        if (capNode) capNode.position.z = CAP_OPEN_DELTA * this.targets()[0].p;
+      },
+    }, 0.72);
+    tl.to(capsuleGroup.rotation, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
+    tl.to(dollyState, { dist: maxDim * 2.3, duration: 0.15, ease: 'power1.inOut', onUpdate: applyDolly }, 0.72);
+
+    // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in, capsule settled
+    tl.fromTo(designerEl, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.1, overwrite: false }, 0.90);
+
+    // Text overlays keyed to the same timeline. Each grows FROM small while
+    // fading in, holds at full size, then grows FURTHER while fading out —
+    // size is tied to scroll position throughout, not just opacity.
+    const zones = {
+      1: [0.02, 0.24],
+      2: [0.32, 0.52],
+      3: [0.60, 0.69],
+    };
+    Object.entries(zones).forEach(([stage, [inAt, outAt]]) => {
+      const el = document.querySelector('#stage-' + stage + ' .inner');
+      tl.fromTo(el,
+        { opacity: 0, scale: 0.62 },
+        { opacity: 1, scale: 1, duration: 0.06, ease: 'power1.out', overwrite: false },
+        inAt
+      );
+      tl.to(el,
+        { opacity: 0, scale: 1.4, duration: 0.06, ease: 'power1.in', overwrite: false },
+        outAt
+      );
+    });
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+
+</body>
+</html>
