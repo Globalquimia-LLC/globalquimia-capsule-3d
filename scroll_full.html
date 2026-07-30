@@ -142,6 +142,57 @@
   .progress-fill {
     width: 100%; height: 0%; background: var(--cyan); border-radius: 2px;
   }
+
+  /* ---------- Mobile / narrow viewports ---------- */
+  @media (max-width: 760px) {
+    header { padding: 14px 16px; }
+    header img { height: 20px; }
+    header span { font-size: 9px; letter-spacing: 0.5px; }
+
+    .intro { height: 88vh; padding: 0 20px; }
+    .intro h1 { font-size: clamp(24px, 7vw, 32px); }
+    .intro p { font-size: 13px; max-width: 340px; }
+
+    /* Side text doesn't work on a narrow screen (no room next to the
+       capsule) — becomes a centered bottom banner instead, same as the
+       designer panel. GSAP still only touches .inner's scale/opacity, so no
+       JS changes are needed for this reflow. */
+    .story-text {
+      top: auto; bottom: 5%;
+      width: 90vw;
+      transform: none;
+    }
+    .story-text.side-left, .story-text.side-right {
+      left: 50%; right: auto;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+    .story-text h2 { font-size: 19px; }
+    .story-text p { font-size: 13px; }
+
+    .designer { bottom: 3%; width: 94vw; }
+    .designer h2 { font-size: 18px; }
+    .designer .row {
+      flex-wrap: wrap; justify-content: center;
+      padding: 10px 12px; gap: 8px 10px;
+    }
+    .designer .row label { width: 100%; text-align: center; }
+    .quick-swatches { justify-content: center; flex-wrap: wrap; }
+    .color-readout { width: 100%; text-align: center; margin-top: 2px; }
+
+    /* The side rail visually collided with the bottom-anchored text/designer
+       on narrow screens — move it out of the way instead of overlapping. */
+    .progress-rail { right: 10px; height: 90px; }
+
+    .closing { padding: 48px 20px; }
+    .closing h2 { font-size: clamp(20px, 6vw, 26px); }
+  }
+
+  @media (max-width: 400px) {
+    .story-text h2 { font-size: 17px; }
+    .designer .row { padding: 8px 10px; }
+    .swatch { width: 18px; height: 18px; }
+  }
 </style>
 </head>
 <body>
