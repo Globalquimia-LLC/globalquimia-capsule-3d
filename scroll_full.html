@@ -56,14 +56,18 @@
   #canvas-container canvas { display: block; width: 100% !important; height: 100% !important; }
 
   /* Big background numeral for the current wizard step — always on the
-     same side as the capsule (see #step-number toggling in goToStep). */
+     same side as the capsule (see #step-number toggling in goToStep).
+     Starts hidden: it's only relevant once the designer wizard itself is
+     active, not during the earlier scroll-driven story stages. */
   .step-number {
     position: absolute; top: 50%; transform: translateY(-50%);
     font-size: clamp(160px, 24vw, 340px); font-weight: 900; line-height: 1;
     color: rgba(28,64,93,0.09);
     z-index: 1; pointer-events: none; user-select: none;
+    opacity: 0;
     transition: opacity 0.35s ease;
   }
+  .step-number.visible { opacity: 1; }
   .step-number.side-left { left: 1%; }
   .step-number.side-right { right: 1%; }
 
@@ -1303,6 +1307,7 @@
         onUpdate: (self) => {
           document.getElementById('progress-fill').style.height = (self.progress * 100) + '%';
           designerEl.classList.toggle('active', self.progress > 0.93);
+          document.getElementById('step-number').classList.toggle('visible', isDesktopLayout && self.progress > 0.93);
         },
       },
     });
