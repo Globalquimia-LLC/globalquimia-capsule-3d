@@ -322,13 +322,11 @@
                 <div class="row">
                   <label>Tapa</label>
                   <button type="button" class="color-toggle" id="toggle-tradicionales-cap"></button>
-                  <div class="quick-swatches" data-finish="tradicionales" data-target="cap"></div>
                   <span class="color-readout" id="readout-tradicionales-cap"></span>
                 </div>
                 <div class="row">
                   <label>Cuerpo</label>
                   <button type="button" class="color-toggle" id="toggle-tradicionales-body"></button>
-                  <div class="quick-swatches" data-finish="tradicionales" data-target="body"></div>
                   <span class="color-readout" id="readout-tradicionales-body"></span>
                 </div>
               </div>
@@ -345,13 +343,11 @@
                 <div class="row">
                   <label>Tapa</label>
                   <button type="button" class="color-toggle" id="toggle-mate-cap"></button>
-                  <div class="quick-swatches" data-finish="mate" data-target="cap"></div>
                   <span class="color-readout" id="readout-mate-cap"></span>
                 </div>
                 <div class="row">
                   <label>Cuerpo</label>
                   <button type="button" class="color-toggle" id="toggle-mate-body"></button>
-                  <div class="quick-swatches" data-finish="mate" data-target="body"></div>
                   <span class="color-readout" id="readout-mate-body"></span>
                 </div>
               </div>
@@ -433,26 +429,6 @@
   // One Pickr instance per finish+piece pair, keyed "finish-target"
   // (e.g. "tradicionales-cap").
   const pickrInstances = {};
-
-  // Quick shortcuts (brand + common capsule colors). Pickr (built below)
-  // covers the FULL color spectrum — these are just one-click favorites
-  // layered on top of it.
-  const PALETTE = [
-    { name: 'Azul Globalquimia', hex: 0x006f9e },
-    { name: 'Cian',              hex: 0x1dbadf },
-    { name: 'Amarillo',          hex: 0xfdc400 },
-    { name: 'Verde',             hex: 0x95c11f },
-    { name: 'Navy',              hex: 0x1c405d },
-    { name: 'Blanco',            hex: 0xf8f8f8 },
-    { name: 'Negro',             hex: 0x2b2b2b },
-    { name: 'Gris',              hex: 0x9aa7ad },
-    { name: 'Rojo',              hex: 0xd63b3b },
-    { name: 'Naranja',           hex: 0xf28c28 },
-    { name: 'Rosa',              hex: 0xe36ca0 },
-    { name: 'Morado',            hex: 0x7d5ba6 },
-    { name: 'Turquesa',          hex: 0x2ec4b6 },
-    { name: 'Beige',             hex: 0xe4d5b7 },
-  ];
 
   // Fixed metallic finish set (not the full spectrum — a closed palette, per
   // the reference swatch grid).
@@ -632,8 +608,6 @@
       const defaultHex = target === 'cap' ? '#2e8ad6' : '#f8f8f8';
 
       ['tradicionales', 'mate'].forEach((finishKey) => {
-        const container = document.querySelector(`.quick-swatches[data-finish="${finishKey}"][data-target="${target}"]`);
-        buildSwatchGroup(container, finishKey, target, material, PALETTE);
         pickrInstances[`${finishKey}-${target}`] = createColorPicker(target, finishKey, material, defaultHex);
         refreshDisplay(target, finishKey, defaultHex);
       });
