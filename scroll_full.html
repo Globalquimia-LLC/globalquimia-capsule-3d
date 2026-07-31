@@ -71,17 +71,21 @@
   .story-text h2 { font-size: clamp(20px, 2.8vw, 30px); margin: 0 0 10px 0; line-height: 1.25; color: var(--navy); }
   .story-text p { font-size: 14px; line-height: 1.5; color: #5b6b74; margin: 0; }
 
+  /* Sits on the RIGHT so the capsule (nudged left via #canvas-container's
+     own transform, see initScrollStory) has room on the left — same
+     outer/.inner split as .story-text: the outer element only handles fixed
+     side positioning, GSAP only ever touches .inner's opacity/transform. */
   .designer {
     position: absolute;
-    left: 50%; bottom: 6%;
-    transform: translate(-50%, 0);
+    right: 6%; left: auto;
+    top: 50%; transform: translateY(-50%);
     text-align: center;
     z-index: 6;
-    opacity: 0;
     pointer-events: none;
-    width: min(780px, 94vw);
+    width: min(480px, 42vw);
   }
   .designer.active { pointer-events: auto; }
+  .designer .inner { opacity: 0; }
   .designer .eyebrow {
     font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     color: var(--blue); margin: 0 0 4px 0;
@@ -89,9 +93,9 @@
   .designer h2 { font-size: clamp(18px, 2.6vw, 24px); margin: 0 0 16px 0; color: var(--navy); }
   .designer .rows { display: flex; flex-direction: column; gap: 12px; }
   .designer .row {
-    display: flex; align-items: center; gap: 12px; justify-content: center;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: center;
     background: rgba(255,255,255,0.7); backdrop-filter: blur(6px);
-    padding: 8px 14px; border-radius: 30px;
+    padding: 10px 14px; border-radius: 18px;
   }
   .designer .row label {
     font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
@@ -251,7 +255,16 @@
     .story-text h2 { font-size: 19px; }
     .story-text p { font-size: 13px; }
 
-    .designer { bottom: 3%; width: 94vw; }
+    /* The right-sidebar layout needs room beside the capsule that a narrow
+       screen doesn't have — falls back to the same bottom-banner treatment
+       as .story-text, and the capsule stays centered (see initScrollStory,
+       which only applies the left-shift above the 760px breakpoint). */
+    .designer {
+      left: 50%; right: auto;
+      top: auto; bottom: 3%;
+      transform: translateX(-50%);
+      width: 94vw;
+    }
     .designer h2 { font-size: 18px; }
     .designer .row {
       flex-wrap: wrap; justify-content: center;
@@ -327,6 +340,7 @@
   </div>
 
   <div class="designer" id="designer">
+   <div class="inner">
     <p class="eyebrow">Personalización</p>
     <h2>Diseña tu cápsula</h2>
 
@@ -416,6 +430,7 @@
         </div>
       </div>
     </div>
+   </div>
   </div>
 </section>
 
@@ -987,6 +1002,12 @@
 
   function initScrollStory(maxDim, camDist) {
     const designerEl = document.getElementById('designer');
+    const designerInner = designerEl.querySelector('.inner');
+    const canvasContainer = document.getElementById('canvas-container');
+    // Below the 760px breakpoint the designer panel drops to a bottom banner
+    // (see the mobile media query) and the capsule stays centered — the
+    // side-by-side layout only makes sense with room to spare.
+    const sideBySide = window.innerWidth > 760;
 
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -1042,8 +1063,14 @@
     tl.to(capsuleGroup.rotation, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
     tl.to(dollyState, { dist: maxDim * 2.3, duration: 0.15, ease: 'power1.inOut', onUpdate: applyDolly }, 0.72);
 
-    // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in, capsule settled
-    tl.fromTo(designerEl, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.1, overwrite: false }, 0.90);
+    // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in on the right;
+    // the capsule (rendered by #canvas-container, shifted at the DOM level —
+    // not the 3D camera — so the move is purely horizontal, no perspective
+    // skew) slides left to make room for it.
+    tl.fromTo(designerInner, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.1, overwrite: false }, 0.90);
+    if (sideBySide) {
+      tl.to(canvasContainer, { xPercent: -14, duration: 0.1, ease: 'power1.inOut', overwrite: false }, 0.90);
+    }
 
     // Text overlays keyed to the same timeline. Each grows FROM small while
     // fading in, holds at full size, then grows FURTHER while fading out —
