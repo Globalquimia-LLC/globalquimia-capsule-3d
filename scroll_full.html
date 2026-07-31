@@ -37,10 +37,28 @@
   header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-transform: uppercase; }
 
   .intro {
+    position: relative;
     height: 90vh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 0 24px;
+    overflow: hidden;
   }
+  /* Brand hex pattern (MANUAL DE MARCA assets), kept very faint and
+     desaturated so it reads as texture/depth rather than a loud graphic —
+     scrolled at a different rate than the content via ScrollTrigger below
+     for a subtle parallax layer. */
+  .intro-pattern {
+    position: absolute; inset: -15% -15%;
+    background-image: url('assets/patron-hex.png');
+    background-repeat: repeat;
+    background-size: 320px auto;
+    opacity: 0.05;
+    filter: grayscale(1);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .intro > * { position: relative; z-index: 1; }
+  .intro-item { opacity: 0; transform: translateY(26px); }
   .intro h1 { font-size: clamp(28px, 5vw, 48px); margin: 0 0 14px 0; max-width: 720px; line-height: 1.15; }
   .intro p { font-size: 15px; color: #5b6b74; max-width: 480px; margin: 0 0 26px 0; }
   .intro .hint { font-size: 12px; color: #9aa7ad; letter-spacing: 0.5px; }
@@ -125,8 +143,16 @@
   .step-back {
     display: none; background: none; border: none; cursor: pointer; font-family: inherit;
     font-size: 12px; font-weight: 700; color: #5b6b74; padding: 0 0 10px 0;
+    transition: color 0.15s ease, transform 0.15s ease;
   }
+  .step-back:hover { color: var(--blue); transform: translateX(-2px); }
   .step-back.visible { display: inline-block; }
+  .step-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; }
+  .step-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: rgba(28,64,93,0.16);
+    transition: width 0.3s ease, border-radius 0.3s ease, background 0.3s ease;
+  }
+  .step-dot.active { width: 22px; border-radius: 4px; background: var(--blue); }
   .step-panel { display: none; }
   .step-panel.active { display: block; }
   .continue-btn {
@@ -134,7 +160,9 @@
     background: var(--blue); color: #fff; border: none; border-radius: 4px;
     font-family: inherit; font-size: 13px; font-weight: 700; padding: 12px;
     cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
   }
+  .continue-btn:hover { background: var(--navy); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(28,64,93,0.25); }
 
   /* Accordion: 1. Color > 1.1 Tradicionales / 1.2 Mate / 1.3 Metalizados.
      Only one of the three finish sub-items is open at a time; "Color" itself
@@ -157,10 +185,20 @@
     padding: 14px 18px; font-size: 13px; font-weight: 700; color: var(--navy);
   }
   .acc-header.acc-sub { padding: 12px 18px 12px 30px; font-size: 12px; color: var(--blue); }
-  .acc-chevron { font-size: 11px; color: #9aa7ad; transition: transform 0.25s ease; }
+  .acc-chevron { font-size: 11px; color: #9aa7ad; transition: transform 0.3s ease; }
   .acc-item.open > .acc-header .acc-chevron { transform: rotate(180deg); }
-  .acc-item > .acc-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-  .acc-item.open > .acc-body { max-height: 760px; }
+  .acc-header:hover { background: rgba(0,111,158,0.05); }
+  /* height starts at 0/overflow:hidden — GSAP animates the actual pixel
+     height on open/close (see openAccBody/closeAccBody) instead of the
+     usual CSS max-height trick, which either overshoots a guessed cap or
+     clips content that's taller than it; animating to the real
+     scrollHeight always matches the actual content. */
+  .acc-item > .acc-body { overflow: hidden; height: 0; }
+  /* Default for whichever item starts open in the static HTML — before any
+     click, GSAP hasn't set an inline height yet, so this CSS fallback is
+     what actually renders it; JS-driven opens/closes take over afterward
+     via inline height, which always wins over this rule. */
+  .acc-item.open > .acc-body { height: auto; }
   .acc-item.open[data-finish] > .acc-body { padding: 0 18px 14px 18px; }
 
   .piece-tabs { display: flex; gap: 18px; margin-bottom: 12px; }
@@ -210,8 +248,11 @@
     background: none; border: none; border-bottom: 1px solid rgba(28,64,93,0.08);
     font-family: inherit; text-align: left; cursor: pointer;
     padding: 10px 4px; font-size: 13px; color: var(--blue);
+    border-radius: 4px;
+    transition: background 0.15s ease, padding-left 0.15s ease, color 0.15s ease;
   }
   .option-row:last-child { border-bottom: none; }
+  .option-row:hover { background: rgba(0,111,158,0.06); padding-left: 10px; }
   .option-row.selected { font-weight: 700; color: var(--navy); }
 
   /* 2. Tamaño — same idea, plus a scaled capsule icon per row and its own
@@ -228,12 +269,16 @@
     background: none; border: none; border-bottom: 1px solid rgba(28,64,93,0.08);
     font-family: inherit; text-align: left; cursor: pointer;
     padding: 10px 4px; font-size: 13px; color: var(--blue);
+    border-radius: 4px;
+    transition: background 0.15s ease, padding-left 0.15s ease;
   }
   .size-row:last-child { border-bottom: none; }
+  .size-row:hover { background: rgba(0,111,158,0.06); padding-left: 10px; }
   .size-row.selected { font-weight: 700; color: var(--navy); }
-  .capsule-icon { flex: none; display: block; height: 18px; }
+  .capsule-icon { flex: none; display: block; height: 18px; transition: transform 0.15s ease; }
   .capsule-icon .cap-half { fill: var(--cyan); }
   .capsule-icon .body-half { fill: var(--navy); }
+  .size-row:hover .capsule-icon { transform: scale(1.08); }
 
   /* 4. Logo y Texto */
   .logo-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -241,19 +286,25 @@
     display: inline-block; background: var(--blue); color: #fff;
     font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 4px;
     cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
   }
+  .logo-upload-btn:hover { background: var(--navy); transform: translateY(-1px); }
   .logo-upload-name { font-size: 12px; color: #5b6b74; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .icon-btn {
     background: none; border: 1px solid rgba(28,64,93,0.15); border-radius: 4px;
     width: 30px; height: 30px; font-size: 14px; line-height: 1; cursor: pointer;
     color: var(--navy);
+    transition: background 0.15s ease, border-color 0.15s ease;
   }
+  .icon-btn:hover { background: rgba(0,111,158,0.08); border-color: var(--blue); }
   .text-toolbar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px 0; }
   .font-size-btns { display: flex; align-items: baseline; gap: 12px; }
   .font-size-btn {
     background: none; border: none; cursor: pointer; font-family: inherit;
     color: #9aa7ad; padding: 0;
+    transition: color 0.15s ease;
   }
+  .font-size-btn:hover { color: var(--blue); }
   .font-size-btn:nth-child(1) { font-size: 13px; }
   .font-size-btn:nth-child(2) { font-size: 17px; }
   .font-size-btn:nth-child(3) { font-size: 21px; }
@@ -263,23 +314,40 @@
     width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px;
     padding: 9px 12px; border: 1px solid rgba(28,64,93,0.2); border-radius: 4px;
     color: var(--navy); margin-bottom: 12px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
+  .text-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,111,158,0.12); }
   .text-input::placeholder { color: #9aa7ad; }
 
   .closing {
+    position: relative;
     min-height: 70vh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 60px 24px;
     background-color: var(--navy);
     color: #fff;
+    overflow: hidden;
   }
+  /* Brand mark as a huge, barely-there watermark — parallax-scrolled at
+     its own rate (see the closing ScrollTrigger) rather than pinned flat
+     to the background, so it drifts subtly as the section is in view. */
+  .closing-symbol {
+    position: absolute; top: 50%; left: 50%;
+    width: clamp(420px, 55vw, 760px); height: auto;
+    transform: translate(-50%, -50%);
+    opacity: 0.06; pointer-events: none; z-index: 0;
+  }
+  .closing > * { position: relative; z-index: 1; }
+  .closing-item { opacity: 0; transform: translateY(24px); }
   .closing h2 { font-size: clamp(22px, 4vw, 34px); margin: 0 0 14px 0; max-width: 640px; }
   .closing p { font-size: 14px; color: #a9bccb; margin: 0 0 26px 0; }
   .closing a.cta {
     display: inline-block; background: var(--yellow); color: var(--navy);
     font-weight: 700; font-size: 14px; text-decoration: none;
     padding: 13px 30px; border-radius: 4px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
+  .closing a.cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(253,196,0,0.3); }
   .closing .contact { margin-top: 30px; font-size: 12px; color: #7d93a4; }
 
   .progress-rail {
@@ -365,10 +433,11 @@
 </header>
 
 <section class="intro">
-  <p class="eyebrow" style="color:var(--blue); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; font-size:12px;">Insumos farmacéuticos</p>
-  <h1>Acompañamiento integral para procesos farmacéuticos</h1>
-  <p>Diseñamos soluciones integrales para laboratorios farmacéuticos y relacionados, acompañando su proyecto desde las etapas iniciales hasta materializar sus ideas de negocio.</p>
-  <span class="hint">Scrolleá para explorar la cápsula</span>
+  <div class="intro-pattern" id="intro-pattern"></div>
+  <p class="eyebrow intro-item" style="color:var(--blue); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; font-size:12px;">Insumos farmacéuticos</p>
+  <h1 class="intro-item">Acompañamiento integral para procesos farmacéuticos</h1>
+  <p class="intro-item">Diseñamos soluciones integrales para laboratorios farmacéuticos y relacionados, acompañando su proyecto desde las etapas iniciales hasta materializar sus ideas de negocio.</p>
+  <span class="hint intro-item">Scrolleá para explorar la cápsula</span>
 </section>
 
 <section id="story">
@@ -401,6 +470,12 @@
   <div class="designer side-right" id="designer">
    <div class="inner">
     <button class="step-back" id="step-back" type="button">‹ Volver</button>
+    <div class="step-dots" id="step-dots">
+      <span class="step-dot active" data-step="1"></span>
+      <span class="step-dot" data-step="2"></span>
+      <span class="step-dot" data-step="3"></span>
+      <span class="step-dot" data-step="4"></span>
+    </div>
     <p class="eyebrow">Personalización</p>
     <h2 id="designer-heading">Tipo de cápsula</h2>
 
@@ -529,11 +604,12 @@
 </section>
 
 <section class="closing">
-  <img src="assets/logo-blanco.png" alt="Globalquimia" style="height:30px; margin-bottom:22px;" />
-  <h2>Disponibilidad inmediata con opciones de personalización sin costo de muestra</h2>
-  <p>Soluciones integrales para producir, proteger, acondicionar y controlar tu producto terminado.</p>
-  <a class="cta" href="https://wa.me/573217408144">Solicita tu cotización</a>
-  <p class="contact">info@globalquimia.com.co · +57 321 740 8144 · www.globalquimia.com.co</p>
+  <img class="closing-symbol" id="closing-symbol" src="assets/simbolo.png" alt="" aria-hidden="true" />
+  <img class="closing-item" src="assets/logo-blanco.png" alt="Globalquimia" style="height:30px; margin-bottom:22px;" />
+  <h2 class="closing-item">Disponibilidad inmediata con opciones de personalización sin costo de muestra</h2>
+  <p class="closing-item">Soluciones integrales para producir, proteger, acondicionar y controlar tu producto terminado.</p>
+  <a class="cta closing-item" href="https://wa.me/573217408144">Solicita tu cotización</a>
+  <p class="contact closing-item">info@globalquimia.com.co · +57 321 740 8144 · www.globalquimia.com.co</p>
 </section>
 
 <div class="progress-rail"><div class="progress-fill" id="progress-fill"></div></div>
@@ -544,6 +620,36 @@
   import { DecalGeometry } from 'three/addons/geometries/DecalGeometry.js';
 
   gsap.registerPlugin(ScrollTrigger);
+
+  // Hero entrance: plays once immediately on load (no ScrollTrigger — the
+  // page always opens on the intro). A gentle stagger reads as considered
+  // rather than everything popping in at once.
+  gsap.timeline({ defaults: { ease: 'power3.out' } })
+    .to('.intro-item', { opacity: 1, y: 0, duration: 0.9, stagger: 0.14 }, 0.1);
+
+  // Hex-pattern background drifts at a different rate than the content as
+  // the intro scrolls away — a subtle parallax layer, not a headline effect.
+  gsap.to('#intro-pattern', {
+    yPercent: 18,
+    ease: 'none',
+    scrollTrigger: { trigger: '.intro', start: 'top top', end: 'bottom top', scrub: true },
+  });
+
+  // Closing section: content staggers in the first time it scrolls into
+  // view (start: 'top 75%' — fires a bit before it's fully on screen so it
+  // doesn't feel late), and the brand mark drifts as its own parallax layer.
+  gsap.fromTo('.closing-item',
+    { opacity: 0, y: 24 },
+    {
+      opacity: 1, y: 0, duration: 0.7, stagger: 0.1, ease: 'power2.out',
+      scrollTrigger: { trigger: '.closing', start: 'top 75%' },
+    }
+  );
+  gsap.to('#closing-symbol', {
+    yPercent: -14,
+    ease: 'none',
+    scrollTrigger: { trigger: '.closing', start: 'top bottom', end: 'bottom top', scrub: true },
+  });
 
   // How far the cap travels along its own local axis to go from fully CLOSED to
   // the reference OPEN pose. Derived directly from build_capsule.py's geometry:
@@ -650,24 +756,25 @@
 
   function buildTipoSection() {
     const list = document.getElementById('tipo-list');
-    let selected = TIPO_OPTIONS[2];
 
-    function render() {
-      list.innerHTML = '';
-      TIPO_OPTIONS.forEach((label) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'option-row' + (label === selected ? ' selected' : '');
-        btn.textContent = label;
-        btn.addEventListener('click', () => {
-          selected = label;
-          render();
-          goToStep(2);
-        });
-        list.appendChild(btn);
+    // Built once — a click only toggles .selected on the existing buttons,
+    // never rebuilds the DOM, so the entrance stagger below plays exactly
+    // once instead of replaying every time someone picks an option.
+    TIPO_OPTIONS.forEach((label, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'option-row' + (i === 2 ? ' selected' : '');
+      btn.textContent = label;
+      btn.addEventListener('click', () => {
+        list.querySelectorAll('.option-row').forEach((row) => row.classList.toggle('selected', row === btn));
+        goToStep(2);
       });
-    }
-    render();
+      list.appendChild(btn);
+    });
+    // Entrance stagger fires when this step actually becomes visible (see
+    // revealStepChildren), not here — the panel is still display:none at
+    // page load, so an animation run now would finish off-screen and just
+    // look like the list was never animated at all.
   }
 
   // ---------------------------------------------------------------------
@@ -706,31 +813,30 @@
   function buildSizeSection() {
     const list = document.getElementById('size-list');
     const maxLen = Math.max(...SIZE_OPTIONS.map((s) => s.length));
-    let selectedCode = '0';
 
     function labelFor(opt) {
       return `${opt.code} (${opt.length.toFixed(2)} L x ${SIZE_WALL_MM.toFixed(2)} W mm)`;
     }
-    function render() {
-      list.innerHTML = '';
-      SIZE_OPTIONS.forEach((opt) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'size-row' + (opt.code === selectedCode ? ' selected' : '');
-        btn.innerHTML = capsuleIconSVG(opt.length, maxLen) + `<span>${labelFor(opt)}</span>`;
-        btn.addEventListener('click', () => {
-          selectedCode = opt.code;
-          render();
-          if (capsuleGroup) {
-            const ratio = opt.length / SIZE_REFERENCE_LENGTH;
-            gsap.to(capsuleGroup.scale, { x: ratio, y: ratio, z: ratio, duration: 0.9, ease: 'power2.inOut' });
-          }
-          goToStep(3);
-        });
-        list.appendChild(btn);
+
+    // Built once — see buildTipoSection for why (avoids replaying the
+    // entrance stagger on every click).
+    SIZE_OPTIONS.forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'size-row' + (opt.code === '0' ? ' selected' : '');
+      btn.innerHTML = capsuleIconSVG(opt.length, maxLen) + `<span>${labelFor(opt)}</span>`;
+      btn.addEventListener('click', () => {
+        list.querySelectorAll('.size-row').forEach((row) => row.classList.toggle('selected', row === btn));
+        if (capsuleGroup) {
+          const ratio = opt.length / SIZE_REFERENCE_LENGTH;
+          gsap.to(capsuleGroup.scale, { x: ratio, y: ratio, z: ratio, duration: 1.0, ease: 'back.out(1.15)' });
+        }
+        goToStep(3);
       });
-    }
-    render();
+      list.appendChild(btn);
+    });
+    // Entrance stagger fires from revealStepChildren once this step is
+    // actually shown — see the note in buildTipoSection.
   }
 
   // ---------------------------------------------------------------------
@@ -1019,8 +1125,24 @@
   // first transition into the wizard doesn't itself need an extra animation.
   // ---------------------------------------------------------------------
   let currentStep = 1;
+  let hasRevealedStep1 = false;
   const STEP_TITLES = { 1: 'Tipo de cápsula', 2: 'Tamaño', 3: 'Color', 4: 'Logo y Texto' };
   function capsuleSideForStep(step) { return step % 2 === 1 ? 'left' : 'right'; }
+
+  // Staggers a step panel's own top-level items in as it becomes visible —
+  // list rows for Tipo/Tamaño, the finish/logo-texto cards for Color and
+  // Logo y Texto. Called once for step 1 (when the designer itself first
+  // activates on scroll) and every time goToStep reveals a panel — never at
+  // build time, since an animation started while display:none finishes
+  // invisibly and the step would just appear with no motion at all.
+  function revealStepChildren(panel) {
+    if (!panel) return;
+    const targets = panel.querySelectorAll(':scope > .option-list > *, :scope > .size-list > *, :scope > .acc-menu > .acc-item');
+    if (!targets.length) return;
+    gsap.fromTo(targets,
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.45, stagger: 0.05, ease: 'power2.out' });
+  }
 
   function goToStep(newStep) {
     if (newStep === currentStep || newStep < 1 || newStep > 4) return;
@@ -1037,16 +1159,18 @@
     const menuSide = capsuleSide === 'left' ? 'right' : 'left';
 
     backBtn.classList.toggle('visible', newStep > 1);
+    document.querySelectorAll('.step-dot').forEach((d) => d.classList.toggle('active', Number(d.dataset.step) === newStep));
 
     gsap.to(inner, {
-      opacity: 0, duration: 0.25, ease: 'power1.in',
+      opacity: 0, y: -6, duration: 0.22, ease: 'power2.in',
       onComplete: () => {
         if (oldPanel) oldPanel.classList.remove('active');
         if (newPanel) newPanel.classList.add('active');
         heading.textContent = STEP_TITLES[newStep];
         designerEl.classList.remove('side-left', 'side-right');
         designerEl.classList.add('side-' + menuSide);
-        gsap.to(inner, { opacity: 1, duration: 0.3, ease: 'power1.out' });
+        gsap.fromTo(inner, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' });
+        revealStepChildren(newPanel);
       },
     });
 
@@ -1061,8 +1185,8 @@
         },
       });
       if (capsuleGroup) {
-        gsap.to(capsuleGroup.rotation, { y: capsuleGroup.rotation.y + Math.PI * 0.6, duration: 0.9, ease: 'power2.inOut' });
-        gsap.to(container, { xPercent: capsuleSide === 'left' ? -14 : 14, duration: 0.9, ease: 'power2.inOut' });
+        gsap.to(capsuleGroup.rotation, { y: capsuleGroup.rotation.y + Math.PI * 0.6, duration: 0.95, ease: 'power3.inOut' });
+        gsap.to(container, { xPercent: capsuleSide === 'left' ? -14 : 14, duration: 0.95, ease: 'power3.inOut' });
       }
     } else {
       // No room to slide the capsule on mobile — just swap the heading/menu.
@@ -1262,16 +1386,40 @@
     });
   }
 
-  // Accordion open/close, uniform at every level: the 4 top-level sections
-  // (Tipo/Tamaño/Color/Logo y Texto) are mutually exclusive, as are Color's
-  // 3 finish children and Logo y Texto's Logo/Texto children — opening one
-  // always closes its siblings within the same parent.
+  // Accordion open/close, uniform at every level: Color's 3 finish children
+  // and Logo y Texto's Logo/Texto children are each mutually exclusive —
+  // opening one closes its siblings within the same parent. Height is
+  // animated to the real measured content height (not a guessed CSS
+  // max-height cap), so the easing curve actually plays out over the
+  // visible motion instead of mostly finishing off-screen.
+  function openAccBody(item) {
+    const body = item.querySelector(':scope > .acc-body');
+    item.classList.add('open');
+    gsap.killTweensOf(body);
+    gsap.set(body, { height: 'auto' });
+    const targetH = body.offsetHeight;
+    gsap.fromTo(body, { height: 0 }, {
+      height: targetH, duration: 0.42, ease: 'power2.out',
+      onComplete: () => gsap.set(body, { height: 'auto' }),
+    });
+  }
+  function closeAccBody(item) {
+    const body = item.querySelector(':scope > .acc-body');
+    gsap.killTweensOf(body);
+    gsap.set(body, { height: body.offsetHeight });
+    gsap.to(body, {
+      height: 0, duration: 0.3, ease: 'power2.in',
+      onComplete: () => item.classList.remove('open'),
+    });
+  }
   document.querySelectorAll('.acc-header').forEach((btn) => {
     btn.addEventListener('click', () => {
       const item = btn.parentElement;
       const willOpen = !item.classList.contains('open');
-      item.parentElement.querySelectorAll(':scope > .acc-item').forEach((sib) => sib.classList.remove('open'));
-      item.classList.toggle('open', willOpen);
+      item.parentElement.querySelectorAll(':scope > .acc-item').forEach((sib) => {
+        if (sib !== item && sib.classList.contains('open')) closeAccBody(sib);
+      });
+      if (willOpen) openAccBody(item); else closeAccBody(item);
     });
   });
 
@@ -1316,6 +1464,10 @@
           document.getElementById('progress-fill').style.height = (self.progress * 100) + '%';
           designerEl.classList.toggle('active', self.progress > 0.93);
           document.getElementById('step-number').classList.toggle('visible', isDesktopLayout && self.progress > 0.93);
+          if (!hasRevealedStep1 && self.progress > 0.93) {
+            hasRevealedStep1 = true;
+            revealStepChildren(document.querySelector('.step-panel[data-step="1"]'));
+          }
         },
       },
     });
@@ -1330,14 +1482,14 @@
     }
 
     // Stage 1 (0 -> 0.29): closed, slow spin
-    tl.to(capsuleGroup.rotation, { y: Math.PI * 0.85, duration: 0.29, ease: 'none' }, 0);
+    tl.to(capsuleGroup.rotation, { y: Math.PI * 0.85, duration: 0.29, ease: 'power1.inOut' }, 0);
 
     // Stage 2 (0.29 -> 0.58): zoom in while the cap slides open
-    tl.to(dollyState, { dist: maxDim * 1.35, duration: 0.29, ease: 'power1.inOut', onUpdate: applyDolly }, 0.29);
+    tl.to(dollyState, { dist: maxDim * 1.35, duration: 0.29, ease: 'power2.inOut', onUpdate: applyDolly }, 0.29);
     tl.to({ p: 0 }, {
       p: 1,
       duration: 0.29,
-      ease: 'power1.inOut',
+      ease: 'power2.inOut',
       onUpdate: function () {
         if (capNode) capNode.position.z = CAP_OPEN_DELTA * this.targets()[0].p;
       },
@@ -1355,8 +1507,8 @@
     }
 
     // Stage 3 (0.58 -> 0.72): open, continued spin, ease out a touch
-    tl.to(capsuleGroup.rotation, { y: Math.PI * 1.35, duration: 0.14, ease: 'none' }, 0.58);
-    tl.to(dollyState, { dist: maxDim * 1.9, duration: 0.14, ease: 'power1.inOut', onUpdate: applyDolly }, 0.58);
+    tl.to(capsuleGroup.rotation, { y: Math.PI * 1.35, duration: 0.14, ease: 'power1.out' }, 0.58);
+    tl.to(dollyState, { dist: maxDim * 1.9, duration: 0.14, ease: 'power2.inOut', onUpdate: applyDolly }, 0.58);
 
     // Stage 4 (0.72 -> 0.87): the cap slides back CLOSED, settling to a clean
     // angle + comfortable distance for the color picker
@@ -1369,7 +1521,7 @@
       },
     }, 0.72);
     tl.to(capsuleGroup.rotation, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
-    tl.to(dollyState, { dist: maxDim * 2.3, duration: 0.15, ease: 'power1.inOut', onUpdate: applyDolly }, 0.72);
+    tl.to(dollyState, { dist: maxDim * 2.3, duration: 0.15, ease: 'power2.inOut', onUpdate: applyDolly }, 0.72);
 
     // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in on the right;
     // the capsule (rendered by #canvas-container, shifted at the DOM level —
@@ -1393,11 +1545,11 @@
       const el = document.querySelector('#stage-' + stage + ' .inner');
       tl.fromTo(el,
         { opacity: 0, scale: 0.62 },
-        { opacity: 1, scale: 1, duration: 0.06, ease: 'power1.out', overwrite: false },
+        { opacity: 1, scale: 1, duration: 0.06, ease: 'power2.out', overwrite: false },
         inAt
       );
       tl.to(el,
-        { opacity: 0, scale: 1.4, duration: 0.06, ease: 'power1.in', overwrite: false },
+        { opacity: 0, scale: 1.4, duration: 0.06, ease: 'power2.in', overwrite: false },
         outAt
       );
     });
