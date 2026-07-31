@@ -85,6 +85,14 @@
   }
   .story-text.side-left { left: 5%; text-align: left; }
   .story-text.side-right { right: 5%; text-align: right; }
+  /* Stage 2's text collides with the capsule's cap as it swells during the
+     zoom (see initScrollStory's stage-2 canvas shift) — pushed down a bit
+     for clearance, matched by nudging the capsule itself up. Scoped to
+     desktop only: the mobile media query already stacks text below the
+     capsule as a bottom banner, where this vertical conflict can't happen. */
+  @media (min-width: 761px) {
+    #stage-2 { top: 62%; }
+  }
   .story-text .inner { opacity: 0; transform: scale(0.7); transform-origin: center; }
   .story-text .eyebrow {
     font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
@@ -1342,8 +1350,8 @@
     // right as it's un-shifting back to center. Same DOM-level shift
     // technique as the designer-stage move, just larger + held longer.
     if (isDesktopLayout) {
-      tl.to(canvasContainer, { xPercent: -22, duration: 0.05, ease: 'power1.inOut' }, 0.30);
-      tl.to(canvasContainer, { xPercent: 0, duration: 0.05, ease: 'power1.inOut' }, 0.58);
+      tl.to(canvasContainer, { xPercent: -22, yPercent: -9, duration: 0.05, ease: 'power1.inOut' }, 0.30);
+      tl.to(canvasContainer, { xPercent: 0, yPercent: 0, duration: 0.05, ease: 'power1.inOut' }, 0.58);
     }
 
     // Stage 3 (0.58 -> 0.72): open, continued spin, ease out a touch
