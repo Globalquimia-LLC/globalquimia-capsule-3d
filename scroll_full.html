@@ -6,7 +6,7 @@
 <title>Globalquimia — Cápsulas</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
+<script src="vendor/iro.min.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -640,6 +640,13 @@
   // in <head> as a global); this function only adds the RGB/HSV/HEX tabs
   // and editable numeric rows around it, wired to iro's color object.
   function createWheelPicker(root, initialHex, onChange) {
+    if (typeof iro === 'undefined') {
+      // iro.js (vendor/iro.min.js) failed to load — show this instead of a
+      // silent blank panel, since that's indistinguishable from "nothing
+      // happened when I clicked".
+      root.innerHTML = '<p style="color:#fff;font-size:12px;padding:8px;">No se pudo cargar el selector de color (vendor/iro.min.js). Recargá la página.</p>';
+      return { setHex() {} };
+    }
     root.innerHTML = `
       <div class="wp-iro"></div>
       <div class="wp-tabs">
