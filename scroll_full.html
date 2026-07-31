@@ -48,8 +48,24 @@
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
 
   #story { position: relative; height: 100vh; overflow: hidden; }
-  #canvas-container { position: absolute; inset: 0; }
+  /* z-index:2, above .step-number (1) — the canvas itself is transparent
+     (alpha:true, no scene background), so the number shows through
+     everywhere except where the opaque capsule mesh actually paints over
+     it, giving the "peeking out from behind" effect with no extra work. */
+  #canvas-container { position: absolute; inset: 0; z-index: 2; }
   #canvas-container canvas { display: block; width: 100% !important; height: 100% !important; }
+
+  /* Big background numeral for the current wizard step — always on the
+     same side as the capsule (see #step-number toggling in goToStep). */
+  .step-number {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: clamp(160px, 24vw, 340px); font-weight: 900; line-height: 1;
+    color: rgba(28,64,93,0.09);
+    z-index: 1; pointer-events: none; user-select: none;
+    transition: opacity 0.35s ease;
+  }
+  .step-number.side-left { left: 1%; }
+  .step-number.side-right { right: 1%; }
 
   /* Text sits at the SIDES (never over the capsule, which stays centered) and
      scales up/down via GSAP as it enters/exits — the outer element only
@@ -73,19 +89,19 @@
   .story-text h2 { font-size: clamp(20px, 2.8vw, 30px); margin: 0 0 10px 0; line-height: 1.25; color: var(--navy); }
   .story-text p { font-size: 14px; line-height: 1.5; color: #5b6b74; margin: 0; }
 
-  /* Sits on the RIGHT so the capsule (nudged left via #canvas-container's
-     own transform, see initScrollStory) has room on the left — same
-     outer/.inner split as .story-text: the outer element only handles fixed
-     side positioning, GSAP only ever touches .inner's opacity/transform. */
+  /* Sits opposite the capsule (see goToStep, which flips both every step) —
+     same outer/.inner split as .story-text: the outer element only handles
+     fixed side positioning, GSAP only ever touches .inner's opacity/transform. */
   .designer {
     position: absolute;
-    right: 6%; left: auto;
     top: 50%; transform: translateY(-50%);
     text-align: center;
     z-index: 6;
     pointer-events: none;
     width: min(480px, 42vw);
   }
+  .designer.side-right { right: 6%; left: auto; }
+  .designer.side-left { left: 6%; right: auto; }
   .designer.active { pointer-events: auto; }
   .designer .inner { opacity: 0; }
   .designer .eyebrow {
@@ -93,6 +109,20 @@
     color: var(--blue); margin: 0 0 4px 0;
   }
   .designer h2 { font-size: clamp(18px, 2.6vw, 24px); margin: 0 0 16px 0; color: var(--navy); }
+
+  .step-back {
+    display: none; background: none; border: none; cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 700; color: #5b6b74; padding: 0 0 10px 0;
+  }
+  .step-back.visible { display: inline-block; }
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+  .continue-btn {
+    display: block; width: 100%; margin-top: 14px;
+    background: var(--blue); color: #fff; border: none; border-radius: 4px;
+    font-family: inherit; font-size: 13px; font-weight: 700; padding: 12px;
+    cursor: pointer;
+  }
 
   /* Accordion: 1. Color > 1.1 Tradicionales / 1.2 Mate / 1.3 Metalizados.
      Only one of the three finish sub-items is open at a time; "Color" itself
@@ -280,7 +310,7 @@
        screen doesn't have — falls back to the same bottom-banner treatment
        as .story-text, and the capsule stays centered (see initScrollStory,
        which only applies the left-shift above the 760px breakpoint). */
-    .designer {
+    .designer, .designer.side-left, .designer.side-right {
       left: 50%; right: auto;
       top: auto; bottom: 3%;
       transform: translateX(-50%);
@@ -289,6 +319,11 @@
     .designer h2 { font-size: 18px; }
     .quick-swatches { justify-content: center; flex-wrap: wrap; }
     .color-readout { width: 100%; text-align: center; margin-top: 2px; }
+
+    /* No room to slide the capsule side to side on a phone screen — the big
+       step numeral (tied to that side-swap) would just look like a random
+       watermark without it, so it's hidden rather than repositioned. */
+    .step-number { display: none; }
 
     .acc-menu { max-height: 56vh; }
     .acc-header { padding: 12px 14px; font-size: 12px; }
@@ -325,6 +360,7 @@
 </section>
 
 <section id="story">
+  <div class="step-number side-left" id="step-number">1</div>
   <div id="canvas-container"></div>
 
   <div class="story-text side-left" id="stage-1" data-stage="1">
@@ -350,153 +386,132 @@
     </div>
   </div>
 
-  <div class="designer" id="designer">
+  <div class="designer side-right" id="designer">
    <div class="inner">
+    <button class="step-back" id="step-back" type="button">‹ Volver</button>
     <p class="eyebrow">Personalización</p>
-    <h2>Diseña tu cápsula</h2>
+    <h2 id="designer-heading">Tipo de cápsula</h2>
 
-    <div class="acc-menu">
-
-      <div class="acc-item open" data-section="tipo">
-        <button class="acc-header" type="button">
-          <span id="tipo-header-label">1. Tipo de cápsula</span>
-          <span class="acc-chevron">▲</span>
-        </button>
-        <div class="acc-body">
-          <div class="option-list" id="tipo-list"></div>
-        </div>
-      </div>
-
-      <div class="acc-item" data-section="tamano">
-        <button class="acc-header" type="button">
-          <span id="tamano-header-label">2. Tamaño</span>
-          <span class="acc-chevron">▲</span>
-        </button>
-        <div class="acc-body">
-          <div class="size-list" id="size-list"></div>
-        </div>
-      </div>
-
-      <div class="acc-item" id="acc-color" data-section="color">
-        <button class="acc-header" type="button">
-          <span>3. Color</span>
-          <span class="acc-chevron">▲</span>
-        </button>
-        <div class="acc-body">
-
-          <div class="acc-item open" data-finish="tradicionales">
-            <button class="acc-header acc-sub" type="button">
-              <span>3.1 Tradicionales</span>
-              <span class="acc-chevron">▲</span>
-            </button>
-            <div class="acc-body">
-              <div class="piece-tabs" data-finish="tradicionales">
-                <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
-                <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
-              </div>
-              <div class="picker-mount" data-finish="tradicionales" data-target="cap"><div id="mount-tradicionales-cap"></div></div>
-              <div class="picker-mount" data-finish="tradicionales" data-target="body"><div id="mount-tradicionales-body"></div></div>
-              <span class="color-readout" id="readout-tradicionales-cap" data-finish="tradicionales" data-target="cap"></span>
-              <span class="color-readout" id="readout-tradicionales-body" data-finish="tradicionales" data-target="body"></span>
-            </div>
-          </div>
-
-          <div class="acc-item" data-finish="mate">
-            <button class="acc-header acc-sub" type="button">
-              <span>3.2 Mate</span>
-              <span class="acc-chevron">▲</span>
-            </button>
-            <div class="acc-body">
-              <div class="piece-tabs" data-finish="mate">
-                <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
-                <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
-              </div>
-              <div class="picker-mount" data-finish="mate" data-target="cap"><div id="mount-mate-cap"></div></div>
-              <div class="picker-mount" data-finish="mate" data-target="body"><div id="mount-mate-body"></div></div>
-              <span class="color-readout" id="readout-mate-cap" data-finish="mate" data-target="cap"></span>
-              <span class="color-readout" id="readout-mate-body" data-finish="mate" data-target="body"></span>
-            </div>
-          </div>
-
-          <div class="acc-item" data-finish="metalizados">
-            <button class="acc-header acc-sub" type="button">
-              <span>3.3 Metalizados</span>
-              <span class="acc-chevron">▲</span>
-            </button>
-            <div class="acc-body">
-              <div class="piece-tabs" data-finish="metalizados">
-                <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
-                <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
-              </div>
-              <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="cap"></div>
-              <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="body" style="display:none;"></div>
-              <span class="color-readout" id="readout-metalizados-cap" data-finish="metalizados" data-target="cap"></span>
-              <span class="color-readout" id="readout-metalizados-body" data-finish="metalizados" data-target="body" style="display:none;"></span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="acc-item" data-section="logotexto">
-        <button class="acc-header" type="button">
-          <span>4. Logo y Texto</span>
-          <span class="acc-chevron">▲</span>
-        </button>
-        <div class="acc-body">
-
-          <div class="acc-item" data-sub="logo">
-            <button class="acc-header acc-sub" type="button">
-              <span>Logo</span>
-              <span class="acc-chevron">▲</span>
-            </button>
-            <div class="acc-body">
-              <div class="piece-tabs" id="logo-piece-tabs">
-                <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
-                <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
-              </div>
-              <div class="logo-upload">
-                <label class="logo-upload-btn" for="logo-file-input">Subir logo</label>
-                <input type="file" id="logo-file-input" accept="image/png,image/jpeg" hidden />
-                <span class="logo-upload-name" id="logo-file-name">Ningún archivo seleccionado</span>
-                <button type="button" class="icon-btn" id="logo-clear-btn" title="Quitar logo" aria-label="Quitar logo">🗑</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="acc-item open" data-sub="texto">
-            <button class="acc-header acc-sub" type="button">
-              <span>Texto</span>
-              <span class="acc-chevron">▲</span>
-            </button>
-            <div class="acc-body">
-              <div class="piece-tabs" data-finish="texto">
-                <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
-                <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
-              </div>
-
-              <div class="text-toolbar">
-                <div class="font-size-btns" id="font-size-btns">
-                  <button type="button" class="font-size-btn" data-size="small">A<sup>+</sup></button>
-                  <button type="button" class="font-size-btn active" data-size="medium">A<sup>+</sup></button>
-                  <button type="button" class="font-size-btn" data-size="large">A<sup>+</sup></button>
-                </div>
-                <div class="text-toolbar-actions">
-                  <button type="button" class="icon-btn" id="text-reset-btn" title="Restablecer" aria-label="Restablecer">⟲</button>
-                  <button type="button" class="icon-btn" id="text-clear-btn" title="Borrar texto" aria-label="Borrar texto">🗑</button>
-                </div>
-              </div>
-
-              <input type="text" class="text-input" id="text-input" placeholder="Digite texto aquí" maxlength="24" />
-
-              <div class="quick-swatches" id="text-color-swatches"></div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
+    <div class="step-panel active" data-step="1">
+      <div class="option-list" id="tipo-list"></div>
     </div>
+
+    <div class="step-panel" data-step="2">
+      <div class="size-list" id="size-list"></div>
+    </div>
+
+    <div class="step-panel" data-step="3">
+      <div class="acc-menu">
+
+        <div class="acc-item open" data-finish="tradicionales">
+          <button class="acc-header acc-sub" type="button">
+            <span>Tradicionales</span>
+            <span class="acc-chevron">▲</span>
+          </button>
+          <div class="acc-body">
+            <div class="piece-tabs" data-finish="tradicionales">
+              <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
+              <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
+            </div>
+            <div class="picker-mount" data-finish="tradicionales" data-target="cap"><div id="mount-tradicionales-cap"></div></div>
+            <div class="picker-mount" data-finish="tradicionales" data-target="body"><div id="mount-tradicionales-body"></div></div>
+            <span class="color-readout" id="readout-tradicionales-cap" data-finish="tradicionales" data-target="cap"></span>
+            <span class="color-readout" id="readout-tradicionales-body" data-finish="tradicionales" data-target="body"></span>
+          </div>
+        </div>
+
+        <div class="acc-item" data-finish="mate">
+          <button class="acc-header acc-sub" type="button">
+            <span>Mate</span>
+            <span class="acc-chevron">▲</span>
+          </button>
+          <div class="acc-body">
+            <div class="piece-tabs" data-finish="mate">
+              <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
+              <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
+            </div>
+            <div class="picker-mount" data-finish="mate" data-target="cap"><div id="mount-mate-cap"></div></div>
+            <div class="picker-mount" data-finish="mate" data-target="body"><div id="mount-mate-body"></div></div>
+            <span class="color-readout" id="readout-mate-cap" data-finish="mate" data-target="cap"></span>
+            <span class="color-readout" id="readout-mate-body" data-finish="mate" data-target="body"></span>
+          </div>
+        </div>
+
+        <div class="acc-item" data-finish="metalizados">
+          <button class="acc-header acc-sub" type="button">
+            <span>Metalizados</span>
+            <span class="acc-chevron">▲</span>
+          </button>
+          <div class="acc-body">
+            <div class="piece-tabs" data-finish="metalizados">
+              <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
+              <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
+            </div>
+            <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="cap"></div>
+            <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="body" style="display:none;"></div>
+            <span class="color-readout" id="readout-metalizados-cap" data-finish="metalizados" data-target="cap"></span>
+            <span class="color-readout" id="readout-metalizados-body" data-finish="metalizados" data-target="body" style="display:none;"></span>
+          </div>
+        </div>
+
+      </div>
+      <button class="continue-btn" id="color-continue-btn" type="button">Continuar →</button>
+    </div>
+
+    <div class="step-panel" data-step="4">
+      <div class="acc-menu">
+
+        <div class="acc-item" data-sub="logo">
+          <button class="acc-header acc-sub" type="button">
+            <span>Logo</span>
+            <span class="acc-chevron">▲</span>
+          </button>
+          <div class="acc-body">
+            <div class="piece-tabs" id="logo-piece-tabs">
+              <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
+              <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
+            </div>
+            <div class="logo-upload">
+              <label class="logo-upload-btn" for="logo-file-input">Subir logo</label>
+              <input type="file" id="logo-file-input" accept="image/png,image/jpeg" hidden />
+              <span class="logo-upload-name" id="logo-file-name">Ningún archivo seleccionado</span>
+              <button type="button" class="icon-btn" id="logo-clear-btn" title="Quitar logo" aria-label="Quitar logo">🗑</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="acc-item open" data-sub="texto">
+          <button class="acc-header acc-sub" type="button">
+            <span>Texto</span>
+            <span class="acc-chevron">▲</span>
+          </button>
+          <div class="acc-body">
+            <div class="piece-tabs" data-finish="texto">
+              <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
+              <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
+            </div>
+
+            <div class="text-toolbar">
+              <div class="font-size-btns" id="font-size-btns">
+                <button type="button" class="font-size-btn" data-size="small">A<sup>+</sup></button>
+                <button type="button" class="font-size-btn active" data-size="medium">A<sup>+</sup></button>
+                <button type="button" class="font-size-btn" data-size="large">A<sup>+</sup></button>
+              </div>
+              <div class="text-toolbar-actions">
+                <button type="button" class="icon-btn" id="text-reset-btn" title="Restablecer" aria-label="Restablecer">⟲</button>
+                <button type="button" class="icon-btn" id="text-clear-btn" title="Borrar texto" aria-label="Borrar texto">🗑</button>
+              </div>
+            </div>
+
+            <input type="text" class="text-input" id="text-input" placeholder="Digite texto aquí" maxlength="24" />
+
+            <div class="quick-swatches" id="text-color-swatches"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
    </div>
   </div>
 </section>
@@ -526,6 +541,10 @@
   const CAP_OPEN_DELTA = 0.01672;
 
   const container = document.getElementById('canvas-container');
+  // Below the 760px breakpoint the wizard drops side-by-side capsule/menu
+  // positioning entirely (no room on a phone) — shared by the scroll-driven
+  // reveal (initScrollStory) and the step-to-step wizard (goToStep).
+  const isDesktopLayout = window.innerWidth > 760;
   const scene = new THREE.Scene();
 
   const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.001, 10);
@@ -619,7 +638,6 @@
 
   function buildTipoSection() {
     const list = document.getElementById('tipo-list');
-    const headerLabel = document.getElementById('tipo-header-label');
     let selected = TIPO_OPTIONS[2];
 
     function render() {
@@ -631,13 +649,12 @@
         btn.textContent = label;
         btn.addEventListener('click', () => {
           selected = label;
-          headerLabel.textContent = '1. ' + selected;
           render();
+          goToStep(2);
         });
         list.appendChild(btn);
       });
     }
-    headerLabel.textContent = '1. ' + selected;
     render();
   }
 
@@ -670,9 +687,12 @@
     </svg>`;
   }
 
+  // The loaded GLB itself IS size "0" — every other size is expressed as a
+  // uniform scale of capsuleGroup relative to that reference length.
+  const SIZE_REFERENCE_LENGTH = 21.60;
+
   function buildSizeSection() {
     const list = document.getElementById('size-list');
-    const headerLabel = document.getElementById('tamano-header-label');
     const maxLen = Math.max(...SIZE_OPTIONS.map((s) => s.length));
     let selectedCode = '0';
 
@@ -688,13 +708,16 @@
         btn.innerHTML = capsuleIconSVG(opt.length, maxLen) + `<span>${labelFor(opt)}</span>`;
         btn.addEventListener('click', () => {
           selectedCode = opt.code;
-          headerLabel.textContent = '2. ' + labelFor(opt);
           render();
+          if (capsuleGroup) {
+            const ratio = opt.length / SIZE_REFERENCE_LENGTH;
+            gsap.to(capsuleGroup.scale, { x: ratio, y: ratio, z: ratio, duration: 0.9, ease: 'power2.inOut' });
+          }
+          goToStep(3);
         });
         list.appendChild(btn);
       });
     }
-    headerLabel.textContent = '2. ' + labelFor(SIZE_OPTIONS.find((s) => s.code === selectedCode));
     render();
   }
 
@@ -976,6 +999,68 @@
     decalMeshes[target] = decalMesh;
   }
 
+  // ---------------------------------------------------------------------
+  // Wizard navigation. Steps alternate sides every time: odd steps put the
+  // capsule (and its big background numeral) on the LEFT with the menu on
+  // the right; even steps flip it. Step 1 matches the side the scroll-
+  // triggered reveal already settles on (see initScrollStory), so the very
+  // first transition into the wizard doesn't itself need an extra animation.
+  // ---------------------------------------------------------------------
+  let currentStep = 1;
+  const STEP_TITLES = { 1: 'Tipo de cápsula', 2: 'Tamaño', 3: 'Color', 4: 'Logo y Texto' };
+  function capsuleSideForStep(step) { return step % 2 === 1 ? 'left' : 'right'; }
+
+  function goToStep(newStep) {
+    if (newStep === currentStep || newStep < 1 || newStep > 4) return;
+    currentStep = newStep;
+
+    const designerEl = document.getElementById('designer');
+    const inner = designerEl.querySelector('.inner');
+    const heading = document.getElementById('designer-heading');
+    const backBtn = document.getElementById('step-back');
+    const stepNumberEl = document.getElementById('step-number');
+    const oldPanel = designerEl.querySelector('.step-panel.active');
+    const newPanel = designerEl.querySelector(`.step-panel[data-step="${newStep}"]`);
+    const capsuleSide = capsuleSideForStep(newStep);
+    const menuSide = capsuleSide === 'left' ? 'right' : 'left';
+
+    backBtn.classList.toggle('visible', newStep > 1);
+
+    gsap.to(inner, {
+      opacity: 0, duration: 0.25, ease: 'power1.in',
+      onComplete: () => {
+        if (oldPanel) oldPanel.classList.remove('active');
+        if (newPanel) newPanel.classList.add('active');
+        heading.textContent = STEP_TITLES[newStep];
+        designerEl.classList.remove('side-left', 'side-right');
+        designerEl.classList.add('side-' + menuSide);
+        gsap.to(inner, { opacity: 1, duration: 0.3, ease: 'power1.out' });
+      },
+    });
+
+    if (isDesktopLayout) {
+      gsap.to(stepNumberEl, {
+        opacity: 0, duration: 0.25, ease: 'power1.in',
+        onComplete: () => {
+          stepNumberEl.textContent = String(newStep);
+          stepNumberEl.classList.remove('side-left', 'side-right');
+          stepNumberEl.classList.add('side-' + capsuleSide);
+          gsap.to(stepNumberEl, { opacity: 1, duration: 0.3, ease: 'power1.out' });
+        },
+      });
+      if (capsuleGroup) {
+        gsap.to(capsuleGroup.rotation, { y: capsuleGroup.rotation.y + Math.PI * 0.6, duration: 0.9, ease: 'power2.inOut' });
+        gsap.to(container, { xPercent: capsuleSide === 'left' ? -14 : 14, duration: 0.9, ease: 'power2.inOut' });
+      }
+    } else {
+      // No room to slide the capsule on mobile — just swap the heading/menu.
+      stepNumberEl.textContent = String(newStep);
+    }
+  }
+
+  document.getElementById('step-back').addEventListener('click', () => goToStep(currentStep - 1));
+  document.getElementById('color-continue-btn').addEventListener('click', () => goToStep(4));
+
   buildTipoSection();
   buildSizeSection();
   setupLogoSection();
@@ -1017,6 +1102,7 @@
     capsuleGroup = new THREE.Group();
     capsuleGroup.add(root);
     scene.add(capsuleGroup);
+    window.__debugCapsuleGroup = capsuleGroup; // hook for automated testing
 
     buildAllColorControls();
 
@@ -1206,10 +1292,6 @@
     const designerEl = document.getElementById('designer');
     const designerInner = designerEl.querySelector('.inner');
     const canvasContainer = document.getElementById('canvas-container');
-    // Below the 760px breakpoint the designer panel drops to a bottom banner
-    // (see the mobile media query) and the capsule stays centered — the
-    // side-by-side layout only makes sense with room to spare.
-    const sideBySide = window.innerWidth > 760;
 
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -1270,8 +1352,9 @@
     // not the 3D camera — so the move is purely horizontal, no perspective
     // skew) slides left to make room for it.
     tl.fromTo(designerInner, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.1, overwrite: false }, 0.90);
-    if (sideBySide) {
+    if (isDesktopLayout) {
       tl.to(canvasContainer, { xPercent: -14, duration: 0.1, ease: 'power1.inOut', overwrite: false }, 0.90);
+      designerEl.classList.add('side-right');
     }
 
     // Text overlays keyed to the same timeline. Each grows FROM small while
