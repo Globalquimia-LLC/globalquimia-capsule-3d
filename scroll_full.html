@@ -93,16 +93,6 @@
     color: var(--blue); margin: 0 0 4px 0;
   }
   .designer h2 { font-size: clamp(18px, 2.6vw, 24px); margin: 0 0 16px 0; color: var(--navy); }
-  .designer .rows { display: flex; flex-direction: column; gap: 12px; }
-  .designer .row {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: center;
-    background: rgba(255,255,255,0.7); backdrop-filter: blur(6px);
-    padding: 10px 14px; border-radius: 18px;
-  }
-  .designer .row label {
-    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-    color: #5b6b74; width: 44px; text-align: right;
-  }
 
   /* Accordion: 1. Color > 1.1 Tradicionales / 1.2 Mate / 1.3 Metalizados.
      Only one of the three finish sub-items is open at a time; "Color" itself
@@ -140,17 +130,21 @@
   }
   .piece-tab.active { color: var(--navy); border-bottom-color: var(--blue); }
   .metal-swatches { flex-wrap: wrap; gap: 8px; }
-  .metal-readout { display: block; margin-top: 8px; }
 
-  /* Free-spectrum picker (Tradicionales/Mate only — Metalizados is a closed
-     swatch set). The .color-toggle circle IS the Pickr trigger element —
-     Pickr (vendor/pickr.min.js + classic theme CSS, loaded in <head>) owns
-     rendering its own floating popup (palette + hue slider + hex/rgba
-     inputs) when clicked, so there's no custom panel markup to maintain here. */
-  .color-toggle {
-    -webkit-appearance: none; appearance: none; flex: none;
-    width: 32px; height: 32px; border-radius: 50%;
-    border: 2px solid rgba(28,64,93,0.2); padding: 0; cursor: pointer;
+  /* Free-spectrum picker (Tradicionales/Mate — Metalizados stays a closed
+     swatch set). Pickr (vendor/pickr.min.js + classic theme CSS, loaded in
+     <head>) renders inline (not a popup) directly into .picker-mount, so
+     it's a real embedded panel, not a click-to-open dialog. Its own trigger
+     button is hidden — redundant once the app is always visible. */
+  .picker-mount .pcr-button { display: none; }
+  .picker-mount .pcr-app {
+    position: static !important; width: 100% !important; box-shadow: none !important;
+    border: 1px solid rgba(28,64,93,0.1);
+  }
+  .picker-mount .pcr-app .pcr-selection .pcr-color-palette,
+  .picker-mount .pcr-app .pcr-selection .pcr-color-chooser,
+  .picker-mount .pcr-app .pcr-selection .pcr-color-opacity {
+    height: 140px;
   }
 
   .quick-swatches { display: flex; gap: 6px; }
@@ -163,8 +157,9 @@
   .swatch:hover { transform: scale(1.15); }
   .swatch.selected { border-color: var(--navy); }
   .color-readout {
+    display: block; margin-top: 8px;
     font-size: 11px; font-family: 'Courier New', monospace; color: var(--navy);
-    min-width: 150px; text-align: left;
+    text-align: left;
   }
 
   .closing {
@@ -230,11 +225,6 @@
       width: 94vw;
     }
     .designer h2 { font-size: 18px; }
-    .designer .row {
-      flex-wrap: wrap; justify-content: center;
-      padding: 10px 12px; gap: 8px 10px;
-    }
-    .designer .row label { width: 100%; text-align: center; }
     .quick-swatches { justify-content: center; flex-wrap: wrap; }
     .color-readout { width: 100%; text-align: center; margin-top: 2px; }
 
@@ -254,7 +244,6 @@
 
   @media (max-width: 400px) {
     .story-text h2 { font-size: 17px; }
-    .designer .row { padding: 8px 10px; }
     .swatch { width: 18px; height: 18px; }
   }
 </style>
@@ -318,18 +307,14 @@
               <span class="acc-chevron">▲</span>
             </button>
             <div class="acc-body">
-              <div class="rows">
-                <div class="row">
-                  <label>Tapa</label>
-                  <button type="button" class="color-toggle" id="toggle-tradicionales-cap"></button>
-                  <span class="color-readout" id="readout-tradicionales-cap"></span>
-                </div>
-                <div class="row">
-                  <label>Cuerpo</label>
-                  <button type="button" class="color-toggle" id="toggle-tradicionales-body"></button>
-                  <span class="color-readout" id="readout-tradicionales-body"></span>
-                </div>
+              <div class="piece-tabs" data-finish="tradicionales">
+                <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
+                <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
               </div>
+              <div class="picker-mount" data-finish="tradicionales" data-target="cap"><div id="mount-tradicionales-cap"></div></div>
+              <div class="picker-mount" data-finish="tradicionales" data-target="body"><div id="mount-tradicionales-body"></div></div>
+              <span class="color-readout" id="readout-tradicionales-cap" data-finish="tradicionales" data-target="cap"></span>
+              <span class="color-readout" id="readout-tradicionales-body" data-finish="tradicionales" data-target="body"></span>
             </div>
           </div>
 
@@ -339,18 +324,14 @@
               <span class="acc-chevron">▲</span>
             </button>
             <div class="acc-body">
-              <div class="rows">
-                <div class="row">
-                  <label>Tapa</label>
-                  <button type="button" class="color-toggle" id="toggle-mate-cap"></button>
-                  <span class="color-readout" id="readout-mate-cap"></span>
-                </div>
-                <div class="row">
-                  <label>Cuerpo</label>
-                  <button type="button" class="color-toggle" id="toggle-mate-body"></button>
-                  <span class="color-readout" id="readout-mate-body"></span>
-                </div>
+              <div class="piece-tabs" data-finish="mate">
+                <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
+                <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
               </div>
+              <div class="picker-mount" data-finish="mate" data-target="cap"><div id="mount-mate-cap"></div></div>
+              <div class="picker-mount" data-finish="mate" data-target="body"><div id="mount-mate-body"></div></div>
+              <span class="color-readout" id="readout-mate-cap" data-finish="mate" data-target="cap"></span>
+              <span class="color-readout" id="readout-mate-body" data-finish="mate" data-target="body"></span>
             </div>
           </div>
 
@@ -366,8 +347,8 @@
               </div>
               <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="cap"></div>
               <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="body" style="display:none;"></div>
-              <span class="color-readout metal-readout" id="readout-metalizados-cap"></span>
-              <span class="color-readout metal-readout" id="readout-metalizados-body" style="display:none;"></span>
+              <span class="color-readout" id="readout-metalizados-cap" data-finish="metalizados" data-target="cap"></span>
+              <span class="color-readout" id="readout-metalizados-body" data-finish="metalizados" data-target="body" style="display:none;"></span>
             </div>
           </div>
 
@@ -429,6 +410,25 @@
   // One Pickr instance per finish+piece pair, keyed "finish-target"
   // (e.g. "tradicionales-cap").
   const pickrInstances = {};
+
+  // Brand + common capsule colors — fed into each Pickr instance's own
+  // native `swatches` row (not a separate custom row alongside it).
+  const PALETTE = [
+    { name: 'Azul Globalquimia', hex: 0x006f9e },
+    { name: 'Cian',              hex: 0x1dbadf },
+    { name: 'Amarillo',          hex: 0xfdc400 },
+    { name: 'Verde',             hex: 0x95c11f },
+    { name: 'Navy',              hex: 0x1c405d },
+    { name: 'Blanco',            hex: 0xf8f8f8 },
+    { name: 'Negro',             hex: 0x2b2b2b },
+    { name: 'Gris',              hex: 0x9aa7ad },
+    { name: 'Rojo',              hex: 0xd63b3b },
+    { name: 'Naranja',           hex: 0xf28c28 },
+    { name: 'Rosa',              hex: 0xe36ca0 },
+    { name: 'Morado',            hex: 0x7d5ba6 },
+    { name: 'Turquesa',          hex: 0x2ec4b6 },
+    { name: 'Beige',             hex: 0xe4d5b7 },
+  ];
 
   // Fixed metallic finish set (not the full spectrum — a closed palette, per
   // the reference swatch grid).
@@ -573,32 +573,45 @@
     });
   }
 
-  // Turns a finish+piece's .color-toggle circle into a Pickr trigger — Pickr
-  // (vendor/pickr.min.js) owns rendering its own floating popup (palette,
-  // hue slider, hex/rgba inputs) entirely; this just wires its 'change'
-  // event into the 3D material.
+  // Builds an inline (always-visible, not popup) Pickr panel directly into
+  // a finish+piece's .picker-mount — a bigger, richer embedded selector:
+  // palette + hue slider, HEX/RGBA/HSLA/HSVA/CMYK format switching, and the
+  // brand palette as Pickr's own native swatch row (not a separate custom
+  // one). Only one finish+piece's mount is visible at a time (Tapa/Cuerpo
+  // tabs), so this only ever builds the picker actually being shown.
   function createColorPicker(target, finishKey, material, initialHex) {
     if (typeof Pickr === 'undefined') {
-      // Fails loudly instead of the toggle silently doing nothing when
-      // clicked — that's indistinguishable from "it's broken".
+      // Fails loudly instead of the mount silently staying empty — that's
+      // indistinguishable from "it's broken".
       console.error('Pickr (vendor/pickr.min.js) failed to load.');
       return null;
     }
     const pickr = Pickr.create({
-      el: `#toggle-${finishKey}-${target}`,
+      el: `#mount-${finishKey}-${target}`,
       theme: 'classic',
       default: initialHex,
+      inline: true,
+      swatches: PALETTE.map((c) => '#' + c.hex.toString(16).padStart(6, '0')),
       components: {
         preview: true,
         opacity: false,
         hue: true,
-        interaction: { hex: true, rgba: true, input: true, save: false },
+        interaction: { hex: true, rgba: true, hsla: true, hsva: true, cmyk: true, input: true, save: false },
       },
     });
     pickr.on('change', (color) => {
       const hexStr = '#' + color.toHEXA().toString().replace('#', '').slice(0, 6);
       setPieceColor(target, finishKey, hexStr, material);
     });
+    // inline:true only changes how the popup is POSITIONED (in-flow vs a
+    // floating overlay) — it does NOT make it visible on its own, and it
+    // still runs its normal "click outside closes it" popup logic (any
+    // click on the Tapa/Cuerpo tabs counts as "outside" and hides it).
+    // Since visibility here is actually controlled by .picker-mount's own
+    // CSS display (the tab switcher), force it to ignore Pickr's own
+    // close attempts entirely — it should never really "close".
+    pickr.show();
+    pickr.on('hide', () => pickr.show());
     return pickr;
   }
 
@@ -618,6 +631,19 @@
       // The mesh actually starts on Tradicionales at the original default hex.
       setPieceColor(target, 'tradicionales', defaultHex, material);
     });
+
+    // Only "Tapa" is active by default — hide "Cuerpo"'s controls, but not
+    // until a frame after every Pickr instance above was built. Pickr's own
+    // reveal (it adds its "visible" state asynchronously, one tick after
+    // creation) never completes if the container is already display:none
+    // by the time that runs — the picker is then permanently blank even
+    // once shown again later, since the class never got applied.
+    requestAnimationFrame(() => {
+      ['tradicionales', 'mate'].forEach((finishKey) => {
+        document.querySelector(`.picker-mount[data-finish="${finishKey}"][data-target="body"]`).style.display = 'none';
+        document.getElementById(`readout-${finishKey}-body`).style.display = 'none';
+      });
+    });
   }
 
   // Accordion open/close: "Color" stays independently collapsible; its three
@@ -634,9 +660,11 @@
     });
   });
 
-  // Metalizados' Tapa/Cuerpo tabs swap which piece's fixed swatch grid (and
-  // readout) is visible — unlike Tradicionales/Mate, which show both pieces
-  // at once as stacked rows.
+  // Every finish's Tapa/Cuerpo tabs swap which piece's controls are visible
+  // — a swatch grid for Metalizados, an inline Pickr panel for the other
+  // two — plus that piece's own readout. Only one piece's markup is ever
+  // shown per finish, both to match Metalizados' original design and to
+  // keep two full inline pickers from stacking in the same accordion body.
   document.querySelectorAll('.piece-tabs').forEach((tabGroup) => {
     const finishKey = tabGroup.dataset.finish;
     tabGroup.querySelectorAll('.piece-tab').forEach((tab) => {
@@ -647,8 +675,11 @@
         document.querySelectorAll(`.quick-swatches[data-finish="${finishKey}"]`).forEach((sw) => {
           sw.style.display = sw.dataset.target === target ? 'flex' : 'none';
         });
-        document.querySelectorAll('.metal-readout').forEach((r) => {
-          r.style.display = r.id === `readout-${finishKey}-${target}` ? 'block' : 'none';
+        document.querySelectorAll(`.picker-mount[data-finish="${finishKey}"]`).forEach((pm) => {
+          pm.style.display = pm.dataset.target === target ? 'block' : 'none';
+        });
+        document.querySelectorAll(`.color-readout[data-finish="${finishKey}"]`).forEach((r) => {
+          r.style.display = r.dataset.target === target ? 'block' : 'none';
         });
       });
     });
