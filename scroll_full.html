@@ -1336,12 +1336,14 @@
     }, 0.29);
 
     // The capsule is centered and zooming in right as stage-2's text (on the
-    // RIGHT) appears — at that size it crowds/overlaps the text. Nudge the
-    // whole canvas left for just this window, then back to center before
-    // stage 3, same DOM-level shift technique as the designer-stage move.
+    // RIGHT) appears, getting BIGGEST right at the end of the zoom (0.58) —
+    // so the shift has to stay in effect for the entire zoom, not retreat
+    // early, or the closest approach (the actual collision risk) happens
+    // right as it's un-shifting back to center. Same DOM-level shift
+    // technique as the designer-stage move, just larger + held longer.
     if (isDesktopLayout) {
-      tl.to(canvasContainer, { xPercent: -12, duration: 0.05, ease: 'power1.inOut' }, 0.30);
-      tl.to(canvasContainer, { xPercent: 0, duration: 0.05, ease: 'power1.inOut' }, 0.56);
+      tl.to(canvasContainer, { xPercent: -22, duration: 0.05, ease: 'power1.inOut' }, 0.30);
+      tl.to(canvasContainer, { xPercent: 0, duration: 0.05, ease: 'power1.inOut' }, 0.58);
     }
 
     // Stage 3 (0.58 -> 0.72): open, continued spin, ease out a touch
