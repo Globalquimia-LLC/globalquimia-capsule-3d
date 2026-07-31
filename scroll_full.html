@@ -6,6 +6,7 @@
 <title>Globalquimia — Cápsulas</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
 <script type="importmap">
 {
   "imports": {
@@ -136,9 +137,10 @@
   .metal-swatches { flex-wrap: wrap; gap: 8px; }
   .metal-readout { display: block; margin-top: 8px; }
 
-  /* Custom HSV wheel + value slider (Tradicionales/Mate only — Metalizados
-     is a closed swatch set, no free-spectrum picker needed there). Replaces
-     the native OS color dialog, which can't be styled/matched to the brand
+  /* Value/spectrum picker (Tradicionales/Mate only — Metalizados is a closed
+     swatch set, no free-spectrum picker needed there). Wheel+slider itself
+     is rendered by iro.js (loaded in <head>) into .wp-iro; replaces the
+     native OS color dialog, which can't be styled/matched to the brand
      panel and looks completely different across browsers. */
   .color-toggle {
     -webkit-appearance: none; appearance: none; flex: none;
@@ -150,21 +152,7 @@
     background: #10263c; border-radius: 14px;
   }
   .wheel-panel.open { max-height: 480px; margin-top: 10px; padding: 18px; }
-  .wp-top { display: flex; gap: 22px; align-items: center; justify-content: center; }
-  .wp-wheel-wrap, .wp-slider-wrap { position: relative; touch-action: none; flex: none; }
-  .wp-wheel-wrap { width: 150px; height: 150px; }
-  .wp-wheel-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; }
-  .wp-wheel-puck {
-    position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px;
-    border-radius: 50%; border: 2px solid #fff;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.5); pointer-events: none;
-  }
-  .wp-slider-wrap { width: 20px; height: 150px; }
-  .wp-slider-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 10px; }
-  .wp-slider-puck {
-    position: absolute; left: -4px; right: -4px; height: 8px; margin-top: -4px;
-    background: #fff; border: 2px solid #10263c; border-radius: 4px; pointer-events: none;
-  }
+  .wp-iro { display: flex; justify-content: center; }
   .wp-tabs { display: flex; justify-content: center; gap: 22px; margin: 16px 0 10px 0; }
   .wp-tab {
     background: none; border: none; cursor: pointer; font-family: inherit;
@@ -279,9 +267,6 @@
     .acc-header.acc-sub { padding: 10px 14px 10px 22px; font-size: 11px; }
     .acc-item.open[data-finish] > .acc-body { padding: 0 14px 12px 14px; }
     .piece-tabs { justify-content: center; gap: 14px; }
-    .wp-top { gap: 14px; }
-    .wp-wheel-wrap { width: 128px; height: 128px; }
-    .wp-slider-wrap { height: 128px; }
     .wheel-panel.open { max-height: 440px; padding: 14px; }
 
     /* The side rail visually collided with the bottom-anchored text/designer
@@ -604,41 +589,6 @@
     const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
     return `rgb(${r}, ${g}, ${b})`;
   }
-  function hexToRgbArr(hexStr) {
-    const n = parseInt(hexStr.replace('#', ''), 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-  }
-  function rgbToHex(r, g, b) {
-    return '#' + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
-  }
-  function hsvToRgb(h, s, v) {
-    s /= 100; v /= 100;
-    const c = v * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = v - c;
-    let r = 0, g = 0, b = 0;
-    if (h < 60)       { r = c; g = x; b = 0; }
-    else if (h < 120) { r = x; g = c; b = 0; }
-    else if (h < 180) { r = 0; g = c; b = x; }
-    else if (h < 240) { r = 0; g = x; b = c; }
-    else if (h < 300) { r = x; g = 0; b = c; }
-    else              { r = c; g = 0; b = x; }
-    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
-  }
-  function rgbToHsv(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-    let h = 0;
-    if (d !== 0) {
-      if (max === r) h = 60 * (((g - b) / d) % 6);
-      else if (max === g) h = 60 * (((b - r) / d) + 2);
-      else h = 60 * (((r - g) / d) + 4);
-    }
-    if (h < 0) h += 360;
-    const s = max === 0 ? 0 : (d / max) * 100;
-    const v = max * 100;
-    return [h, s, v];
-  }
 
   // Updates the on-screen controls (toggle swatch, hex/rgb readout, selected
   // quick-swatch, open wheel picker) for one finish+piece pair without
@@ -679,22 +629,15 @@
     });
   }
 
-  // Builds (once, lazily) an embedded HSV wheel + value-slider picker inside
-  // a finish+piece's .wheel-panel, replacing the OS-native color dialog —
+  // Builds (once, lazily) an embedded wheel + value-slider picker inside a
+  // finish+piece's .wheel-panel, replacing the OS-native color dialog —
   // which can't be styled to match the panel and looks wildly different
-  // across browsers/OSes.
+  // across browsers/OSes. The wheel/slider widget itself is iro.js (loaded
+  // in <head> as a global); this function only adds the RGB/HSV/HEX tabs
+  // and editable numeric rows around it, wired to iro's color object.
   function createWheelPicker(root, initialHex, onChange) {
     root.innerHTML = `
-      <div class="wp-top">
-        <div class="wp-wheel-wrap">
-          <canvas class="wp-wheel"></canvas>
-          <div class="wp-wheel-puck"></div>
-        </div>
-        <div class="wp-slider-wrap">
-          <canvas class="wp-slider"></canvas>
-          <div class="wp-slider-puck"></div>
-        </div>
-      </div>
+      <div class="wp-iro"></div>
       <div class="wp-tabs">
         <button type="button" class="wp-tab active" data-mode="rgb">RGB</button>
         <button type="button" class="wp-tab" data-mode="hsv">HSV</button>
@@ -703,70 +646,22 @@
       <div class="wp-rows"></div>
     `;
 
-    const wheelWrap = root.querySelector('.wp-wheel-wrap');
-    const wheelCanvas = root.querySelector('.wp-wheel');
-    const wheelPuck = root.querySelector('.wp-wheel-puck');
-    const sliderWrap = root.querySelector('.wp-slider-wrap');
-    const sliderCanvas = root.querySelector('.wp-slider');
-    const sliderPuck = root.querySelector('.wp-slider-puck');
+    const mount = root.querySelector('.wp-iro');
     const rowsEl = root.querySelector('.wp-rows');
     const tabs = root.querySelectorAll('.wp-tab');
 
-    // Bitmap resolution is fixed (independent of the CSS display size, which
-    // shifts at the mobile breakpoint) — the browser just scales it, and all
-    // pointer math below reads the *live* rendered rect instead of this
-    // constant, so it stays accurate at any CSS size.
-    const BITMAP = 160;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    wheelCanvas.width = wheelCanvas.height = BITMAP * dpr;
-    sliderCanvas.width = BITMAP * dpr * 0.13;
-    sliderCanvas.height = BITMAP * dpr;
+    const wheelWidth = window.innerWidth <= 760 ? 118 : 140;
+    const colorPicker = new iro.ColorPicker(mount, {
+      width: wheelWidth,
+      color: initialHex,
+      layoutDirection: 'horizontal',
+      layout: [
+        { component: iro.ui.Wheel, options: {} },
+        { component: iro.ui.Slider, options: { sliderType: 'value' } },
+      ],
+    });
 
     let mode = 'rgb';
-    const [ir, ig, ib] = hexToRgbArr(initialHex);
-    let [h, s, v] = rgbToHsv(ir, ig, ib);
-
-    function renderWheel() {
-      const ctx = wheelCanvas.getContext('2d');
-      const size = wheelCanvas.width;
-      const cx = size / 2, cy = size / 2, radius = size / 2;
-      const img = ctx.createImageData(size, size);
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          const dx = x - cx, dy = y - cy;
-          const rr = Math.sqrt(dx * dx + dy * dy) / radius;
-          const idx = (y * size + x) * 4;
-          if (rr <= 1) {
-            let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-            if (angle < 0) angle += 360;
-            const [pr, pg, pb] = hsvToRgb(angle, rr * 100, v);
-            img.data[idx] = pr; img.data[idx + 1] = pg; img.data[idx + 2] = pb; img.data[idx + 3] = 255;
-          } else {
-            img.data[idx + 3] = 0;
-          }
-        }
-      }
-      ctx.putImageData(img, 0, 0);
-    }
-
-    function renderSlider() {
-      const ctx = sliderCanvas.getContext('2d');
-      const w = sliderCanvas.width, hh = sliderCanvas.height;
-      const [tr, tg, tb] = hsvToRgb(h, s, 100);
-      const grad = ctx.createLinearGradient(0, 0, 0, hh);
-      grad.addColorStop(0, `rgb(${tr},${tg},${tb})`);
-      grad.addColorStop(1, '#000000');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, hh);
-    }
-
-    function updatePucks() {
-      const angleRad = h * Math.PI / 180;
-      const radiusFrac = s / 100;
-      wheelPuck.style.left = (50 + radiusFrac * 50 * Math.cos(angleRad)) + '%';
-      wheelPuck.style.top = (50 + radiusFrac * 50 * Math.sin(angleRad)) + '%';
-      sliderPuck.style.top = ((1 - v / 100) * 100) + '%';
-    }
 
     // Row DOM nodes are only rebuilt when the format tab changes
     // (renderRowsStructure). Every other update (dragging the wheel/slider,
@@ -802,14 +697,14 @@
     function renderRowsStructure() {
       if (mode === 'rgb') {
         rowsEl.innerHTML = rowSkeleton('R', 255) + rowSkeleton('G', 255) + rowSkeleton('B', 255);
-        bindNumberRow('R', 255, (val) => { const [, g2, b2] = hsvToRgb(h, s, v); setFromRgb(val, g2, b2); });
-        bindNumberRow('G', 255, (val) => { const [r2, , b2] = hsvToRgb(h, s, v); setFromRgb(r2, val, b2); });
-        bindNumberRow('B', 255, (val) => { const [r2, g2] = hsvToRgb(h, s, v); setFromRgb(r2, g2, val); });
+        bindNumberRow('R', 255, (val) => { const { g, b } = colorPicker.color.rgb; applyRgb(val, g, b); });
+        bindNumberRow('G', 255, (val) => { const { r, b } = colorPicker.color.rgb; applyRgb(r, val, b); });
+        bindNumberRow('B', 255, (val) => { const { r, g } = colorPicker.color.rgb; applyRgb(r, g, val); });
       } else if (mode === 'hsv') {
         rowsEl.innerHTML = rowSkeleton('H', 360) + rowSkeleton('S', 100) + rowSkeleton('V', 100);
-        bindNumberRow('H', 360, (val) => setFromHsv(val, s, v));
-        bindNumberRow('S', 100, (val) => setFromHsv(h, val, v));
-        bindNumberRow('V', 100, (val) => setFromHsv(h, s, val));
+        bindNumberRow('H', 360, (val) => { const { s, v } = colorPicker.color.hsv; applyHsv(val, s, v); });
+        bindNumberRow('S', 100, (val) => { const { h, v } = colorPicker.color.hsv; applyHsv(h, val, v); });
+        bindNumberRow('V', 100, (val) => { const { h, s } = colorPicker.color.hsv; applyHsv(h, s, val); });
       } else {
         rowsEl.innerHTML = `<div class="wp-row wp-row-hex">
           <span class="wp-row-label">HEX:</span>
@@ -819,9 +714,7 @@
         input.addEventListener('change', () => {
           const val = input.value.trim();
           if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
-            const clean = val.startsWith('#') ? val : '#' + val;
-            const [nr, ng, nb] = hexToRgbArr(clean);
-            setFromRgb(nr, ng, nb);
+            applyHex(val.startsWith('#') ? val : '#' + val);
           } else {
             updateRowsValues();
           }
@@ -831,79 +724,41 @@
     }
 
     function updateRowsValues() {
-      const [r, g, b] = hsvToRgb(h, s, v);
+      const { r, g, b } = colorPicker.color.rgb;
+      const { h, s, v } = colorPicker.color.hsv;
       if (mode === 'rgb') {
         setRowValue('R', r, 255); setRowValue('G', g, 255); setRowValue('B', b, 255);
       } else if (mode === 'hsv') {
         setRowValue('H', h, 360); setRowValue('S', s, 100); setRowValue('V', v, 100);
       } else {
         const input = rowsEl.querySelector('.wp-row-input');
-        if (input && document.activeElement !== input) input.value = rgbToHex(r, g, b).toUpperCase();
+        if (input && document.activeElement !== input) input.value = colorPicker.color.hexString.toUpperCase();
       }
     }
 
-    function setFromRgb(r, g, b) {
-      [h, s, v] = rgbToHsv(r, g, b);
-      commit();
+    // iro only fires 'input:change' for its own drag interactions, so typed
+    // row edits (which go through .color.rgb/.hsv/.hexString directly) need
+    // to update the rows + notify the 3D material themselves.
+    function applyRgb(r, g, b) {
+      colorPicker.color.rgb = { r, g, b };
+      updateRowsValues();
+      onChange(colorPicker.color.hexString);
     }
-    function setFromHsv(nh, ns, nv) {
-      h = nh; s = ns; v = nv;
-      commit();
+    function applyHsv(h, s, v) {
+      colorPicker.color.hsv = { h, s, v };
+      updateRowsValues();
+      onChange(colorPicker.color.hexString);
     }
-    function commit() {
-      renderWheel(); renderSlider(); updatePucks(); updateRowsValues();
-      const [r, g, b] = hsvToRgb(h, s, v);
-      onChange(rgbToHex(r, g, b));
-    }
-
-    function wheelPointFromEvent(e) {
-      const rect = wheelWrap.getBoundingClientRect();
-      const cx = rect.width / 2, cy = rect.height / 2;
-      let dx = (e.clientX - rect.left) - cx, dy = (e.clientY - rect.top) - cy;
-      let r = Math.sqrt(dx * dx + dy * dy) / (rect.width / 2);
-      if (r > 1) r = 1;
-      let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      if (angle < 0) angle += 360;
-      return [angle, r * 100];
-    }
-    function sliderValueFromEvent(e) {
-      const rect = sliderWrap.getBoundingClientRect();
-      const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-      return 100 * (1 - y / rect.height);
+    function applyHex(hexStr) {
+      colorPicker.color.hexString = hexStr;
+      updateRowsValues();
+      onChange(colorPicker.color.hexString);
     }
 
-    let draggingWheel = false, draggingSlider = false;
-    wheelWrap.addEventListener('pointerdown', (e) => {
-      draggingWheel = true;
-      wheelWrap.setPointerCapture(e.pointerId);
-      [h, s] = wheelPointFromEvent(e);
-      renderSlider(); updatePucks(); updateRowsValues();
-      onChange(rgbToHex(...hsvToRgb(h, s, v)));
+    colorPicker.on('input:change', () => {
+      updateRowsValues();
+      onChange(colorPicker.color.hexString);
     });
-    wheelWrap.addEventListener('pointermove', (e) => {
-      if (!draggingWheel) return;
-      [h, s] = wheelPointFromEvent(e);
-      renderSlider(); updatePucks(); updateRowsValues();
-      onChange(rgbToHex(...hsvToRgb(h, s, v)));
-    });
-    wheelWrap.addEventListener('pointerup', () => { draggingWheel = false; });
-    wheelWrap.addEventListener('pointercancel', () => { draggingWheel = false; });
-
-    sliderWrap.addEventListener('pointerdown', (e) => {
-      draggingSlider = true;
-      sliderWrap.setPointerCapture(e.pointerId);
-      v = sliderValueFromEvent(e);
-      renderWheel(); updatePucks(); updateRowsValues();
-      onChange(rgbToHex(...hsvToRgb(h, s, v)));
-    });
-    sliderWrap.addEventListener('pointermove', (e) => {
-      if (!draggingSlider) return;
-      v = sliderValueFromEvent(e);
-      renderWheel(); updatePucks(); updateRowsValues();
-      onChange(rgbToHex(...hsvToRgb(h, s, v)));
-    });
-    sliderWrap.addEventListener('pointerup', () => { draggingSlider = false; });
-    sliderWrap.addEventListener('pointercancel', () => { draggingSlider = false; });
 
     tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
@@ -914,16 +769,15 @@
       });
     });
 
-    renderWheel(); renderSlider(); updatePucks(); renderRowsStructure();
+    renderRowsStructure();
 
     return {
       // Display-only sync (e.g. a quick-swatch click elsewhere) — no onChange.
-      // Never rebuilds row DOM nodes, so it's always safe to call even while
-      // one of this picker's own inputs has focus.
+      // .color.hexString= only fires 'color:change', not 'input:change', so
+      // this can't loop back into onChange.
       setHex(hexStr) {
-        const [r, g, b] = hexToRgbArr(hexStr);
-        [h, s, v] = rgbToHsv(r, g, b);
-        renderWheel(); renderSlider(); updatePucks(); updateRowsValues();
+        colorPicker.color.hexString = hexStr;
+        updateRowsValues();
       },
     };
   }
