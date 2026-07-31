@@ -1335,6 +1335,15 @@
       },
     }, 0.29);
 
+    // The capsule is centered and zooming in right as stage-2's text (on the
+    // RIGHT) appears — at that size it crowds/overlaps the text. Nudge the
+    // whole canvas left for just this window, then back to center before
+    // stage 3, same DOM-level shift technique as the designer-stage move.
+    if (isDesktopLayout) {
+      tl.to(canvasContainer, { xPercent: -12, duration: 0.05, ease: 'power1.inOut' }, 0.30);
+      tl.to(canvasContainer, { xPercent: 0, duration: 0.05, ease: 'power1.inOut' }, 0.56);
+    }
+
     // Stage 3 (0.58 -> 0.72): open, continued spin, ease out a touch
     tl.to(capsuleGroup.rotation, { y: Math.PI * 1.35, duration: 0.14, ease: 'none' }, 0.58);
     tl.to(dollyState, { dist: maxDim * 1.9, duration: 0.14, ease: 'power1.inOut', onUpdate: applyDolly }, 0.58);
