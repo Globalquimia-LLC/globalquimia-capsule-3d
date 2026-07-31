@@ -6,7 +6,8 @@
 <title>Globalquimia — Cápsulas</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="vendor/iro.min.js"></script>
+<link rel="stylesheet" href="vendor/pickr-classic.min.css" />
+<script src="vendor/pickr.min.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -141,45 +142,16 @@
   .metal-swatches { flex-wrap: wrap; gap: 8px; }
   .metal-readout { display: block; margin-top: 8px; }
 
-  /* Value/spectrum picker (Tradicionales/Mate only — Metalizados is a closed
-     swatch set, no free-spectrum picker needed there). Wheel+slider itself
-     is rendered by iro.js (loaded in <head>) into .wp-iro; replaces the
-     native OS color dialog, which can't be styled/matched to the brand
-     panel and looks completely different across browsers. */
+  /* Free-spectrum picker (Tradicionales/Mate only — Metalizados is a closed
+     swatch set). The .color-toggle circle IS the Pickr trigger element —
+     Pickr (vendor/pickr.min.js + classic theme CSS, loaded in <head>) owns
+     rendering its own floating popup (palette + hue slider + hex/rgba
+     inputs) when clicked, so there's no custom panel markup to maintain here. */
   .color-toggle {
     -webkit-appearance: none; appearance: none; flex: none;
     width: 32px; height: 32px; border-radius: 50%;
     border: 2px solid rgba(28,64,93,0.2); padding: 0; cursor: pointer;
   }
-  .wheel-panel {
-    max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
-    background: #10263c; border-radius: 14px;
-  }
-  .wheel-panel.open { max-height: 480px; margin-top: 10px; padding: 18px; }
-  .wp-iro { display: flex; justify-content: center; }
-  .wp-tabs { display: flex; justify-content: center; gap: 22px; margin: 16px 0 10px 0; }
-  .wp-tab {
-    background: none; border: none; cursor: pointer; font-family: inherit;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: #6f8ba8;
-    padding: 0 0 5px 0; border-bottom: 2px solid transparent;
-  }
-  .wp-tab.active { color: #fff; border-bottom-color: var(--cyan); }
-  .wp-rows { display: flex; flex-direction: column; gap: 6px; }
-  .wp-row {
-    position: relative; display: flex; align-items: center; justify-content: space-between;
-    background: #173a5c; border-radius: 6px; padding: 6px 10px; overflow: hidden;
-  }
-  .wp-row-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #1f4d78; z-index: 0; }
-  .wp-row-label {
-    position: relative; z-index: 1; font-size: 11px; font-weight: 700;
-    letter-spacing: 0.5px; color: #a9c0d6;
-  }
-  .wp-row-input {
-    position: relative; z-index: 1; background: none; border: none; outline: none;
-    color: #fff; font-family: 'Courier New', monospace; font-size: 13px;
-    text-align: right; width: 60px;
-  }
-  .wp-row-hex .wp-row-input { width: 110px; letter-spacing: 1px; }
 
   .quick-swatches { display: flex; gap: 6px; }
   .swatch {
@@ -271,7 +243,6 @@
     .acc-header.acc-sub { padding: 10px 14px 10px 22px; font-size: 11px; }
     .acc-item.open[data-finish] > .acc-body { padding: 0 14px 12px 14px; }
     .piece-tabs { justify-content: center; gap: 14px; }
-    .wheel-panel.open { max-height: 440px; padding: 14px; }
 
     /* The side rail visually collided with the bottom-anchored text/designer
        on narrow screens — move it out of the way instead of overlapping. */
@@ -348,23 +319,17 @@
             </button>
             <div class="acc-body">
               <div class="rows">
-                <div class="row-block">
-                  <div class="row">
-                    <label>Tapa</label>
-                    <button type="button" class="color-toggle" id="toggle-tradicionales-cap"></button>
-                    <div class="quick-swatches" data-finish="tradicionales" data-target="cap"></div>
-                    <span class="color-readout" id="readout-tradicionales-cap"></span>
-                  </div>
-                  <div class="wheel-panel" id="wp-tradicionales-cap"></div>
+                <div class="row">
+                  <label>Tapa</label>
+                  <button type="button" class="color-toggle" id="toggle-tradicionales-cap"></button>
+                  <div class="quick-swatches" data-finish="tradicionales" data-target="cap"></div>
+                  <span class="color-readout" id="readout-tradicionales-cap"></span>
                 </div>
-                <div class="row-block">
-                  <div class="row">
-                    <label>Cuerpo</label>
-                    <button type="button" class="color-toggle" id="toggle-tradicionales-body"></button>
-                    <div class="quick-swatches" data-finish="tradicionales" data-target="body"></div>
-                    <span class="color-readout" id="readout-tradicionales-body"></span>
-                  </div>
-                  <div class="wheel-panel" id="wp-tradicionales-body"></div>
+                <div class="row">
+                  <label>Cuerpo</label>
+                  <button type="button" class="color-toggle" id="toggle-tradicionales-body"></button>
+                  <div class="quick-swatches" data-finish="tradicionales" data-target="body"></div>
+                  <span class="color-readout" id="readout-tradicionales-body"></span>
                 </div>
               </div>
             </div>
@@ -377,23 +342,17 @@
             </button>
             <div class="acc-body">
               <div class="rows">
-                <div class="row-block">
-                  <div class="row">
-                    <label>Tapa</label>
-                    <button type="button" class="color-toggle" id="toggle-mate-cap"></button>
-                    <div class="quick-swatches" data-finish="mate" data-target="cap"></div>
-                    <span class="color-readout" id="readout-mate-cap"></span>
-                  </div>
-                  <div class="wheel-panel" id="wp-mate-cap"></div>
+                <div class="row">
+                  <label>Tapa</label>
+                  <button type="button" class="color-toggle" id="toggle-mate-cap"></button>
+                  <div class="quick-swatches" data-finish="mate" data-target="cap"></div>
+                  <span class="color-readout" id="readout-mate-cap"></span>
                 </div>
-                <div class="row-block">
-                  <div class="row">
-                    <label>Cuerpo</label>
-                    <button type="button" class="color-toggle" id="toggle-mate-body"></button>
-                    <div class="quick-swatches" data-finish="mate" data-target="body"></div>
-                    <span class="color-readout" id="readout-mate-body"></span>
-                  </div>
-                  <div class="wheel-panel" id="wp-mate-body"></div>
+                <div class="row">
+                  <label>Cuerpo</label>
+                  <button type="button" class="color-toggle" id="toggle-mate-body"></button>
+                  <div class="quick-swatches" data-finish="mate" data-target="body"></div>
+                  <span class="color-readout" id="readout-mate-body"></span>
                 </div>
               </div>
             </div>
@@ -471,13 +430,13 @@
 
   let capsuleGroup, capNode, capMaterial, bodyMaterial;
 
-  // One HSV wheel-picker instance per finish+piece pair that's been opened at
-  // least once, keyed "finish-target" (e.g. "tradicionales-cap").
-  const wheelInstances = {};
+  // One Pickr instance per finish+piece pair, keyed "finish-target"
+  // (e.g. "tradicionales-cap").
+  const pickrInstances = {};
 
-  // Quick shortcuts (brand + common capsule colors). The HSV wheel picker
-  // (built below) covers the FULL color spectrum — these are just one-click
-  // favorites layered on top of it.
+  // Quick shortcuts (brand + common capsule colors). Pickr (built below)
+  // covers the FULL color spectrum — these are just one-click favorites
+  // layered on top of it.
   const PALETTE = [
     { name: 'Azul Globalquimia', hex: 0x006f9e },
     { name: 'Cian',              hex: 0x1dbadf },
@@ -594,20 +553,25 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  // Updates the on-screen controls (toggle swatch, hex/rgb readout, selected
-  // quick-swatch, open wheel picker) for one finish+piece pair without
-  // touching the 3D material — used to give Mate a starting display value
-  // even when its finish isn't the one currently applied to the mesh.
+  // Updates the on-screen controls (Pickr swatch button, hex/rgb readout,
+  // selected quick-swatch) for one finish+piece pair without touching the 3D
+  // material — used to give Mate a starting display value even when its
+  // finish isn't the one currently applied to the mesh.
   function refreshDisplay(target, finishKey, hexStr) {
-    const toggle = document.getElementById(`toggle-${finishKey}-${target}`);
-    if (toggle) { toggle.style.backgroundColor = hexStr; toggle.dataset.hex = hexStr; }
     const readout = document.getElementById(`readout-${finishKey}-${target}`);
     if (readout) readout.textContent = hexStr.toUpperCase() + ' · ' + hexToRgbString(hexStr);
     document.querySelectorAll(`.quick-swatches[data-finish="${finishKey}"][data-target="${target}"] .swatch`).forEach((s) => {
       s.classList.toggle('selected', s.dataset.hex === hexStr.toLowerCase());
     });
-    const wp = wheelInstances[`${finishKey}-${target}`];
-    if (wp) wp.setHex(hexStr);
+    const pickr = pickrInstances[`${finishKey}-${target}`];
+    if (pickr) {
+      // silent=true on both: don't re-fire 'change' and loop back into
+      // setPieceColor. setColor() alone only updates the popup's own
+      // internal state (palette cursor position, etc) — applyColor() is
+      // what actually pushes that color to the button's own swatch.
+      pickr.setColor(hexStr, true);
+      pickr.applyColor(true);
+    }
   }
 
   // Applies a color AND a finish (roughness/metalness) to the actual 3D
@@ -633,181 +597,33 @@
     });
   }
 
-  // Builds (once, lazily) an embedded wheel + value-slider picker inside a
-  // finish+piece's .wheel-panel, replacing the OS-native color dialog —
-  // which can't be styled to match the panel and looks wildly different
-  // across browsers/OSes. The wheel/slider widget itself is iro.js (loaded
-  // in <head> as a global); this function only adds the RGB/HSV/HEX tabs
-  // and editable numeric rows around it, wired to iro's color object.
-  function createWheelPicker(root, initialHex, onChange) {
-    if (typeof iro === 'undefined') {
-      // iro.js (vendor/iro.min.js) failed to load — show this instead of a
-      // silent blank panel, since that's indistinguishable from "nothing
-      // happened when I clicked".
-      root.innerHTML = '<p style="color:#fff;font-size:12px;padding:8px;">No se pudo cargar el selector de color (vendor/iro.min.js). Recargá la página.</p>';
-      return { setHex() {} };
+  // Turns a finish+piece's .color-toggle circle into a Pickr trigger — Pickr
+  // (vendor/pickr.min.js) owns rendering its own floating popup (palette,
+  // hue slider, hex/rgba inputs) entirely; this just wires its 'change'
+  // event into the 3D material.
+  function createColorPicker(target, finishKey, material, initialHex) {
+    if (typeof Pickr === 'undefined') {
+      // Fails loudly instead of the toggle silently doing nothing when
+      // clicked — that's indistinguishable from "it's broken".
+      console.error('Pickr (vendor/pickr.min.js) failed to load.');
+      return null;
     }
-    root.innerHTML = `
-      <div class="wp-iro"></div>
-      <div class="wp-tabs">
-        <button type="button" class="wp-tab active" data-mode="rgb">RGB</button>
-        <button type="button" class="wp-tab" data-mode="hsv">HSV</button>
-        <button type="button" class="wp-tab" data-mode="hex">HEX</button>
-      </div>
-      <div class="wp-rows"></div>
-    `;
-
-    const mount = root.querySelector('.wp-iro');
-    const rowsEl = root.querySelector('.wp-rows');
-    const tabs = root.querySelectorAll('.wp-tab');
-
-    const wheelWidth = window.innerWidth <= 760 ? 118 : 140;
-    const colorPicker = new iro.ColorPicker(mount, {
-      width: wheelWidth,
-      color: initialHex,
-      layoutDirection: 'horizontal',
-      layout: [
-        { component: iro.ui.Wheel, options: {} },
-        { component: iro.ui.Slider, options: { sliderType: 'value' } },
-      ],
-    });
-
-    let mode = 'rgb';
-
-    // Row DOM nodes are only rebuilt when the format tab changes
-    // (renderRowsStructure). Every other update (dragging the wheel/slider,
-    // committing a typed value) only touches existing nodes' .value/width via
-    // updateRowsValues — rebuilding the input's own DOM node from inside its
-    // own 'change' handler is what throws "node no longer a child" errors.
-    function rowSkeleton(label, max) {
-      return `<div class="wp-row" data-ch="${label}">
-        <div class="wp-row-fill"></div>
-        <span class="wp-row-label">${label}:</span>
-        <input class="wp-row-input" type="number" min="0" max="${max}" />
-      </div>`;
-    }
-
-    function bindNumberRow(label, max, cb) {
-      const row = rowsEl.querySelector(`[data-ch="${label}"]`);
-      const input = row.querySelector('input');
-      input.addEventListener('change', () => {
-        let val = parseFloat(input.value);
-        if (isNaN(val)) val = 0;
-        cb(Math.max(0, Math.min(max, val)));
-      });
-    }
-
-    function setRowValue(label, value, max) {
-      const row = rowsEl.querySelector(`[data-ch="${label}"]`);
-      if (!row) return;
-      const input = row.querySelector('input');
-      row.querySelector('.wp-row-fill').style.width = Math.max(0, Math.min(100, (value / max) * 100)) + '%';
-      if (document.activeElement !== input) input.value = Math.round(value);
-    }
-
-    function renderRowsStructure() {
-      if (mode === 'rgb') {
-        rowsEl.innerHTML = rowSkeleton('R', 255) + rowSkeleton('G', 255) + rowSkeleton('B', 255);
-        bindNumberRow('R', 255, (val) => { const { g, b } = colorPicker.color.rgb; applyRgb(val, g, b); });
-        bindNumberRow('G', 255, (val) => { const { r, b } = colorPicker.color.rgb; applyRgb(r, val, b); });
-        bindNumberRow('B', 255, (val) => { const { r, g } = colorPicker.color.rgb; applyRgb(r, g, val); });
-      } else if (mode === 'hsv') {
-        rowsEl.innerHTML = rowSkeleton('H', 360) + rowSkeleton('S', 100) + rowSkeleton('V', 100);
-        bindNumberRow('H', 360, (val) => { const { s, v } = colorPicker.color.hsv; applyHsv(val, s, v); });
-        bindNumberRow('S', 100, (val) => { const { h, v } = colorPicker.color.hsv; applyHsv(h, val, v); });
-        bindNumberRow('V', 100, (val) => { const { h, s } = colorPicker.color.hsv; applyHsv(h, s, val); });
-      } else {
-        rowsEl.innerHTML = `<div class="wp-row wp-row-hex">
-          <span class="wp-row-label">HEX:</span>
-          <input class="wp-row-input" type="text" maxlength="7" />
-        </div>`;
-        const input = rowsEl.querySelector('input');
-        input.addEventListener('change', () => {
-          const val = input.value.trim();
-          if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
-            applyHex(val.startsWith('#') ? val : '#' + val);
-          } else {
-            updateRowsValues();
-          }
-        });
-      }
-      updateRowsValues();
-    }
-
-    function updateRowsValues() {
-      const { r, g, b } = colorPicker.color.rgb;
-      const { h, s, v } = colorPicker.color.hsv;
-      if (mode === 'rgb') {
-        setRowValue('R', r, 255); setRowValue('G', g, 255); setRowValue('B', b, 255);
-      } else if (mode === 'hsv') {
-        setRowValue('H', h, 360); setRowValue('S', s, 100); setRowValue('V', v, 100);
-      } else {
-        const input = rowsEl.querySelector('.wp-row-input');
-        if (input && document.activeElement !== input) input.value = colorPicker.color.hexString.toUpperCase();
-      }
-    }
-
-    // iro only fires 'input:change' for its own drag interactions, so typed
-    // row edits (which go through .color.rgb/.hsv/.hexString directly) need
-    // to update the rows + notify the 3D material themselves.
-    function applyRgb(r, g, b) {
-      colorPicker.color.rgb = { r, g, b };
-      updateRowsValues();
-      onChange(colorPicker.color.hexString);
-    }
-    function applyHsv(h, s, v) {
-      colorPicker.color.hsv = { h, s, v };
-      updateRowsValues();
-      onChange(colorPicker.color.hexString);
-    }
-    function applyHex(hexStr) {
-      colorPicker.color.hexString = hexStr;
-      updateRowsValues();
-      onChange(colorPicker.color.hexString);
-    }
-
-    colorPicker.on('input:change', () => {
-      updateRowsValues();
-      onChange(colorPicker.color.hexString);
-    });
-
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabs.forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        mode = tab.dataset.mode;
-        renderRowsStructure();
-      });
-    });
-
-    renderRowsStructure();
-
-    return {
-      // Display-only sync (e.g. a quick-swatch click elsewhere) — no onChange.
-      // .color.hexString= only fires 'color:change', not 'input:change', so
-      // this can't loop back into onChange.
-      setHex(hexStr) {
-        colorPicker.color.hexString = hexStr;
-        updateRowsValues();
+    const pickr = Pickr.create({
+      el: `#toggle-${finishKey}-${target}`,
+      theme: 'classic',
+      default: initialHex,
+      components: {
+        preview: true,
+        opacity: false,
+        hue: true,
+        interaction: { hex: true, rgba: true, input: true, save: false },
       },
-    };
-  }
-
-  function toggleWheelPanel(finishKey, target, material) {
-    const panel = document.getElementById(`wp-${finishKey}-${target}`);
-    const willOpen = !panel.classList.contains('open');
-    // Only one wheel panel open at a time within this finish's Tapa/Cuerpo rows.
-    panel.closest('.rows').querySelectorAll('.wheel-panel').forEach((p) => p.classList.remove('open'));
-    panel.classList.toggle('open', willOpen);
-    if (!willOpen) return;
-
-    const key = `${finishKey}-${target}`;
-    if (!wheelInstances[key]) {
-      const toggle = document.getElementById(`toggle-${finishKey}-${target}`);
-      wheelInstances[key] = createWheelPicker(panel, toggle.dataset.hex, (hexStr) => {
-        setPieceColor(target, finishKey, hexStr, material);
-      });
-    }
+    });
+    pickr.on('change', (color) => {
+      const hexStr = '#' + color.toHEXA().toString().replace('#', '').slice(0, 6);
+      setPieceColor(target, finishKey, hexStr, material);
+    });
+    return pickr;
   }
 
   function buildAllColorControls() {
@@ -818,8 +634,7 @@
       ['tradicionales', 'mate'].forEach((finishKey) => {
         const container = document.querySelector(`.quick-swatches[data-finish="${finishKey}"][data-target="${target}"]`);
         buildSwatchGroup(container, finishKey, target, material, PALETTE);
-        const toggle = document.getElementById(`toggle-${finishKey}-${target}`);
-        toggle.addEventListener('click', () => toggleWheelPanel(finishKey, target, material));
+        pickrInstances[`${finishKey}-${target}`] = createColorPicker(target, finishKey, material, defaultHex);
         refreshDisplay(target, finishKey, defaultHex);
       });
 
