@@ -119,7 +119,7 @@
   .acc-chevron { font-size: 11px; color: #9aa7ad; transition: transform 0.25s ease; }
   .acc-item.open > .acc-header .acc-chevron { transform: rotate(180deg); }
   .acc-item > .acc-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-  .acc-item.open > .acc-body { max-height: 600px; }
+  .acc-item.open > .acc-body { max-height: 760px; }
   .acc-item.open[data-finish] > .acc-body { padding: 0 18px 14px 18px; }
 
   .piece-tabs { display: flex; gap: 18px; margin-bottom: 12px; }
@@ -131,13 +131,60 @@
   .piece-tab.active { color: var(--navy); border-bottom-color: var(--blue); }
   .metal-swatches { flex-wrap: wrap; gap: 8px; }
   .metal-readout { display: block; margin-top: 8px; }
-  .color-picker {
-    -webkit-appearance: none; appearance: none;
-    width: 32px; height: 32px; border: 2px solid rgba(28,64,93,0.2); border-radius: 50%;
-    padding: 0; cursor: pointer; background: none; overflow: hidden;
+
+  /* Custom HSV wheel + value slider (Tradicionales/Mate only — Metalizados
+     is a closed swatch set, no free-spectrum picker needed there). Replaces
+     the native OS color dialog, which can't be styled/matched to the brand
+     panel and looks completely different across browsers. */
+  .color-toggle {
+    -webkit-appearance: none; appearance: none; flex: none;
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid rgba(28,64,93,0.2); padding: 0; cursor: pointer;
   }
-  .color-picker::-webkit-color-swatch-wrapper { padding: 0; }
-  .color-picker::-webkit-color-swatch { border: none; border-radius: 50%; }
+  .wheel-panel {
+    max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+    background: #10263c; border-radius: 14px;
+  }
+  .wheel-panel.open { max-height: 480px; margin-top: 10px; padding: 18px; }
+  .wp-top { display: flex; gap: 22px; align-items: center; justify-content: center; }
+  .wp-wheel-wrap, .wp-slider-wrap { position: relative; touch-action: none; flex: none; }
+  .wp-wheel-wrap { width: 150px; height: 150px; }
+  .wp-wheel-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; }
+  .wp-wheel-puck {
+    position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+    border-radius: 50%; border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5); pointer-events: none;
+  }
+  .wp-slider-wrap { width: 20px; height: 150px; }
+  .wp-slider-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 10px; }
+  .wp-slider-puck {
+    position: absolute; left: -4px; right: -4px; height: 8px; margin-top: -4px;
+    background: #fff; border: 2px solid #10263c; border-radius: 4px; pointer-events: none;
+  }
+  .wp-tabs { display: flex; justify-content: center; gap: 22px; margin: 16px 0 10px 0; }
+  .wp-tab {
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: #6f8ba8;
+    padding: 0 0 5px 0; border-bottom: 2px solid transparent;
+  }
+  .wp-tab.active { color: #fff; border-bottom-color: var(--cyan); }
+  .wp-rows { display: flex; flex-direction: column; gap: 6px; }
+  .wp-row {
+    position: relative; display: flex; align-items: center; justify-content: space-between;
+    background: #173a5c; border-radius: 6px; padding: 6px 10px; overflow: hidden;
+  }
+  .wp-row-fill { position: absolute; left: 0; top: 0; bottom: 0; background: #1f4d78; z-index: 0; }
+  .wp-row-label {
+    position: relative; z-index: 1; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; color: #a9c0d6;
+  }
+  .wp-row-input {
+    position: relative; z-index: 1; background: none; border: none; outline: none;
+    color: #fff; font-family: 'Courier New', monospace; font-size: 13px;
+    text-align: right; width: 60px;
+  }
+  .wp-row-hex .wp-row-input { width: 110px; letter-spacing: 1px; }
+
   .quick-swatches { display: flex; gap: 6px; }
   .swatch {
     width: 20px; height: 20px; border-radius: 50%;
@@ -214,11 +261,15 @@
     .quick-swatches { justify-content: center; flex-wrap: wrap; }
     .color-readout { width: 100%; text-align: center; margin-top: 2px; }
 
-    .acc-menu { max-height: 52vh; }
+    .acc-menu { max-height: 56vh; }
     .acc-header { padding: 12px 14px; font-size: 12px; }
     .acc-header.acc-sub { padding: 10px 14px 10px 22px; font-size: 11px; }
     .acc-item.open[data-finish] > .acc-body { padding: 0 14px 12px 14px; }
     .piece-tabs { justify-content: center; gap: 14px; }
+    .wp-top { gap: 14px; }
+    .wp-wheel-wrap { width: 128px; height: 128px; }
+    .wp-slider-wrap { height: 128px; }
+    .wheel-panel.open { max-height: 440px; padding: 14px; }
 
     /* The side rail visually collided with the bottom-anchored text/designer
        on narrow screens — move it out of the way instead of overlapping. */
@@ -294,17 +345,23 @@
             </button>
             <div class="acc-body">
               <div class="rows">
-                <div class="row">
-                  <label>Tapa</label>
-                  <input type="color" class="color-picker" id="picker-tradicionales-cap" value="#2e8ad6" />
-                  <div class="quick-swatches" data-finish="tradicionales" data-target="cap"></div>
-                  <span class="color-readout" id="readout-tradicionales-cap"></span>
+                <div class="row-block">
+                  <div class="row">
+                    <label>Tapa</label>
+                    <button type="button" class="color-toggle" id="toggle-tradicionales-cap"></button>
+                    <div class="quick-swatches" data-finish="tradicionales" data-target="cap"></div>
+                    <span class="color-readout" id="readout-tradicionales-cap"></span>
+                  </div>
+                  <div class="wheel-panel" id="wp-tradicionales-cap"></div>
                 </div>
-                <div class="row">
-                  <label>Cuerpo</label>
-                  <input type="color" class="color-picker" id="picker-tradicionales-body" value="#f8f8f8" />
-                  <div class="quick-swatches" data-finish="tradicionales" data-target="body"></div>
-                  <span class="color-readout" id="readout-tradicionales-body"></span>
+                <div class="row-block">
+                  <div class="row">
+                    <label>Cuerpo</label>
+                    <button type="button" class="color-toggle" id="toggle-tradicionales-body"></button>
+                    <div class="quick-swatches" data-finish="tradicionales" data-target="body"></div>
+                    <span class="color-readout" id="readout-tradicionales-body"></span>
+                  </div>
+                  <div class="wheel-panel" id="wp-tradicionales-body"></div>
                 </div>
               </div>
             </div>
@@ -317,17 +374,23 @@
             </button>
             <div class="acc-body">
               <div class="rows">
-                <div class="row">
-                  <label>Tapa</label>
-                  <input type="color" class="color-picker" id="picker-mate-cap" value="#2e8ad6" />
-                  <div class="quick-swatches" data-finish="mate" data-target="cap"></div>
-                  <span class="color-readout" id="readout-mate-cap"></span>
+                <div class="row-block">
+                  <div class="row">
+                    <label>Tapa</label>
+                    <button type="button" class="color-toggle" id="toggle-mate-cap"></button>
+                    <div class="quick-swatches" data-finish="mate" data-target="cap"></div>
+                    <span class="color-readout" id="readout-mate-cap"></span>
+                  </div>
+                  <div class="wheel-panel" id="wp-mate-cap"></div>
                 </div>
-                <div class="row">
-                  <label>Cuerpo</label>
-                  <input type="color" class="color-picker" id="picker-mate-body" value="#f8f8f8" />
-                  <div class="quick-swatches" data-finish="mate" data-target="body"></div>
-                  <span class="color-readout" id="readout-mate-body"></span>
+                <div class="row-block">
+                  <div class="row">
+                    <label>Cuerpo</label>
+                    <button type="button" class="color-toggle" id="toggle-mate-body"></button>
+                    <div class="quick-swatches" data-finish="mate" data-target="body"></div>
+                    <span class="color-readout" id="readout-mate-body"></span>
+                  </div>
+                  <div class="wheel-panel" id="wp-mate-body"></div>
                 </div>
               </div>
             </div>
@@ -404,9 +467,13 @@
 
   let capsuleGroup, capNode, capMaterial, bodyMaterial;
 
-  // Quick shortcuts (brand + common capsule colors). The picker itself (native
-  // <input type="color">, wired up below) covers the FULL color spectrum —
-  // these are just one-click favorites layered on top of it.
+  // One HSV wheel-picker instance per finish+piece pair that's been opened at
+  // least once, keyed "finish-target" (e.g. "tradicionales-cap").
+  const wheelInstances = {};
+
+  // Quick shortcuts (brand + common capsule colors). The HSV wheel picker
+  // (built below) covers the FULL color spectrum — these are just one-click
+  // favorites layered on top of it.
   const PALETTE = [
     { name: 'Azul Globalquimia', hex: 0x006f9e },
     { name: 'Cian',              hex: 0x1dbadf },
@@ -522,19 +589,56 @@
     const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
     return `rgb(${r}, ${g}, ${b})`;
   }
+  function hexToRgbArr(hexStr) {
+    const n = parseInt(hexStr.replace('#', ''), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+  }
+  function hsvToRgb(h, s, v) {
+    s /= 100; v /= 100;
+    const c = v * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = v - c;
+    let r = 0, g = 0, b = 0;
+    if (h < 60)       { r = c; g = x; b = 0; }
+    else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; }
+    else              { r = c; g = 0; b = x; }
+    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+  }
+  function rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h = 0;
+    if (d !== 0) {
+      if (max === r) h = 60 * (((g - b) / d) % 6);
+      else if (max === g) h = 60 * (((b - r) / d) + 2);
+      else h = 60 * (((r - g) / d) + 4);
+    }
+    if (h < 0) h += 360;
+    const s = max === 0 ? 0 : (d / max) * 100;
+    const v = max * 100;
+    return [h, s, v];
+  }
 
-  // Updates the on-screen controls (picker value, hex/rgb readout, selected
-  // swatch) for one finish+piece pair without touching the 3D material —
-  // used to give Mate/Metalizados a starting display value even when their
-  // finish isn't the one currently applied to the mesh.
+  // Updates the on-screen controls (toggle swatch, hex/rgb readout, selected
+  // quick-swatch, open wheel picker) for one finish+piece pair without
+  // touching the 3D material — used to give Mate a starting display value
+  // even when its finish isn't the one currently applied to the mesh.
   function refreshDisplay(target, finishKey, hexStr) {
-    const picker = document.getElementById(`picker-${finishKey}-${target}`);
-    if (picker) picker.value = hexStr;
+    const toggle = document.getElementById(`toggle-${finishKey}-${target}`);
+    if (toggle) { toggle.style.backgroundColor = hexStr; toggle.dataset.hex = hexStr; }
     const readout = document.getElementById(`readout-${finishKey}-${target}`);
     if (readout) readout.textContent = hexStr.toUpperCase() + ' · ' + hexToRgbString(hexStr);
     document.querySelectorAll(`.quick-swatches[data-finish="${finishKey}"][data-target="${target}"] .swatch`).forEach((s) => {
       s.classList.toggle('selected', s.dataset.hex === hexStr.toLowerCase());
     });
+    const wp = wheelInstances[`${finishKey}-${target}`];
+    if (wp) wp.setHex(hexStr);
   }
 
   // Applies a color AND a finish (roughness/metalness) to the actual 3D
@@ -560,6 +664,272 @@
     });
   }
 
+  // Builds (once, lazily) an embedded HSV wheel + value-slider picker inside
+  // a finish+piece's .wheel-panel, replacing the OS-native color dialog —
+  // which can't be styled to match the panel and looks wildly different
+  // across browsers/OSes.
+  function createWheelPicker(root, initialHex, onChange) {
+    root.innerHTML = `
+      <div class="wp-top">
+        <div class="wp-wheel-wrap">
+          <canvas class="wp-wheel"></canvas>
+          <div class="wp-wheel-puck"></div>
+        </div>
+        <div class="wp-slider-wrap">
+          <canvas class="wp-slider"></canvas>
+          <div class="wp-slider-puck"></div>
+        </div>
+      </div>
+      <div class="wp-tabs">
+        <button type="button" class="wp-tab active" data-mode="rgb">RGB</button>
+        <button type="button" class="wp-tab" data-mode="hsv">HSV</button>
+        <button type="button" class="wp-tab" data-mode="hex">HEX</button>
+      </div>
+      <div class="wp-rows"></div>
+    `;
+
+    const wheelWrap = root.querySelector('.wp-wheel-wrap');
+    const wheelCanvas = root.querySelector('.wp-wheel');
+    const wheelPuck = root.querySelector('.wp-wheel-puck');
+    const sliderWrap = root.querySelector('.wp-slider-wrap');
+    const sliderCanvas = root.querySelector('.wp-slider');
+    const sliderPuck = root.querySelector('.wp-slider-puck');
+    const rowsEl = root.querySelector('.wp-rows');
+    const tabs = root.querySelectorAll('.wp-tab');
+
+    // Bitmap resolution is fixed (independent of the CSS display size, which
+    // shifts at the mobile breakpoint) — the browser just scales it, and all
+    // pointer math below reads the *live* rendered rect instead of this
+    // constant, so it stays accurate at any CSS size.
+    const BITMAP = 160;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    wheelCanvas.width = wheelCanvas.height = BITMAP * dpr;
+    sliderCanvas.width = BITMAP * dpr * 0.13;
+    sliderCanvas.height = BITMAP * dpr;
+
+    let mode = 'rgb';
+    const [ir, ig, ib] = hexToRgbArr(initialHex);
+    let [h, s, v] = rgbToHsv(ir, ig, ib);
+
+    function renderWheel() {
+      const ctx = wheelCanvas.getContext('2d');
+      const size = wheelCanvas.width;
+      const cx = size / 2, cy = size / 2, radius = size / 2;
+      const img = ctx.createImageData(size, size);
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const dx = x - cx, dy = y - cy;
+          const rr = Math.sqrt(dx * dx + dy * dy) / radius;
+          const idx = (y * size + x) * 4;
+          if (rr <= 1) {
+            let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            if (angle < 0) angle += 360;
+            const [pr, pg, pb] = hsvToRgb(angle, rr * 100, v);
+            img.data[idx] = pr; img.data[idx + 1] = pg; img.data[idx + 2] = pb; img.data[idx + 3] = 255;
+          } else {
+            img.data[idx + 3] = 0;
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    function renderSlider() {
+      const ctx = sliderCanvas.getContext('2d');
+      const w = sliderCanvas.width, hh = sliderCanvas.height;
+      const [tr, tg, tb] = hsvToRgb(h, s, 100);
+      const grad = ctx.createLinearGradient(0, 0, 0, hh);
+      grad.addColorStop(0, `rgb(${tr},${tg},${tb})`);
+      grad.addColorStop(1, '#000000');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, hh);
+    }
+
+    function updatePucks() {
+      const angleRad = h * Math.PI / 180;
+      const radiusFrac = s / 100;
+      wheelPuck.style.left = (50 + radiusFrac * 50 * Math.cos(angleRad)) + '%';
+      wheelPuck.style.top = (50 + radiusFrac * 50 * Math.sin(angleRad)) + '%';
+      sliderPuck.style.top = ((1 - v / 100) * 100) + '%';
+    }
+
+    // Row DOM nodes are only rebuilt when the format tab changes
+    // (renderRowsStructure). Every other update (dragging the wheel/slider,
+    // committing a typed value) only touches existing nodes' .value/width via
+    // updateRowsValues — rebuilding the input's own DOM node from inside its
+    // own 'change' handler is what throws "node no longer a child" errors.
+    function rowSkeleton(label, max) {
+      return `<div class="wp-row" data-ch="${label}">
+        <div class="wp-row-fill"></div>
+        <span class="wp-row-label">${label}:</span>
+        <input class="wp-row-input" type="number" min="0" max="${max}" />
+      </div>`;
+    }
+
+    function bindNumberRow(label, max, cb) {
+      const row = rowsEl.querySelector(`[data-ch="${label}"]`);
+      const input = row.querySelector('input');
+      input.addEventListener('change', () => {
+        let val = parseFloat(input.value);
+        if (isNaN(val)) val = 0;
+        cb(Math.max(0, Math.min(max, val)));
+      });
+    }
+
+    function setRowValue(label, value, max) {
+      const row = rowsEl.querySelector(`[data-ch="${label}"]`);
+      if (!row) return;
+      const input = row.querySelector('input');
+      row.querySelector('.wp-row-fill').style.width = Math.max(0, Math.min(100, (value / max) * 100)) + '%';
+      if (document.activeElement !== input) input.value = Math.round(value);
+    }
+
+    function renderRowsStructure() {
+      if (mode === 'rgb') {
+        rowsEl.innerHTML = rowSkeleton('R', 255) + rowSkeleton('G', 255) + rowSkeleton('B', 255);
+        bindNumberRow('R', 255, (val) => { const [, g2, b2] = hsvToRgb(h, s, v); setFromRgb(val, g2, b2); });
+        bindNumberRow('G', 255, (val) => { const [r2, , b2] = hsvToRgb(h, s, v); setFromRgb(r2, val, b2); });
+        bindNumberRow('B', 255, (val) => { const [r2, g2] = hsvToRgb(h, s, v); setFromRgb(r2, g2, val); });
+      } else if (mode === 'hsv') {
+        rowsEl.innerHTML = rowSkeleton('H', 360) + rowSkeleton('S', 100) + rowSkeleton('V', 100);
+        bindNumberRow('H', 360, (val) => setFromHsv(val, s, v));
+        bindNumberRow('S', 100, (val) => setFromHsv(h, val, v));
+        bindNumberRow('V', 100, (val) => setFromHsv(h, s, val));
+      } else {
+        rowsEl.innerHTML = `<div class="wp-row wp-row-hex">
+          <span class="wp-row-label">HEX:</span>
+          <input class="wp-row-input" type="text" maxlength="7" />
+        </div>`;
+        const input = rowsEl.querySelector('input');
+        input.addEventListener('change', () => {
+          const val = input.value.trim();
+          if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
+            const clean = val.startsWith('#') ? val : '#' + val;
+            const [nr, ng, nb] = hexToRgbArr(clean);
+            setFromRgb(nr, ng, nb);
+          } else {
+            updateRowsValues();
+          }
+        });
+      }
+      updateRowsValues();
+    }
+
+    function updateRowsValues() {
+      const [r, g, b] = hsvToRgb(h, s, v);
+      if (mode === 'rgb') {
+        setRowValue('R', r, 255); setRowValue('G', g, 255); setRowValue('B', b, 255);
+      } else if (mode === 'hsv') {
+        setRowValue('H', h, 360); setRowValue('S', s, 100); setRowValue('V', v, 100);
+      } else {
+        const input = rowsEl.querySelector('.wp-row-input');
+        if (input && document.activeElement !== input) input.value = rgbToHex(r, g, b).toUpperCase();
+      }
+    }
+
+    function setFromRgb(r, g, b) {
+      [h, s, v] = rgbToHsv(r, g, b);
+      commit();
+    }
+    function setFromHsv(nh, ns, nv) {
+      h = nh; s = ns; v = nv;
+      commit();
+    }
+    function commit() {
+      renderWheel(); renderSlider(); updatePucks(); updateRowsValues();
+      const [r, g, b] = hsvToRgb(h, s, v);
+      onChange(rgbToHex(r, g, b));
+    }
+
+    function wheelPointFromEvent(e) {
+      const rect = wheelWrap.getBoundingClientRect();
+      const cx = rect.width / 2, cy = rect.height / 2;
+      let dx = (e.clientX - rect.left) - cx, dy = (e.clientY - rect.top) - cy;
+      let r = Math.sqrt(dx * dx + dy * dy) / (rect.width / 2);
+      if (r > 1) r = 1;
+      let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      if (angle < 0) angle += 360;
+      return [angle, r * 100];
+    }
+    function sliderValueFromEvent(e) {
+      const rect = sliderWrap.getBoundingClientRect();
+      const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+      return 100 * (1 - y / rect.height);
+    }
+
+    let draggingWheel = false, draggingSlider = false;
+    wheelWrap.addEventListener('pointerdown', (e) => {
+      draggingWheel = true;
+      wheelWrap.setPointerCapture(e.pointerId);
+      [h, s] = wheelPointFromEvent(e);
+      renderSlider(); updatePucks(); updateRowsValues();
+      onChange(rgbToHex(...hsvToRgb(h, s, v)));
+    });
+    wheelWrap.addEventListener('pointermove', (e) => {
+      if (!draggingWheel) return;
+      [h, s] = wheelPointFromEvent(e);
+      renderSlider(); updatePucks(); updateRowsValues();
+      onChange(rgbToHex(...hsvToRgb(h, s, v)));
+    });
+    wheelWrap.addEventListener('pointerup', () => { draggingWheel = false; });
+    wheelWrap.addEventListener('pointercancel', () => { draggingWheel = false; });
+
+    sliderWrap.addEventListener('pointerdown', (e) => {
+      draggingSlider = true;
+      sliderWrap.setPointerCapture(e.pointerId);
+      v = sliderValueFromEvent(e);
+      renderWheel(); updatePucks(); updateRowsValues();
+      onChange(rgbToHex(...hsvToRgb(h, s, v)));
+    });
+    sliderWrap.addEventListener('pointermove', (e) => {
+      if (!draggingSlider) return;
+      v = sliderValueFromEvent(e);
+      renderWheel(); updatePucks(); updateRowsValues();
+      onChange(rgbToHex(...hsvToRgb(h, s, v)));
+    });
+    sliderWrap.addEventListener('pointerup', () => { draggingSlider = false; });
+    sliderWrap.addEventListener('pointercancel', () => { draggingSlider = false; });
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        mode = tab.dataset.mode;
+        renderRowsStructure();
+      });
+    });
+
+    renderWheel(); renderSlider(); updatePucks(); renderRowsStructure();
+
+    return {
+      // Display-only sync (e.g. a quick-swatch click elsewhere) — no onChange.
+      // Never rebuilds row DOM nodes, so it's always safe to call even while
+      // one of this picker's own inputs has focus.
+      setHex(hexStr) {
+        const [r, g, b] = hexToRgbArr(hexStr);
+        [h, s, v] = rgbToHsv(r, g, b);
+        renderWheel(); renderSlider(); updatePucks(); updateRowsValues();
+      },
+    };
+  }
+
+  function toggleWheelPanel(finishKey, target, material) {
+    const panel = document.getElementById(`wp-${finishKey}-${target}`);
+    const willOpen = !panel.classList.contains('open');
+    // Only one wheel panel open at a time within this finish's Tapa/Cuerpo rows.
+    panel.closest('.rows').querySelectorAll('.wheel-panel').forEach((p) => p.classList.remove('open'));
+    panel.classList.toggle('open', willOpen);
+    if (!willOpen) return;
+
+    const key = `${finishKey}-${target}`;
+    if (!wheelInstances[key]) {
+      const toggle = document.getElementById(`toggle-${finishKey}-${target}`);
+      wheelInstances[key] = createWheelPicker(panel, toggle.dataset.hex, (hexStr) => {
+        setPieceColor(target, finishKey, hexStr, material);
+      });
+    }
+  }
+
   function buildAllColorControls() {
     ['cap', 'body'].forEach((target) => {
       const material = target === 'cap' ? capMaterial : bodyMaterial;
@@ -568,8 +938,8 @@
       ['tradicionales', 'mate'].forEach((finishKey) => {
         const container = document.querySelector(`.quick-swatches[data-finish="${finishKey}"][data-target="${target}"]`);
         buildSwatchGroup(container, finishKey, target, material, PALETTE);
-        const picker = document.getElementById(`picker-${finishKey}-${target}`);
-        picker.addEventListener('input', (e) => setPieceColor(target, finishKey, e.target.value, material));
+        const toggle = document.getElementById(`toggle-${finishKey}-${target}`);
+        toggle.addEventListener('click', () => toggleWheelPanel(finishKey, target, material));
         refreshDisplay(target, finishKey, defaultHex);
       });
 
