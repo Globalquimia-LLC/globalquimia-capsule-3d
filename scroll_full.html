@@ -109,9 +109,13 @@
      in beside it later without restructuring. */
   .acc-menu {
     text-align: left; background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
-    border-radius: 16px; overflow-y: auto; max-height: 46vh;
+    border-radius: 16px; overflow-y: auto; max-height: 64vh;
     box-shadow: 0 8px 24px rgba(28,64,93,0.08);
+    scrollbar-width: thin; scrollbar-color: rgba(28,64,93,0.35) transparent;
   }
+  .acc-menu::-webkit-scrollbar { width: 6px; }
+  .acc-menu::-webkit-scrollbar-track { background: transparent; }
+  .acc-menu::-webkit-scrollbar-thumb { background: rgba(28,64,93,0.3); border-radius: 3px; }
   .acc-item { border-bottom: 1px solid rgba(28,64,93,0.08); }
   .acc-item:last-child { border-bottom: none; }
   .acc-top { border-bottom: none; }
