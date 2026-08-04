@@ -1611,10 +1611,14 @@
 
   let lastScrollAdvanceAt = 0;
   function tryAdvanceOnScroll(deltaY) {
-    const designerEl = document.getElementById('designer');
-    if (!designerEl.classList.contains('active')) return false;
     const st = ScrollTrigger.getAll().find((t) => t.trigger && t.trigger.id === 'story');
-    if (!st || st.progress < 0.999) return false;
+    if (!st) return false;
+    // st.progress is smoothed by scrub:1 — it lags up to ~1s behind the
+    // real scroll position, so gating on it (progress >= 0.999) let the
+    // first wheel tick or two slip past the pin's actual end before this
+    // caught up, unpinning #story into .closing for a frame. window.scrollY
+    // vs st.end (both real pixel values, no smoothing) has no such lag.
+    if (window.scrollY < st.end - 2) return false;
 
     if (tunnelTimeline && tunnelPlaying) {
       if (deltaY < 0) tunnelTimeline.reverse();
