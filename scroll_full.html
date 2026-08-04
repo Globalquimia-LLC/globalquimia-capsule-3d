@@ -70,7 +70,8 @@
      (alpha:true, no scene background), so the number shows through
      everywhere except where the opaque capsule mesh actually paints over
      it, giving the "peeking out from behind" effect with no extra work. */
-  #canvas-container { position: absolute; inset: 0; z-index: 2; }
+  #canvas-container { position: absolute; inset: 0; z-index: 2; cursor: grab; }
+  #canvas-container.dragging { cursor: grabbing; }
   #canvas-container canvas { display: block; width: 100% !important; height: 100% !important; }
 
   /* Big background numeral for the current wizard step — always on the
@@ -80,7 +81,8 @@
   .step-number {
     position: absolute; top: 50%; transform: translateY(-50%);
     font-size: clamp(160px, 24vw, 340px); font-weight: 900; line-height: 1;
-    color: rgba(28,64,93,0.09);
+    color: rgba(28,64,93,0.22);
+    -webkit-text-stroke: 1px rgba(28,64,93,0.3);
     z-index: 1; pointer-events: none; user-select: none;
     opacity: 0;
     transition: opacity 0.35s ease;
@@ -88,6 +90,13 @@
   .step-number.visible { opacity: 1; }
   .step-number.side-left { left: 1%; }
   .step-number.side-right { right: 1%; }
+  /* Small "N / 5" tag riding just above the numeral — the numeral alone
+     reads as decoration; this is what actually tells you it's a step count. */
+  .step-number .of-total {
+    display: block; font-size: 0.14em; font-weight: 700; letter-spacing: 2px;
+    color: rgba(28,64,93,0.45); -webkit-text-stroke: 0;
+    margin-bottom: 0.05em;
+  }
 
   /* Text sits at the SIDES (never over the capsule, which stays centered) and
      scales up/down via GSAP as it enters/exits — the outer element only
@@ -128,7 +137,7 @@
     text-align: center;
     z-index: 6;
     pointer-events: none;
-    width: min(480px, 42vw);
+    width: min(560px, 48vw);
   }
   .designer.side-right { right: 6%; left: auto; }
   .designer.side-left { left: 6%; right: auto; }
@@ -147,14 +156,64 @@
   }
   .step-back:hover { color: var(--blue); transform: translateX(-2px); }
   .step-back.visible { display: inline-block; }
-  .step-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; }
-  .step-dot {
-    width: 7px; height: 7px; border-radius: 50%; background: rgba(28,64,93,0.16);
-    transition: width 0.3s ease, border-radius 0.3s ease, background 0.3s ease;
+  /* Real step indicator — 5 numbered/labeled stops instead of plain dots,
+     so it's clear up front how many steps there are and which one you're
+     on, not just that "some step" is active. */
+  .stepper { display: flex; align-items: flex-start; margin-bottom: 16px; }
+  .stepper-item { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: none; }
+  .stepper-circle {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #9aa7ad;
+    background: #fff; border: 2px solid rgba(28,64,93,0.18);
+    transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
   }
-  .step-dot.active { width: 22px; border-radius: 4px; background: var(--blue); }
+  .stepper-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+    color: #9aa7ad; white-space: nowrap; transition: color 0.25s ease;
+  }
+  .stepper-line { flex: 1 1 auto; height: 2px; background: rgba(28,64,93,0.16); margin: 11px 4px 0 4px; transition: background 0.25s ease; }
+  .stepper-item.completed .stepper-circle { background: var(--cyan); border-color: var(--cyan); color: #fff; }
+  .stepper-item.completed .stepper-label { color: var(--navy); }
+  .stepper-item.active .stepper-circle { background: var(--blue); border-color: var(--blue); color: #fff; transform: scale(1.18); }
+  .stepper-item.active .stepper-label { color: var(--navy); }
+  .stepper-line.completed { background: var(--cyan); }
+
+  .step-instruction { font-size: 13px; color: #5b6b74; line-height: 1.5; margin: 0 0 16px 0; }
+
+  /* Running summary — visible from step 1 onward, not just at the end, so
+     the accumulated choice is always in view. */
+  .running-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; min-height: 22px; }
+  .running-summary .chip {
+    font-size: 10.5px; font-weight: 700; color: var(--blue);
+    background: rgba(0,111,158,0.08); border-radius: 999px; padding: 4px 11px;
+    letter-spacing: 0.2px; white-space: nowrap;
+  }
+
+  /* "Keep scrolling" affordance, replacing the removed Continuar buttons on
+     steps that don't need an explicit pick to move on — same bobbing-arrow
+     language as the intro's own scroll hint, for visual consistency. */
+  .scroll-more-hint {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    margin-top: 18px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: #9aa7ad;
+  }
+  .scroll-more-hint::after { content: "↓"; font-size: 15px; animation: bob 1.6s ease-in-out infinite; }
+
   .step-panel { display: none; }
-  .step-panel.active { display: block; }
+  .step-panel.active { display: block; border-radius: 6px; }
+  /* Nudge — steps 1-2 need an actual click to move on, so scrolling past
+     the pinned story with nothing picked yet used to just fall through to
+     the browser's native scroll and dump the page into .closing early.
+     This plays instead: a quick highlight ring on the option list itself,
+     prompting the pick rather than silently doing nothing (or worse,
+     jumping to unrelated content). */
+  @keyframes nudge-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0,111,158,0.4); }
+    60% { box-shadow: 0 0 0 10px rgba(0,111,158,0); }
+    100% { box-shadow: 0 0 0 0 rgba(0,111,158,0); }
+  }
+  .step-panel.nudge { animation: nudge-pulse 0.55s ease-out; }
   .continue-btn {
     display: block; width: 100%; margin-top: 14px;
     background: var(--blue); color: #fff; border: none; border-radius: 4px;
@@ -182,10 +241,27 @@
   .acc-header {
     width: 100%; display: flex; align-items: center; justify-content: space-between;
     background: none; border: none; cursor: pointer; font-family: inherit;
-    padding: 14px 18px; font-size: 13px; font-weight: 700; color: var(--navy);
+    padding: 15px 18px; font-size: 15px; font-weight: 800; color: var(--navy);
   }
-  .acc-header.acc-sub { padding: 12px 18px 12px 30px; font-size: 12px; color: var(--blue); }
+  .acc-header.acc-sub { padding: 12px 18px 12px 30px; font-size: 12px; color: var(--blue); font-weight: 700; }
   .acc-chevron { font-size: 11px; color: #9aa7ad; transition: transform 0.3s ease; }
+
+  /* Finish headers (Tradicionales/Mate/Metalizados) — a small preview
+     swatch next to the label so the finish is legible at a glance, not
+     just a name. */
+  .finish-header { display: flex; align-items: center; gap: 10px; }
+  .finish-swatch { width: 20px; height: 20px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(28,64,93,0.15); }
+  .finish-swatch-tradicionales { background: radial-gradient(circle at 32% 28%, #6db8ea 0%, #006f9e 55%, #003a55 100%); }
+  .finish-swatch-mate { background: radial-gradient(circle at 32% 28%, #b9c2c7 0%, #7c8890 70%, #5c666d 100%); }
+  .finish-swatch-metalizados { background: linear-gradient(135deg, #f2f2f2 0%, #b8b8b8 30%, #e8e8e8 50%, #8a8a8a 70%, #f5f5f5 100%); }
+
+  /* Two columns (Tapa | Cuerpo) shown together — simpler than a tab you
+     have to switch to see the other piece. */
+  .color-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .color-col-label {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    color: var(--blue); margin-bottom: 8px;
+  }
   .acc-item.open > .acc-header .acc-chevron { transform: rotate(180deg); }
   .acc-header:hover { background: rgba(0,111,158,0.05); }
   /* height starts at 0/overflow:hidden — GSAP animates the actual pixel
@@ -280,7 +356,28 @@
   .capsule-icon .body-half { fill: var(--navy); }
   .size-row:hover .capsule-icon { transform: scale(1.08); }
 
-  /* 4. Logo y Texto */
+  /* 4. Logo y Texto — one piece toggle for the whole step (was: two
+     separate, independently-stateful Tapa/Cuerpo tabs, one per section,
+     easy to lose track of which piece you were even editing), and the
+     two sections shown directly instead of behind an accordion click. */
+  .piece-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
+  .piece-toggle-btn {
+    flex: 1 1 0; background: rgba(255,255,255,0.7); border: 1px solid rgba(28,64,93,0.16); border-radius: 8px;
+    font-family: inherit; font-size: 12.5px; font-weight: 700; color: #5b6b74; padding: 10px 8px; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .piece-toggle-btn:hover { border-color: var(--blue); }
+  .piece-toggle-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+  .design-section {
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(28,64,93,0.08); padding: 16px 18px; margin-bottom: 14px; text-align: left;
+  }
+  .design-section-label {
+    display: block; font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+    color: var(--navy); margin-bottom: 12px;
+  }
+
   .logo-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .logo-upload-btn {
     display: inline-block; background: var(--blue); color: #fff;
@@ -297,18 +394,15 @@
     transition: background 0.15s ease, border-color 0.15s ease;
   }
   .icon-btn:hover { background: rgba(0,111,158,0.08); border-color: var(--blue); }
-  .text-toolbar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px 0; }
-  .font-size-btns { display: flex; align-items: baseline; gap: 12px; }
+  .text-toolbar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px 0; gap: 10px; flex-wrap: wrap; }
+  .font-size-btns { display: flex; gap: 6px; }
   .font-size-btn {
-    background: none; border: none; cursor: pointer; font-family: inherit;
-    color: #9aa7ad; padding: 0;
-    transition: color 0.15s ease;
+    background: none; border: 1px solid rgba(28,64,93,0.18); border-radius: 6px; cursor: pointer; font-family: inherit;
+    color: #5b6b74; font-size: 11px; font-weight: 700; padding: 6px 12px;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
-  .font-size-btn:hover { color: var(--blue); }
-  .font-size-btn:nth-child(1) { font-size: 13px; }
-  .font-size-btn:nth-child(2) { font-size: 17px; }
-  .font-size-btn:nth-child(3) { font-size: 21px; }
-  .font-size-btn.active { color: var(--blue); text-decoration: underline; }
+  .font-size-btn:hover { border-color: var(--blue); }
+  .font-size-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
   .text-toolbar-actions { display: flex; gap: 8px; }
   .text-input {
     width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px;
@@ -318,6 +412,42 @@
   }
   .text-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,111,158,0.12); }
   .text-input::placeholder { color: #9aa7ad; }
+
+  /* 5. Cantidad y cotización — summary card + qty input, styled like the
+     rest of the wizard (acc-menu card look, text-input pattern for the
+     number field) rather than introducing a new visual language. */
+  .quote-summary {
+    text-align: left; background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
+    border-radius: 16px; box-shadow: 0 8px 24px rgba(28,64,93,0.08);
+    padding: 18px 20px;
+  }
+  .quote-summary-list {
+    list-style: none; margin: 0 0 14px 0; padding: 0;
+    font-size: 13px; color: var(--navy); line-height: 1.9;
+  }
+  .quote-summary-list li { border-bottom: 1px solid rgba(28,64,93,0.08); padding: 4px 0; }
+  .quote-summary-list li:last-child { border-bottom: none; }
+  .quote-qty-label {
+    display: block; font-size: 12px; font-weight: 700; color: var(--blue);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .quote-qty-input {
+    width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px;
+    padding: 9px 12px; border: 1px solid rgba(28,64,93,0.2); border-radius: 4px;
+    color: var(--navy); margin-bottom: 8px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .quote-qty-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,111,158,0.12); }
+  .quote-note { font-size: 11px; color: #9aa7ad; line-height: 1.5; margin: 0 0 10px 0; }
+  .quote-estimate { font-size: 13px; font-weight: 700; color: var(--navy); margin: 0; }
+  .quote-actions { margin-top: 14px; }
+  .quote-copy-btn {
+    display: block; width: 100%; margin-top: 8px;
+    background: none; color: var(--blue); border: 1px solid rgba(0,111,158,0.3); border-radius: 4px;
+    font-family: inherit; font-size: 12px; font-weight: 700; padding: 10px;
+    cursor: pointer; transition: background 0.15s ease;
+  }
+  .quote-copy-btn:hover { background: rgba(0,111,158,0.06); }
 
   .closing {
     position: relative;
@@ -349,6 +479,16 @@
   }
   .closing a.cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(253,196,0,0.3); }
   .closing .contact { margin-top: 30px; font-size: 12px; color: #7d93a4; }
+
+  /* Closing tunnel — camera dolly-in + this overlay darkening together read
+     as "flying into the capsule and everything going dark", without having
+     to navigate the camera literally through the thin-walled geometry. */
+  .tunnel-overlay {
+    position: fixed; inset: 0; z-index: 100; background: #000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+  }
+  .tunnel-logo { width: min(220px, 40vw); height: auto; opacity: 0; transform: scale(0.85); }
 
   .progress-rail {
     position: fixed; right: 22px; top: 50%; transform: translateY(-50%);
@@ -441,7 +581,7 @@
 </section>
 
 <section id="story">
-  <div class="step-number side-left" id="step-number">1</div>
+  <div class="step-number side-left" id="step-number"><span class="of-total">Paso 1 de 5</span>1</div>
   <div id="canvas-container"></div>
 
   <div class="story-text side-left" id="stage-1" data-stage="1">
@@ -470,14 +610,21 @@
   <div class="designer side-right" id="designer">
    <div class="inner">
     <button class="step-back" id="step-back" type="button">‹ Volver</button>
-    <div class="step-dots" id="step-dots">
-      <span class="step-dot active" data-step="1"></span>
-      <span class="step-dot" data-step="2"></span>
-      <span class="step-dot" data-step="3"></span>
-      <span class="step-dot" data-step="4"></span>
+    <div class="stepper" id="stepper">
+      <div class="stepper-item active" data-step="1"><span class="stepper-circle">1</span><span class="stepper-label">Tipo</span></div>
+      <div class="stepper-line"></div>
+      <div class="stepper-item" data-step="2"><span class="stepper-circle">2</span><span class="stepper-label">Talla</span></div>
+      <div class="stepper-line"></div>
+      <div class="stepper-item" data-step="3"><span class="stepper-circle">3</span><span class="stepper-label">Color</span></div>
+      <div class="stepper-line"></div>
+      <div class="stepper-item" data-step="4"><span class="stepper-circle">4</span><span class="stepper-label">Diseño</span></div>
+      <div class="stepper-line"></div>
+      <div class="stepper-item" data-step="5"><span class="stepper-circle">5</span><span class="stepper-label">Cotizar</span></div>
     </div>
     <p class="eyebrow">Personalización</p>
     <h2 id="designer-heading">Tipo de cápsula</h2>
+    <p class="step-instruction" id="step-instruction">Elegí el tipo de cápsula para tu producto.</p>
+    <div class="running-summary" id="running-summary"></div>
 
     <div class="step-panel active" data-step="1">
       <div class="option-list" id="tipo-list"></div>
@@ -491,117 +638,130 @@
       <div class="acc-menu">
 
         <div class="acc-item open" data-finish="tradicionales">
-          <button class="acc-header acc-sub" type="button">
-            <span>Tradicionales</span>
+          <button class="acc-header" type="button">
+            <span class="finish-header"><span class="finish-swatch finish-swatch-tradicionales"></span>Tradicionales</span>
             <span class="acc-chevron">▲</span>
           </button>
           <div class="acc-body">
-            <div class="piece-tabs" data-finish="tradicionales">
-              <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
-              <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
+            <div class="color-columns" data-finish="tradicionales">
+              <div class="color-col">
+                <span class="color-col-label">Tapa</span>
+                <div class="picker-mount" data-finish="tradicionales" data-target="cap"><div id="mount-tradicionales-cap"></div></div>
+                <span class="color-readout" id="readout-tradicionales-cap" data-finish="tradicionales" data-target="cap"></span>
+              </div>
+              <div class="color-col">
+                <span class="color-col-label">Cuerpo</span>
+                <div class="picker-mount" data-finish="tradicionales" data-target="body"><div id="mount-tradicionales-body"></div></div>
+                <span class="color-readout" id="readout-tradicionales-body" data-finish="tradicionales" data-target="body"></span>
+              </div>
             </div>
-            <div class="picker-mount" data-finish="tradicionales" data-target="cap"><div id="mount-tradicionales-cap"></div></div>
-            <div class="picker-mount" data-finish="tradicionales" data-target="body"><div id="mount-tradicionales-body"></div></div>
-            <span class="color-readout" id="readout-tradicionales-cap" data-finish="tradicionales" data-target="cap"></span>
-            <span class="color-readout" id="readout-tradicionales-body" data-finish="tradicionales" data-target="body"></span>
           </div>
         </div>
 
         <div class="acc-item" data-finish="mate">
-          <button class="acc-header acc-sub" type="button">
-            <span>Mate</span>
+          <button class="acc-header" type="button">
+            <span class="finish-header"><span class="finish-swatch finish-swatch-mate"></span>Mate</span>
             <span class="acc-chevron">▲</span>
           </button>
           <div class="acc-body">
-            <div class="piece-tabs" data-finish="mate">
-              <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
-              <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
+            <div class="color-columns" data-finish="mate">
+              <div class="color-col">
+                <span class="color-col-label">Tapa</span>
+                <div class="picker-mount" data-finish="mate" data-target="cap"><div id="mount-mate-cap"></div></div>
+                <span class="color-readout" id="readout-mate-cap" data-finish="mate" data-target="cap"></span>
+              </div>
+              <div class="color-col">
+                <span class="color-col-label">Cuerpo</span>
+                <div class="picker-mount" data-finish="mate" data-target="body"><div id="mount-mate-body"></div></div>
+                <span class="color-readout" id="readout-mate-body" data-finish="mate" data-target="body"></span>
+              </div>
             </div>
-            <div class="picker-mount" data-finish="mate" data-target="cap"><div id="mount-mate-cap"></div></div>
-            <div class="picker-mount" data-finish="mate" data-target="body"><div id="mount-mate-body"></div></div>
-            <span class="color-readout" id="readout-mate-cap" data-finish="mate" data-target="cap"></span>
-            <span class="color-readout" id="readout-mate-body" data-finish="mate" data-target="body"></span>
           </div>
         </div>
 
         <div class="acc-item" data-finish="metalizados">
-          <button class="acc-header acc-sub" type="button">
-            <span>Metalizados</span>
+          <button class="acc-header" type="button">
+            <span class="finish-header"><span class="finish-swatch finish-swatch-metalizados"></span>Metalizados</span>
             <span class="acc-chevron">▲</span>
           </button>
           <div class="acc-body">
-            <div class="piece-tabs" data-finish="metalizados">
-              <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
-              <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
+            <div class="color-columns" data-finish="metalizados">
+              <div class="color-col">
+                <span class="color-col-label">Tapa</span>
+                <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="cap"></div>
+                <span class="color-readout" id="readout-metalizados-cap" data-finish="metalizados" data-target="cap"></span>
+              </div>
+              <div class="color-col">
+                <span class="color-col-label">Cuerpo</span>
+                <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="body"></div>
+                <span class="color-readout" id="readout-metalizados-body" data-finish="metalizados" data-target="body"></span>
+              </div>
             </div>
-            <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="cap"></div>
-            <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="body" style="display:none;"></div>
-            <span class="color-readout" id="readout-metalizados-cap" data-finish="metalizados" data-target="cap"></span>
-            <span class="color-readout" id="readout-metalizados-body" data-finish="metalizados" data-target="body" style="display:none;"></span>
           </div>
         </div>
 
       </div>
-      <button class="continue-btn" id="color-continue-btn" type="button">Continuar →</button>
+      <div class="scroll-more-hint">Seguí bajando</div>
     </div>
 
     <div class="step-panel" data-step="4">
-      <div class="acc-menu">
-
-        <div class="acc-item" data-sub="logo">
-          <button class="acc-header acc-sub" type="button">
-            <span>Logo</span>
-            <span class="acc-chevron">▲</span>
-          </button>
-          <div class="acc-body">
-            <div class="piece-tabs" id="logo-piece-tabs">
-              <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
-              <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
-            </div>
-            <div class="logo-upload">
-              <label class="logo-upload-btn" for="logo-file-input">Subir logo</label>
-              <input type="file" id="logo-file-input" accept="image/png,image/jpeg" hidden />
-              <span class="logo-upload-name" id="logo-file-name">Ningún archivo seleccionado</span>
-              <button type="button" class="icon-btn" id="logo-clear-btn" title="Quitar logo" aria-label="Quitar logo">🗑</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="acc-item open" data-sub="texto">
-          <button class="acc-header acc-sub" type="button">
-            <span>Texto</span>
-            <span class="acc-chevron">▲</span>
-          </button>
-          <div class="acc-body">
-            <div class="piece-tabs" data-finish="texto">
-              <button class="piece-tab active" type="button" data-target="cap">Tapa</button>
-              <button class="piece-tab" type="button" data-target="body">Cuerpo</button>
-            </div>
-
-            <div class="text-toolbar">
-              <div class="font-size-btns" id="font-size-btns">
-                <button type="button" class="font-size-btn" data-size="small">A<sup>+</sup></button>
-                <button type="button" class="font-size-btn active" data-size="medium">A<sup>+</sup></button>
-                <button type="button" class="font-size-btn" data-size="large">A<sup>+</sup></button>
-              </div>
-              <div class="text-toolbar-actions">
-                <button type="button" class="icon-btn" id="text-reset-btn" title="Restablecer" aria-label="Restablecer">⟲</button>
-                <button type="button" class="icon-btn" id="text-clear-btn" title="Borrar texto" aria-label="Borrar texto">🗑</button>
-              </div>
-            </div>
-
-            <input type="text" class="text-input" id="text-input" placeholder="Digite texto aquí" maxlength="24" />
-
-            <div class="quick-swatches" id="text-color-swatches"></div>
-          </div>
-        </div>
-
+      <div class="piece-toggle" id="design-piece-toggle">
+        <button type="button" class="piece-toggle-btn active" data-target="cap">Personalizando: Tapa</button>
+        <button type="button" class="piece-toggle-btn" data-target="body">Personalizando: Cuerpo</button>
       </div>
+
+      <div class="design-section">
+        <span class="design-section-label">Logo</span>
+        <div class="logo-upload">
+          <label class="logo-upload-btn" for="logo-file-input">Subir logo</label>
+          <input type="file" id="logo-file-input" accept="image/png,image/jpeg" hidden />
+          <span class="logo-upload-name" id="logo-file-name">Ningún archivo seleccionado</span>
+          <button type="button" class="icon-btn" id="logo-clear-btn" title="Quitar logo" aria-label="Quitar logo">🗑</button>
+        </div>
+      </div>
+
+      <div class="design-section">
+        <span class="design-section-label">Texto grabado</span>
+        <input type="text" class="text-input" id="text-input" placeholder="Digite texto aquí" maxlength="24" />
+        <div class="text-toolbar">
+          <div class="font-size-btns" id="font-size-btns">
+            <button type="button" class="font-size-btn" data-size="small">Chico</button>
+            <button type="button" class="font-size-btn active" data-size="medium">Mediano</button>
+            <button type="button" class="font-size-btn" data-size="large">Grande</button>
+          </div>
+          <div class="text-toolbar-actions">
+            <button type="button" class="icon-btn" id="text-reset-btn" title="Restablecer" aria-label="Restablecer">⟲</button>
+            <button type="button" class="icon-btn" id="text-clear-btn" title="Borrar texto" aria-label="Borrar texto">🗑</button>
+          </div>
+        </div>
+        <div class="quick-swatches" id="text-color-swatches"></div>
+      </div>
+
+      <div class="scroll-more-hint">Seguí bajando</div>
+    </div>
+
+    <div class="step-panel" data-step="5">
+      <div class="quote-summary">
+        <ul class="quote-summary-list" id="quote-summary-list"></ul>
+        <label class="quote-qty-label" for="quote-qty">Cantidad de unidades</label>
+        <input type="number" class="quote-qty-input" id="quote-qty" min="1" step="1" value="1000" />
+        <p class="quote-note">La cantidad mínima de pedido varía según el producto — se confirma en la respuesta de la cotización.</p>
+        <p class="quote-estimate" id="quote-estimate"></p>
+      </div>
+      <div class="quote-actions">
+        <button class="continue-btn" id="quote-whatsapp-btn" type="button">Solicitar cotización por WhatsApp</button>
+        <button class="quote-copy-btn" id="quote-copy-btn" type="button">Copiar resumen</button>
+      </div>
+      <div class="scroll-more-hint">Seguí bajando</div>
     </div>
 
    </div>
   </div>
 </section>
+
+<div class="tunnel-overlay" id="tunnel-overlay">
+  <img class="tunnel-logo" id="tunnel-logo" src="assets/logo-blanco.png" alt="Globalquimia" />
+</div>
 
 <section class="closing">
   <img class="closing-symbol" id="closing-symbol" src="assets/simbolo.png" alt="" aria-hidden="true" />
@@ -618,6 +778,7 @@
   import * as THREE from 'three';
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
   import { DecalGeometry } from 'three/addons/geometries/DecalGeometry.js';
+  import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -672,10 +833,24 @@
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
+  // Soft shadows (PCF) read as product-photography quality at this scale;
+  // a hard shadow map on a capsule this small would just look like a
+  // pixelated dark smear under it.
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
+
+  // A tiny fake-studio environment (generated, no HDRI file to fetch) gives
+  // the metalness-heavy "Metalizados" finish something to actually reflect —
+  // with directional lights alone it just reads as flat dark grey since
+  // there's nothing in the scene for a mirror-like surface to bounce.
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
   const key = new THREE.DirectionalLight(0xffffff, 3.2);
   key.position.set(1, 1.4, 1.2);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
   const fillLight = new THREE.DirectionalLight(0xcfe0ff, 1.3);
   fillLight.position.set(-1.2, 0.3, -0.7);
@@ -685,7 +860,111 @@
   scene.add(rim);
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
 
+  // Contact shadow catcher — an invisible-except-for-its-shadow plane below
+  // the capsule. ShadowMaterial only ever paints the shadow itself, so the
+  // "floor" never appears as a visible disc, just a soft grounding shadow.
+  // Sized/positioned once the capsule's real bounding box is known (GLTF
+  // load callback below), since the whole scene lives at ~0.02-unit scale.
+  const shadowCatcher = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.ShadowMaterial({ opacity: 0.28 })
+  );
+  shadowCatcher.rotation.x = -Math.PI / 2;
+  shadowCatcher.receiveShadow = true;
+  shadowCatcher.visible = false; // shown once sized correctly, below
+  scene.add(shadowCatcher);
+
   let capsuleGroup, capNode, capMaterial, bodyMaterial, capMeshObj, bodyMeshObj;
+  let maxDimGlobal = 0;
+
+  // ---------------------------------------------------------------------
+  // Free rotation by cursor drag (the same "grab and spin" feel as
+  // visor.html's <model-viewer camera-controls>), layered on top of the
+  // scroll-driven story/wizard rotation instead of replacing it. Mouse
+  // only (pointerType check) — touch drags are left alone so they keep
+  // doing their normal job of driving the pinned scroll story; adding
+  // touch here would fight one-finger scrolling on the very same area.
+  // Scrolling again after a drag used to re-assert whatever the active GSAP
+  // scrub tween wanted for rotation.y at that scroll position by setting it
+  // directly — a hard snap from wherever the drag left it, since a scrub
+  // tween always writes its own calculated value regardless of what the
+  // property currently holds. Now the story's rotation tweens target
+  // `rotationTarget` (a plain proxy, not the object itself) and animate()
+  // eases capsuleGroup.rotation.y toward it — see ROTATION_CHASE_WINDOW_MS
+  // below — so resuming scroll after a drag glides back into sync instead
+  // of jumping.
+  // ---------------------------------------------------------------------
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0;
+  let dragStartRotY = 0, dragStartRotX = 0;
+  const DRAG_TILT_LIMIT = 0.6; // radians — keeps the vertical tilt from flipping the capsule end-over-end
+  const DRAG_SENSITIVITY = 0.012;
+
+  // Story-scrub rotation goes through this proxy instead of directly onto
+  // capsuleGroup.rotation.y (see comment above) — animate() below eases the
+  // real object toward it whenever chaseUntil is in the future, i.e. only
+  // while scroll is actively driving it, never as a passive pull at rest.
+  const rotationTarget = { y: 0 };
+  let chaseUntil = 0;
+  const ROTATION_CHASE_WINDOW_MS = 500;
+  const ROTATION_CHASE_LERP = 0.14;
+
+  // Spin momentum: tracked continuously while dragging (so it reflects how
+  // fast the cursor was moving right up to the moment of release, not just
+  // the release event itself), then left to decay once the pointer lifts —
+  // applied every frame in animate() below, not here.
+  let spinVelocityY = 0;
+  let lastPointerX = 0, lastPointerT = 0;
+  const SPIN_FRICTION = 0.95; // per-frame decay once released
+  const SPIN_MAX_VELOCITY = 0.15; // radians/frame — caps an extreme flick
+  const SPIN_MIN_VELOCITY = 0.0002; // below this it's imperceptible; stop updating
+
+  container.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || !capsuleGroup) return;
+    isDragging = true;
+    spinVelocityY = 0; // grabbing it again stops any momentum spin in progress
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragStartRotY = capsuleGroup.rotation.y;
+    dragStartRotX = capsuleGroup.rotation.x;
+    lastPointerX = e.clientX;
+    lastPointerT = performance.now();
+    container.classList.add('dragging');
+    container.setPointerCapture(e.pointerId);
+  });
+
+  container.addEventListener('pointermove', (e) => {
+    if (!isDragging || !capsuleGroup) return;
+    capsuleGroup.rotation.y = dragStartRotY + (e.clientX - dragStartX) * DRAG_SENSITIVITY;
+    capsuleGroup.rotation.x = THREE.MathUtils.clamp(
+      dragStartRotX + (e.clientY - dragStartY) * DRAG_SENSITIVITY,
+      -DRAG_TILT_LIMIT, DRAG_TILT_LIMIT
+    );
+
+    // Instantaneous velocity since the last move event, normalized to a
+    // ~16ms (one 60fps frame) reference so it's comparable to how it'll be
+    // applied per-frame later, regardless of how far apart events actually
+    // fired. Lightly smoothed (70/30) so one jittery last-frame delta right
+    // before release doesn't fully dictate the throw.
+    const now = performance.now();
+    const dt = Math.max(now - lastPointerT, 1);
+    const rawVelocity = (e.clientX - lastPointerX) * DRAG_SENSITIVITY * (16 / dt);
+    spinVelocityY = THREE.MathUtils.clamp(spinVelocityY * 0.7 + rawVelocity * 0.3, -SPIN_MAX_VELOCITY, SPIN_MAX_VELOCITY);
+    lastPointerX = e.clientX;
+    lastPointerT = now;
+  });
+
+  function endDrag(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    container.classList.remove('dragging');
+    if (e && e.pointerId !== undefined && container.hasPointerCapture(e.pointerId)) {
+      container.releasePointerCapture(e.pointerId);
+    }
+    // spinVelocityY carries over as-is — animate() below decays it every frame.
+  }
+  container.addEventListener('pointerup', endDrag);
+  container.addEventListener('pointercancel', endDrag);
 
   // One Pickr instance per finish+piece pair, keyed "finish-target"
   // (e.g. "tradicionales-cap").
@@ -754,6 +1033,11 @@
     'Cápsulas de relleno líquido - LQ-CAPS',
   ];
 
+  // Tracks what's actually been picked in each step, read by step 5's
+  // summary (renderQuoteSummary) — matches the defaults each section
+  // starts on (tipo index 2, size "0", tradicionales finish).
+  let selectedTipo = TIPO_OPTIONS[2];
+
   function buildTipoSection() {
     const list = document.getElementById('tipo-list');
 
@@ -767,6 +1051,7 @@
       btn.textContent = label;
       btn.addEventListener('click', () => {
         list.querySelectorAll('.option-row').forEach((row) => row.classList.toggle('selected', row === btn));
+        selectedTipo = label;
         goToStep(2);
       });
       list.appendChild(btn);
@@ -810,6 +1095,8 @@
   // uniform scale of capsuleGroup relative to that reference length.
   const SIZE_REFERENCE_LENGTH = 21.60;
 
+  let selectedSize = SIZE_OPTIONS.find((s) => s.code === '0');
+
   function buildSizeSection() {
     const list = document.getElementById('size-list');
     const maxLen = Math.max(...SIZE_OPTIONS.map((s) => s.length));
@@ -827,6 +1114,7 @@
       btn.innerHTML = capsuleIconSVG(opt.length, maxLen) + `<span>${labelFor(opt)}</span>`;
       btn.addEventListener('click', () => {
         list.querySelectorAll('.size-row').forEach((row) => row.classList.toggle('selected', row === btn));
+        selectedSize = opt;
         if (capsuleGroup) {
           const ratio = opt.length / SIZE_REFERENCE_LENGTH;
           gsap.to(capsuleGroup.scale, { x: ratio, y: ratio, z: ratio, duration: 1.0, ease: 'back.out(1.15)' });
@@ -864,25 +1152,35 @@
     body: { logoImg: null, logoName: '', text: '', textColor: '#000000', fontSize: 'medium' },
   };
 
+  // One shared piece toggle drives BOTH the Logo and Texto sections below —
+  // previously each section had its own independent Tapa/Cuerpo tabs, so
+  // switching piece in one didn't affect the other and it was easy to edit
+  // the wrong piece without noticing.
+  let activeDesignTarget = 'cap';
+  let refreshLogoUI = () => {};
+  let refreshTextoUI = () => {};
+
+  function setupDesignPieceToggle() {
+    const toggle = document.getElementById('design-piece-toggle');
+    toggle.querySelectorAll('.piece-toggle-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        toggle.querySelectorAll('.piece-toggle-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeDesignTarget = btn.dataset.target;
+        refreshLogoUI();
+        refreshTextoUI();
+      });
+    });
+  }
+
   function setupLogoSection() {
-    const tabGroup = document.getElementById('logo-piece-tabs');
     const fileInput = document.getElementById('logo-file-input');
     const fileNameEl = document.getElementById('logo-file-name');
     const clearBtn = document.getElementById('logo-clear-btn');
-    let activeTarget = 'cap';
 
-    function refreshUI() {
-      fileNameEl.textContent = customization[activeTarget].logoName || 'Ningún archivo seleccionado';
-    }
-
-    tabGroup.querySelectorAll('.piece-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabGroup.querySelectorAll('.piece-tab').forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        activeTarget = tab.dataset.target;
-        refreshUI();
-      });
-    });
+    refreshLogoUI = () => {
+      fileNameEl.textContent = customization[activeDesignTarget].logoName || 'Ningún archivo seleccionado';
+    };
 
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
@@ -891,10 +1189,10 @@
       reader.onload = () => {
         const img = new Image();
         img.onload = () => {
-          customization[activeTarget].logoImg = img;
-          customization[activeTarget].logoName = file.name;
-          refreshUI();
-          scheduleDecalUpdate(activeTarget);
+          customization[activeDesignTarget].logoImg = img;
+          customization[activeDesignTarget].logoName = file.name;
+          refreshLogoUI();
+          scheduleDecalUpdate(activeDesignTarget);
         };
         img.src = reader.result;
       };
@@ -903,23 +1201,21 @@
 
     clearBtn.addEventListener('click', () => {
       fileInput.value = '';
-      customization[activeTarget].logoImg = null;
-      customization[activeTarget].logoName = '';
-      refreshUI();
-      scheduleDecalUpdate(activeTarget);
+      customization[activeDesignTarget].logoImg = null;
+      customization[activeDesignTarget].logoName = '';
+      refreshLogoUI();
+      scheduleDecalUpdate(activeDesignTarget);
     });
 
-    refreshUI();
+    refreshLogoUI();
   }
 
   function setupTextoSection() {
-    const tabGroup = document.querySelector('.piece-tabs[data-finish="texto"]');
     const input = document.getElementById('text-input');
     const sizeBtnsWrap = document.getElementById('font-size-btns');
     const resetBtn = document.getElementById('text-reset-btn');
     const clearBtn = document.getElementById('text-clear-btn');
     const swatchWrap = document.getElementById('text-color-swatches');
-    let activeTarget = 'cap';
 
     TEXT_COLOR_PALETTE.forEach((c) => {
       const hexStr = '#' + c.hex.toString(16).padStart(6, '0');
@@ -929,15 +1225,15 @@
       btn.dataset.hex = hexStr;
       btn.style.backgroundColor = hexStr;
       btn.addEventListener('click', () => {
-        customization[activeTarget].textColor = hexStr;
-        refreshUI();
-        scheduleDecalUpdate(activeTarget);
+        customization[activeDesignTarget].textColor = hexStr;
+        refreshTextoUI();
+        scheduleDecalUpdate(activeDesignTarget);
       });
       swatchWrap.appendChild(btn);
     });
 
-    function refreshUI() {
-      const state = customization[activeTarget];
+    refreshTextoUI = () => {
+      const state = customization[activeDesignTarget];
       input.value = state.text;
       sizeBtnsWrap.querySelectorAll('.font-size-btn').forEach((b) => {
         b.classList.toggle('active', b.dataset.size === state.fontSize);
@@ -945,44 +1241,35 @@
       swatchWrap.querySelectorAll('.swatch').forEach((s) => {
         s.classList.toggle('selected', s.dataset.hex === state.textColor);
       });
-    }
-
-    tabGroup.querySelectorAll('.piece-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabGroup.querySelectorAll('.piece-tab').forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        activeTarget = tab.dataset.target;
-        refreshUI();
-      });
-    });
+    };
 
     input.addEventListener('input', () => {
-      customization[activeTarget].text = input.value;
-      scheduleDecalUpdate(activeTarget);
+      customization[activeDesignTarget].text = input.value;
+      scheduleDecalUpdate(activeDesignTarget);
     });
 
     sizeBtnsWrap.querySelectorAll('.font-size-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        customization[activeTarget].fontSize = btn.dataset.size;
-        refreshUI();
-        scheduleDecalUpdate(activeTarget);
+        customization[activeDesignTarget].fontSize = btn.dataset.size;
+        refreshTextoUI();
+        scheduleDecalUpdate(activeDesignTarget);
       });
     });
 
     resetBtn.addEventListener('click', () => {
-      customization[activeTarget].fontSize = 'medium';
-      customization[activeTarget].textColor = '#000000';
-      refreshUI();
-      scheduleDecalUpdate(activeTarget);
+      customization[activeDesignTarget].fontSize = 'medium';
+      customization[activeDesignTarget].textColor = '#000000';
+      refreshTextoUI();
+      scheduleDecalUpdate(activeDesignTarget);
     });
 
     clearBtn.addEventListener('click', () => {
-      customization[activeTarget].text = '';
+      customization[activeDesignTarget].text = '';
       input.value = '';
-      scheduleDecalUpdate(activeTarget);
+      scheduleDecalUpdate(activeDesignTarget);
     });
 
-    refreshUI();
+    refreshTextoUI();
   }
 
   // Rebuilding a decal re-raycasts the mesh and re-triangulates the
@@ -990,6 +1277,7 @@
   // single keystroke. Debounce to once per short pause in typing.
   const decalUpdateTimers = {};
   function scheduleDecalUpdate(target) {
+    updateRunningSummary(); // cheap — refresh immediately, don't wait on the debounce below
     clearTimeout(decalUpdateTimers[target]);
     decalUpdateTimers[target] = setTimeout(() => updateDecalForTarget(target), 200);
   }
@@ -1124,10 +1412,112 @@
   // triggered reveal already settles on (see initScrollStory), so the very
   // first transition into the wizard doesn't itself need an extra animation.
   // ---------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------
+  // 5. Cantidad y cotización — assembles every choice made in steps 1-4
+  // plus a quantity into a structured request. Deliberately does NOT
+  // compute a live price: Globalquimia has no published price list yet
+  // (marketing-plan.md §10.1) — showing a made-up number would be worse
+  // than showing none. PRICE_TABLE is the hook for when real costs exist:
+  // fill it in ({ sizeCode: { tipoLabel: pricePerThousandUSD } }) and
+  // computeEstimate starts returning a real number with no other change.
+  // ---------------------------------------------------------------------
+  const PRICE_TABLE = null;
+  const FINISH_LABELS = { tradicionales: 'Tradicional', mate: 'Mate', metalizados: 'Metalizado' };
+
+  function computeEstimate(sizeCode, tipoLabel, qty) {
+    if (!PRICE_TABLE) return null;
+    const perThousand = PRICE_TABLE[sizeCode] && PRICE_TABLE[sizeCode][tipoLabel];
+    return perThousand ? (perThousand * qty) / 1000 : null;
+  }
+
+  // Renders the summary list + estimate, and returns the plain-text
+  // version used by both the WhatsApp link and "copiar resumen".
+  function renderQuoteSummary() {
+    const qtyInput = document.getElementById('quote-qty');
+    const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+
+    const lines = [
+      `Tipo: ${selectedTipo}`,
+      `Tamaño: ${selectedSize.code} (${selectedSize.length.toFixed(2)} mm)`,
+      `Tapa: ${FINISH_LABELS[appliedColor.cap.finish]} ${appliedColor.cap.hex.toUpperCase()}`,
+      `Cuerpo: ${FINISH_LABELS[appliedColor.body.finish]} ${appliedColor.body.hex.toUpperCase()}`,
+    ];
+    if (customization.cap.logoName) lines.push(`Logo tapa: ${customization.cap.logoName}`);
+    if (customization.body.logoName) lines.push(`Logo cuerpo: ${customization.body.logoName}`);
+    if (customization.cap.text) lines.push(`Texto tapa: "${customization.cap.text}"`);
+    if (customization.body.text) lines.push(`Texto cuerpo: "${customization.body.text}"`);
+    lines.push(`Cantidad: ${qty.toLocaleString('es-CO')} unidades`);
+
+    const listEl = document.getElementById('quote-summary-list');
+    listEl.innerHTML = lines.map((l) => `<li>${l}</li>`).join('');
+
+    const estimate = computeEstimate(selectedSize.code, selectedTipo, qty);
+    document.getElementById('quote-estimate').textContent = estimate
+      ? `Estimado: $${estimate.toFixed(2)} USD`
+      : 'Precio sujeto a cotización — un asesor responde con el valor exacto.';
+
+    return lines.join('\n');
+  }
+
+  document.getElementById('quote-qty').addEventListener('input', renderQuoteSummary);
+
+  document.getElementById('quote-whatsapp-btn').addEventListener('click', () => {
+    const summary = renderQuoteSummary();
+    const msg = `Hola, quiero cotizar cápsulas personalizadas:\n${summary}`;
+    window.open(`https://wa.me/573217408144?text=${encodeURIComponent(msg)}`, '_blank');
+  });
+
+  document.getElementById('quote-copy-btn').addEventListener('click', () => {
+    const summary = renderQuoteSummary();
+    const btn = document.getElementById('quote-copy-btn');
+    const original = btn.textContent;
+    navigator.clipboard.writeText(summary).then(() => {
+      btn.textContent = 'Copiado ✓';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  });
+
   let currentStep = 1;
   let hasRevealedStep1 = false;
-  const STEP_TITLES = { 1: 'Tipo de cápsula', 2: 'Tamaño', 3: 'Color', 4: 'Logo y Texto' };
-  function capsuleSideForStep(step) { return step % 2 === 1 ? 'left' : 'right'; }
+  const STEP_TITLES = { 1: 'Tipo de cápsula', 2: 'Tamaño', 3: 'Color', 4: 'Logo y Texto', 5: 'Cantidad y cotización' };
+  const STEP_INSTRUCTIONS = {
+    1: 'Elegí el tipo de cápsula para tu producto.',
+    2: 'Elegí la talla — la cápsula escala en vivo a la proporción real.',
+    3: 'Elegí acabado y color para la tapa y el cuerpo.',
+    4: 'Agregá tu logo o un texto grabado sobre la cápsula.',
+    5: 'Revisá tu selección, ajustá la cantidad y pedí la cotización.',
+  };
+  // The capsule/menu no longer swap sides between steps — always the same
+  // layout (capsule left, panel right) so nothing appears to jump around
+  // step to step; only the capsule itself still turns to face the camera.
+
+  function updateStepper(step) {
+    document.querySelectorAll('.stepper-item').forEach((item) => {
+      const s = Number(item.dataset.step);
+      item.classList.toggle('active', s === step);
+      item.classList.toggle('completed', s < step);
+    });
+    document.querySelectorAll('.stepper-line').forEach((line, i) => {
+      line.classList.toggle('completed', i + 1 < step);
+    });
+  }
+
+  // Short accumulated-choice chips, shown from step 1 onward — not just in
+  // the step 5 summary — so the running selection is always visible.
+  function updateRunningSummary() {
+    const el = document.getElementById('running-summary');
+    if (!el) return;
+    const chips = [
+      selectedTipo.replace(/\s*-\s*[A-Z-]+$/, ''),
+      `Talla ${selectedSize.code}`,
+      `${FINISH_LABELS[appliedColor.cap.finish]} tapa ${appliedColor.cap.hex.toUpperCase()}`,
+      `${FINISH_LABELS[appliedColor.body.finish]} cuerpo ${appliedColor.body.hex.toUpperCase()}`,
+    ];
+    if (customization.cap.logoName || customization.body.logoName) chips.push('Con logo');
+    if (customization.cap.text || customization.body.text) chips.push('Con texto grabado');
+    el.innerHTML = chips.map((c) => `<span class="chip">${c}</span>`).join('');
+  }
 
   // Staggers a step panel's own top-level items in as it becomes visible —
   // list rows for Tipo/Tamaño, the finish/logo-texto cards for Color and
@@ -1145,21 +1535,21 @@
   }
 
   function goToStep(newStep) {
-    if (newStep === currentStep || newStep < 1 || newStep > 4) return;
+    if (newStep === currentStep || newStep < 1 || newStep > 5) return;
     currentStep = newStep;
 
     const designerEl = document.getElementById('designer');
     const inner = designerEl.querySelector('.inner');
     const heading = document.getElementById('designer-heading');
+    const instruction = document.getElementById('step-instruction');
     const backBtn = document.getElementById('step-back');
     const stepNumberEl = document.getElementById('step-number');
     const oldPanel = designerEl.querySelector('.step-panel.active');
     const newPanel = designerEl.querySelector(`.step-panel[data-step="${newStep}"]`);
-    const capsuleSide = capsuleSideForStep(newStep);
-    const menuSide = capsuleSide === 'left' ? 'right' : 'left';
 
     backBtn.classList.toggle('visible', newStep > 1);
-    document.querySelectorAll('.step-dot').forEach((d) => d.classList.toggle('active', Number(d.dataset.step) === newStep));
+    updateStepper(newStep);
+    updateRunningSummary();
 
     gsap.to(inner, {
       opacity: 0, y: -6, duration: 0.22, ease: 'power2.in',
@@ -1167,38 +1557,225 @@
         if (oldPanel) oldPanel.classList.remove('active');
         if (newPanel) newPanel.classList.add('active');
         heading.textContent = STEP_TITLES[newStep];
-        designerEl.classList.remove('side-left', 'side-right');
-        designerEl.classList.add('side-' + menuSide);
+        instruction.textContent = STEP_INSTRUCTIONS[newStep];
         gsap.fromTo(inner, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' });
         revealStepChildren(newPanel);
+        if (newStep === 5) renderQuoteSummary();
       },
     });
 
-    if (isDesktopLayout) {
-      gsap.to(stepNumberEl, {
-        opacity: 0, duration: 0.25, ease: 'power1.in',
-        onComplete: () => {
-          stepNumberEl.textContent = String(newStep);
-          stepNumberEl.classList.remove('side-left', 'side-right');
-          stepNumberEl.classList.add('side-' + capsuleSide);
-          gsap.to(stepNumberEl, { opacity: 1, duration: 0.3, ease: 'power1.out' });
-        },
-      });
-      if (capsuleGroup) {
-        gsap.to(capsuleGroup.rotation, { y: capsuleGroup.rotation.y + Math.PI * 0.6, duration: 0.95, ease: 'power3.inOut' });
-        gsap.to(container, { xPercent: capsuleSide === 'left' ? -14 : 14, duration: 0.95, ease: 'power3.inOut' });
-      }
-    } else {
-      // No room to slide the capsule on mobile — just swap the heading/menu.
-      stepNumberEl.textContent = String(newStep);
+    gsap.to(stepNumberEl, {
+      opacity: 0, duration: 0.25, ease: 'power1.in',
+      onComplete: () => {
+        stepNumberEl.innerHTML = `<span class="of-total">Paso ${newStep} de 5</span>${newStep}`;
+        gsap.to(stepNumberEl, { opacity: 1, duration: 0.3, ease: 'power1.out' });
+      },
+    });
+    // The capsule keeps turning to greet each new step (a bit of motion, not
+    // a side swap) — same fixed left/right layout throughout.
+    if (isDesktopLayout && capsuleGroup) {
+      gsap.to(capsuleGroup.rotation, { y: capsuleGroup.rotation.y + Math.PI * 0.6, duration: 0.95, ease: 'power3.inOut' });
     }
   }
 
   document.getElementById('step-back').addEventListener('click', () => goToStep(currentStep - 1));
-  document.getElementById('color-continue-btn').addEventListener('click', () => goToStep(4));
+
+  // ---------------------------------------------------------------------
+  // Scroll-to-continue — replaces the old "Continuar" buttons on steps 3/4,
+  // and carries step 5 on into the closing tunnel. Once the main scroll
+  // story is fully consumed (progress ~1, which is exactly when the wizard
+  // is showing at all), further downward scroll/wheel/swipe would normally
+  // just unpin #story and drop straight into .closing — intercepted here
+  // instead and repurposed as "move to the next step" while on 3, 4 or 5.
+  // Steps 1-2 stay click-driven on purpose: picking a tipo/tamaño is an
+  // actual decision, not a "continue when ready" beat.
+  // ---------------------------------------------------------------------
+  // Scrolling back up mirrors scrolling down: while the tunnel is mid-flight
+  // it reverses (same eased path, backwards, via GSAP's own .reverse() —
+  // that's what keeps it feeling like one continuous motion instead of a
+  // jump-cut back to step 5), and once it's fully closed again (or was never
+  // entered) an upward scroll retreats the wizard a step at a time —
+  // 5 -> 4 -> 3 -> 2 -> 1 — showing each one's own content as it lands,
+  // same as clicking "Volver" repeatedly but scroll-driven.
+  let lastNudgeAt = 0;
+  function nudgeStepMenu() {
+    const now = performance.now();
+    if (now - lastNudgeAt < 500) return; // already mid-pulse — let it finish instead of restacking
+    lastNudgeAt = now;
+    const panel = document.querySelector('.step-panel.active');
+    if (!panel) return;
+    panel.classList.remove('nudge');
+    void panel.offsetWidth; // force reflow so re-adding the class restarts the animation
+    panel.classList.add('nudge');
+  }
+
+  let lastScrollAdvanceAt = 0;
+  function tryAdvanceOnScroll(deltaY) {
+    const designerEl = document.getElementById('designer');
+    if (!designerEl.classList.contains('active')) return false;
+    const st = ScrollTrigger.getAll().find((t) => t.trigger && t.trigger.id === 'story');
+    if (!st || st.progress < 0.999) return false;
+
+    if (tunnelTimeline && tunnelPlaying) {
+      if (deltaY < 0) tunnelTimeline.reverse();
+      return true; // swallow all scroll while the tunnel is animating either way
+    }
+
+    if (deltaY === 0) return false;
+    if (deltaY > 0 && currentStep < 3) {
+      // Steps 1-2 stay click-only going forward — but letting the event
+      // fall through to native scroll here used to unpin #story once its
+      // scrub was maxed out, dropping straight into .closing early. Swallow
+      // it and nudge the option list instead of doing nothing (or worse).
+      nudgeStepMenu();
+      return true;
+    }
+    if (deltaY < 0 && currentStep <= 1) return false; // nothing to retreat to before step 1
+
+    // A hard swipe/wheel burst can dispatch many events in a row — without
+    // a cooldown that would blow through 2-3 steps on one gesture instead
+    // of feeling like "one scroll, one step".
+    const now = performance.now();
+    if (now - lastScrollAdvanceAt < 700) return true; // still swallow the event so the page itself doesn't scroll
+    lastScrollAdvanceAt = now;
+
+    if (deltaY > 0) {
+      if (currentStep < 5) goToStep(currentStep + 1);
+      else playTunnelSequence();
+    } else {
+      goToStep(currentStep - 1);
+    }
+    return true;
+  }
+
+  window.addEventListener('wheel', (e) => {
+    if (tryAdvanceOnScroll(e.deltaY)) e.preventDefault();
+  }, { passive: false });
+
+  let lastTouchY = null;
+  window.addEventListener('touchstart', (e) => {
+    lastTouchY = e.touches[0].clientY;
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (lastTouchY === null) return;
+    const dy = lastTouchY - e.touches[0].clientY; // finger moving up = scrolling down
+    if (tryAdvanceOnScroll(dy)) e.preventDefault();
+    lastTouchY = e.touches[0].clientY;
+  }, { passive: false });
+
+  // ---------------------------------------------------------------------
+  // Closing tunnel. Four beats:
+  //   1. The cap pops open and keeps going — flies well past the normal
+  //      "open" pose and out of frame entirely (not the same short slide
+  //      used earlier in the scroll story).
+  //   2. With the cap gone, the body turns to face the camera head-on so
+  //      its hollow opening points straight at the viewer.
+  //   3. The camera pushes into that opening while a full-screen overlay
+  //      darkens over it — together reading as "flying into the capsule".
+  //   4. Once fully black, the Globalquimia logo fades in at the end of
+  //      the tunnel, then the page auto-scrolls into .closing underneath.
+  // ---------------------------------------------------------------------
+  let tunnelStarted = false;
+  let tunnelPlaying = false;
+  let tunnelTimeline = null;
+  function playTunnelSequence() {
+    if (tunnelStarted || !camera.userData.baseDir || !capsuleGroup || !capNode) return;
+    tunnelStarted = true;
+    tunnelPlaying = true;
+    const overlay = document.getElementById('tunnel-overlay');
+    const logo = document.getElementById('tunnel-logo');
+    const dir = camera.userData.baseDir;
+    const deepInside = dir.clone().multiplyScalar(maxDimGlobal * 0.04);
+
+    // Any drag momentum still decaying would fight the scripted turn below.
+    spinVelocityY = 0;
+
+    // The body's opening faces local +Z (capNode slides further +Z to
+    // open) — rotating capsuleGroup so that axis points at the camera's
+    // fixed baseDir aims the hollow straight at the viewer, without moving
+    // the camera itself off its established look-at-origin framing.
+    const fromQuat = capsuleGroup.quaternion.clone();
+    const toQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+    const turnState = { t: 0 };
+
+    // Darkening is tied to the camera's actual distance from the capsule,
+    // not to a fixed time on the clock — everything stays fully lit at its
+    // normal color while the camera is still approaching from outside, and
+    // only starts fading to black once it actually crosses into the open
+    // body (entryDist), reaching full black exactly as it reaches the
+    // deepest point (endDist). entryDist is an approximation of where the
+    // body's rim sits (there's no exact stored value for it).
+    const endDist = deepInside.length();
+    const entryDist = maxDimGlobal * 0.35;
+
+    // capsuleGroup keeps turning by re-slerping fromQuat->toQuat every scrub
+    // of turnState.t, which plays back correctly in reverse for free — same
+    // for the camera dolly and overlay opacity below, since both are driven
+    // off a plain 0->1 progress value rather than a one-shot relative delta.
+    tunnelTimeline = gsap.timeline({
+      onReverseComplete: () => {
+        tunnelStarted = false;
+        tunnelPlaying = false;
+        overlay.style.pointerEvents = 'none';
+      },
+    })
+      // 1. Cap flies off — far past CAP_OPEN_DELTA, then fades and hides.
+      // inOut (not a hard "in") so it leaves with a gentle push rather than
+      // a snap-start, matching the softer camera dolly below.
+      .to(capNode.position, { z: CAP_OPEN_DELTA * 25, duration: 1.1, ease: 'power2.inOut' }, 0)
+      .to(capMaterial, {
+        opacity: 0, duration: 0.6, ease: 'power1.inOut',
+        onStart: () => { capMaterial.transparent = true; capMaterial.needsUpdate = true; },
+      }, 0.5)
+      // capMeshObj.visible stays true throughout — opacity alone (tweened
+      // by GSAP, which .reverse() plays back correctly either direction)
+      // is what hides it; toggling .visible via .call() doesn't have a
+      // natural "undo" and would leave the cap invisible on the way back.
+      // 2. Body turns to face the camera — starts as the cap is mid-exit.
+      .to(turnState, {
+        t: 1, duration: 1.4, ease: 'power2.inOut',
+        onUpdate: () => capsuleGroup.quaternion.slerpQuaternions(fromQuat, toQuat, turnState.t),
+      }, 0.5)
+      .set(overlay, { pointerEvents: 'auto' }, 1.7)
+      // 3. Camera pushes through the now-exposed opening — this is the beat
+      // that actually reads as "entering the tunnel", so it gets the
+      // gentlest curve of the whole sequence: inOut instead of the old hard
+      // "in" (which accelerated the whole way and slammed to a stop right
+      // as it went black) and a touch more time to cover the same distance.
+      // The overlay only starts darkening once the camera distance actually
+      // drops below entryDist, not from the start of this dolly.
+      .to(camera.position, {
+        x: deepInside.x, y: deepInside.y, z: deepInside.z,
+        duration: 2.6, ease: 'power2.inOut',
+        onUpdate: () => {
+          camera.lookAt(0, 0, 0);
+          const dist = camera.position.length();
+          overlay.style.opacity = THREE.MathUtils.clamp(
+            THREE.MathUtils.mapLinear(dist, entryDist, endDist, 0, 1),
+            0, 1
+          );
+        },
+      }, 1.7)
+      // 4. Logo at the end of the tunnel (overlay is fully black by the
+      // time the dolly above finishes).
+      .to(logo, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' })
+      .to({}, { duration: 0.9 })
+      // Past this point is the point of no return: the page itself
+      // navigates to .closing, so scrolling back up from here on is normal
+      // page scroll again rather than something this timeline can reverse.
+      .call(() => {
+        tunnelPlaying = false;
+        document.querySelector('.closing').scrollIntoView({ behavior: 'smooth' });
+      })
+      .to(overlay, {
+        opacity: 0, duration: 1.0, ease: 'power1.out',
+        onComplete: () => { overlay.style.pointerEvents = 'none'; },
+      }, '+=0.4');
+  }
 
   buildTipoSection();
   buildSizeSection();
+  setupDesignPieceToggle();
   setupLogoSection();
   setupTextoSection();
 
@@ -1226,6 +1803,11 @@
           side: THREE.DoubleSide,
         });
         obj.material = mat;
+        // The cap can cast a real shadow onto the body (and vice versa)
+        // once it swings open during the scroll story — both pieces both
+        // cast and receive so that reads correctly either way.
+        obj.castShadow = true;
+        obj.receiveShadow = true;
         if (isCap) { capMaterial = mat; capMeshObj = obj; } else { bodyMaterial = mat; bodyMeshObj = obj; }
       }
     });
@@ -1243,6 +1825,27 @@
     buildAllColorControls();
 
     const maxDim = Math.max(size.x, size.y, size.z);
+    maxDimGlobal = maxDim; // used later by the closing tunnel sequence
+
+    // Shadow camera + contact-shadow catcher, sized to the capsule's real
+    // (tiny) scale. near/far are measured from the LIGHT's actual position
+    // (still a full ~2-unit vector, unscaled) to the scene content near the
+    // origin — scaling them by maxDim alone (a ~0.02-unit quantity) would
+    // put both planes way short of where the light actually is, clipping
+    // the whole capsule out of the shadow frustum and producing no shadow.
+    const lightDist = key.position.length();
+    key.shadow.camera.left = -maxDim * 1.4;
+    key.shadow.camera.right = maxDim * 1.4;
+    key.shadow.camera.top = maxDim * 1.4;
+    key.shadow.camera.bottom = -maxDim * 1.4;
+    key.shadow.camera.near = lightDist - maxDim * 3;
+    key.shadow.camera.far = lightDist + maxDim * 3;
+    key.shadow.camera.updateProjectionMatrix();
+    key.shadow.bias = -maxDim * 0.01;
+    shadowCatcher.scale.setScalar(maxDim * 6);
+    shadowCatcher.position.y = -maxDim * 0.62;
+    shadowCatcher.visible = true;
+
     // The capsule's long axis is local Z — a camera placed straight along Z
     // stares end-on into the rounded tip (looks like a flat circle). Use a
     // 3/4 angled position instead, same yaw/pitch approach as the static
@@ -1261,6 +1864,9 @@
 
     initScrollStory(maxDim, camDist);
     window.__capsuleReady = true; // hook for automated testing
+    window.__goToStepDebug = goToStep; // hook for automated testing
+    window.__playTunnelSequenceDebug = playTunnelSequence; // hook for automated testing
+    window.__cameraDebug = camera; // hook for automated testing
   });
 
   function hexToRgbString(hexStr) {
@@ -1290,6 +1896,14 @@
     }
   }
 
+  // Last color+finish actually applied to each piece's material — three
+  // finishes each keep their own picker state, but only one is "live" on
+  // the mesh at a time; this is what step 5's summary reads.
+  const appliedColor = {
+    cap:  { finish: 'tradicionales', hex: '#2e8ad6' },
+    body: { finish: 'tradicionales', hex: '#f8f8f8' },
+  };
+
   // Applies a color AND a finish (roughness/metalness) to the actual 3D
   // material, then syncs that finish's own controls to match.
   function setPieceColor(target, finishKey, hexStr, material) {
@@ -1297,7 +1911,9 @@
     const props = FINISH_PROPS[finishKey];
     material.roughness = props.roughness;
     material.metalness = props.metalness;
+    appliedColor[target] = { finish: finishKey, hex: hexStr };
     refreshDisplay(target, finishKey, hexStr);
+    updateRunningSummary();
   }
 
   function buildSwatchGroup(container, finishKey, target, material, palette) {
@@ -1336,7 +1952,11 @@
         preview: true,
         opacity: false,
         hue: true,
-        interaction: { hex: true, rgba: true, hsla: true, hsva: true, cmyk: true, input: true, save: false },
+        // rgba/hsla/hsva/cmyk format toggles render but don't actually
+        // switch the value in this vendored build (clicking them is a
+        // no-op — verified live) — hex + free typing is what actually
+        // works, so that's all that's offered.
+        interaction: { hex: true, input: true, save: false },
       },
     });
     pickr.on('change', (color) => {
@@ -1370,19 +1990,6 @@
 
       // The mesh actually starts on Tradicionales at the original default hex.
       setPieceColor(target, 'tradicionales', defaultHex, material);
-    });
-
-    // Only "Tapa" is active by default — hide "Cuerpo"'s controls, but not
-    // until a frame after every Pickr instance above was built. Pickr's own
-    // reveal (it adds its "visible" state asynchronously, one tick after
-    // creation) never completes if the container is already display:none
-    // by the time that runs — the picker is then permanently blank even
-    // once shown again later, since the class never got applied.
-    requestAnimationFrame(() => {
-      ['tradicionales', 'mate'].forEach((finishKey) => {
-        document.querySelector(`.picker-mount[data-finish="${finishKey}"][data-target="body"]`).style.display = 'none';
-        document.getElementById(`readout-${finishKey}-body`).style.display = 'none';
-      });
     });
   }
 
@@ -1423,31 +2030,6 @@
     });
   });
 
-  // Every finish's Tapa/Cuerpo tabs swap which piece's controls are visible
-  // — a swatch grid for Metalizados, an inline Pickr panel for the other
-  // two — plus that piece's own readout. Only one piece's markup is ever
-  // shown per finish, both to match Metalizados' original design and to
-  // keep two full inline pickers from stacking in the same accordion body.
-  document.querySelectorAll('.piece-tabs[data-finish]:not([data-finish="texto"])').forEach((tabGroup) => {
-    const finishKey = tabGroup.dataset.finish;
-    tabGroup.querySelectorAll('.piece-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        const target = tab.dataset.target;
-        tabGroup.querySelectorAll('.piece-tab').forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        document.querySelectorAll(`.quick-swatches[data-finish="${finishKey}"]`).forEach((sw) => {
-          sw.style.display = sw.dataset.target === target ? 'flex' : 'none';
-        });
-        document.querySelectorAll(`.picker-mount[data-finish="${finishKey}"]`).forEach((pm) => {
-          pm.style.display = pm.dataset.target === target ? 'block' : 'none';
-        });
-        document.querySelectorAll(`.color-readout[data-finish="${finishKey}"]`).forEach((r) => {
-          r.style.display = r.dataset.target === target ? 'block' : 'none';
-        });
-      });
-    });
-  });
-
   function initScrollStory(maxDim, camDist) {
     const designerEl = document.getElementById('designer');
     const designerInner = designerEl.querySelector('.inner');
@@ -1461,6 +2043,11 @@
         scrub: 1,
         pin: true,
         onUpdate: (self) => {
+          // Re-armed on every active scrub tick — see ROTATION_CHASE_WINDOW_MS
+          // above. Idle scroll (no ticks) means this stops refreshing and the
+          // chase naturally stops too, instead of pulling the capsule back
+          // toward a stale target while the user's just left it dragged.
+          chaseUntil = performance.now() + ROTATION_CHASE_WINDOW_MS;
           document.getElementById('progress-fill').style.height = (self.progress * 100) + '%';
           designerEl.classList.toggle('active', self.progress > 0.93);
           document.getElementById('step-number').classList.toggle('visible', isDesktopLayout && self.progress > 0.93);
@@ -1482,7 +2069,7 @@
     }
 
     // Stage 1 (0 -> 0.29): closed, slow spin
-    tl.to(capsuleGroup.rotation, { y: Math.PI * 0.85, duration: 0.29, ease: 'power1.inOut' }, 0);
+    tl.to(rotationTarget, { y: Math.PI * 0.85, duration: 0.29, ease: 'power1.inOut' }, 0);
 
     // Stage 2 (0.29 -> 0.58): zoom in while the cap slides open
     tl.to(dollyState, { dist: maxDim * 1.35, duration: 0.29, ease: 'power2.inOut', onUpdate: applyDolly }, 0.29);
@@ -1507,7 +2094,7 @@
     }
 
     // Stage 3 (0.58 -> 0.72): open, continued spin, ease out a touch
-    tl.to(capsuleGroup.rotation, { y: Math.PI * 1.35, duration: 0.14, ease: 'power1.out' }, 0.58);
+    tl.to(rotationTarget, { y: Math.PI * 1.35, duration: 0.14, ease: 'power1.out' }, 0.58);
     tl.to(dollyState, { dist: maxDim * 1.9, duration: 0.14, ease: 'power2.inOut', onUpdate: applyDolly }, 0.58);
 
     // Stage 4 (0.72 -> 0.87): the cap slides back CLOSED, settling to a clean
@@ -1520,7 +2107,7 @@
         if (capNode) capNode.position.z = CAP_OPEN_DELTA * this.targets()[0].p;
       },
     }, 0.72);
-    tl.to(capsuleGroup.rotation, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
+    tl.to(rotationTarget, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
     tl.to(dollyState, { dist: maxDim * 2.3, duration: 0.15, ease: 'power2.inOut', onUpdate: applyDolly }, 0.72);
 
     // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in on the right;
@@ -1557,6 +2144,18 @@
 
   function animate() {
     requestAnimationFrame(animate);
+    // Momentum spin: only once the pointer's been released (a live drag
+    // already sets rotation.y directly above) and only while it's still
+    // fast enough to notice — decays a little more every frame.
+    if (!isDragging && capsuleGroup && Math.abs(spinVelocityY) > SPIN_MIN_VELOCITY) {
+      capsuleGroup.rotation.y += spinVelocityY;
+      spinVelocityY *= SPIN_FRICTION;
+    } else if (!isDragging && capsuleGroup && performance.now() < chaseUntil) {
+      // Story scroll is actively driving rotationTarget right now (see the
+      // ScrollTrigger onUpdate above) — ease toward it instead of snapping,
+      // so resuming scroll after a manual drag glides back into sync.
+      capsuleGroup.rotation.y += (rotationTarget.y - capsuleGroup.rotation.y) * ROTATION_CHASE_LERP;
+    }
     renderer.render(scene, camera);
   }
   animate();
