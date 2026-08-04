@@ -1617,8 +1617,23 @@
     // real scroll position, so gating on it (progress >= 0.999) let the
     // first wheel tick or two slip past the pin's actual end before this
     // caught up, unpinning #story into .closing for a frame. window.scrollY
-    // vs st.end (both real pixel values, no smoothing) has no such lag.
-    if (window.scrollY < st.end - 2) return false;
+    // vs st.end (both real pixel values, no smoothing) has no such lag —
+    // but a plain "< st.end" check alone still isn't enough: the *last*
+    // tick before actually reaching the end is still legitimately let
+    // through (correct, so the final bit of story motion isn't skipped),
+    // and a single wheel/trackpad tick's delta can easily be bigger than
+    // whatever's left of that gap, overshooting past st.end in one motion
+    // (measured: a 150px tick from 30px out landed 120px past the end —
+    // exactly the gap that let .closing peek through). So: predict where
+    // this tick would land, and if it would cross st.end, clamp the actual
+    // scroll to land exactly on it instead of wherever the raw delta says.
+    if (window.scrollY < st.end - 2) {
+      if (deltaY > 0 && window.scrollY + deltaY > st.end) {
+        window.scrollTo(0, st.end);
+        return true;
+      }
+      return false;
+    }
 
     if (tunnelTimeline && tunnelPlaying) {
       if (deltaY < 0) tunnelTimeline.reverse();
