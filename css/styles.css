@@ -7,6 +7,17 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); font-family: Arial, Helvetica, sans-serif; color: var(--navy); overflow-x: hidden; }
+/* Set on <html> once the closing tunnel reaches .closing (tunnel.js),
+   cleared by "Volver a diseñar la cápsula" (wizard.js's resetWizard) —
+   removes the marketing intro and the whole scroll-driven wizard from the
+   document entirely, rather than just scrolling past them, so .closing
+   sits at the actual top of the page. Scrolling itself stays normal —
+   with intro/#story gone there's nothing left to scroll to anyway once
+   .closing's own content fits the viewport. */
+html.quote-complete .intro, html.quote-complete #story { display: none; }
+/* Tracked wizard scroll progress — pointless once #story (what it was
+   tracking) is gone. */
+html.quote-complete .progress-rail { display: none; }
 
 header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
@@ -496,6 +507,17 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   background-color: var(--navy);
   color: #fff;
   overflow: hidden;
+}
+/* html.quote-complete removes #story entirely (see above) instead of just
+   scrolling past it — .closing's own justify-content:center + min-height:70vh
+   were tuned for arriving at it mid-scroll, so left as-is here they leave a
+   tall block of empty space above the summary where the wizard used to be,
+   even though there's nothing left to scroll through to reach it. Starting
+   content right under the fixed header instead removes that gap outright. */
+html.quote-complete .closing {
+  min-height: 0;
+  justify-content: flex-start;
+  padding-top: 120px;
 }
 /* Brand mark as a huge, barely-there watermark — parallax-scrolled at
    its own rate (see the closing ScrollTrigger) rather than pinned flat

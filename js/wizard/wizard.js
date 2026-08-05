@@ -143,6 +143,12 @@ export function initWizardShell() {
 // the tunnel has actually finished (tunnelStarted stays true past the
 // "point of no return" — see tunnel.js), so currentStep is always 5 here.
 export function resetWizard() {
+  // Undo tunnel.js's "hide the intro + wizard entirely" — bringing #story
+  // back into layout changes its height, so the ScrollTrigger refresh below
+  // (right before using its .end) is what makes storyScrollTrigger's cached
+  // start/end reflect that again instead of the collapsed display:none ones.
+  document.documentElement.classList.remove('quote-complete');
+
   // progress(0) restores cap position, body orientation, camera position,
   // and overlay opacity to exactly what they were right before
   // playTunnelSequence() started — the same restoration .reverse() already
@@ -191,6 +197,7 @@ export function resetWizard() {
   // from normalizeScroll's own position tracking.
   const st = state.storyScrollTrigger;
   if (st) {
+    ScrollTrigger.refresh(); // re-measure #story's pin distance now that it's back in layout, so st.end below is current
     if (state.scrollNormalizer) {
       state.scrollNormalizer.enable();
       state.scrollNormalizer.scrollY(st.end);
