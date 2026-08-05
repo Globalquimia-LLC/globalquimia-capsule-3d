@@ -171,30 +171,44 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   letter-spacing: 0.2px; white-space: nowrap;
 }
 
-/* "Keep scrolling" affordance, replacing the removed Continuar buttons on
-   steps that don't need an explicit pick to move on — same bobbing-arrow
-   language as the intro's own scroll hint, for visual consistency. */
-.scroll-more-hint {
+/* "Keep scrolling" / "pick one" affordance, replacing the removed
+   Continuar buttons — a filled pill instead of plain small-caps text so
+   it reads as an active prompt, not a footnote. .scroll-more-hint carries
+   the bobbing-arrow language for scroll-to-continue steps (3-5);
+   .pick-hint is the click-to-continue variant for steps 1-2, which used
+   to show no static guidance at all and relied only on the (easy-to-miss)
+   nudge pulse below to explain why scrolling wasn't moving them on. */
+.scroll-more-hint, .pick-hint {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  margin-top: 18px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px;
-  text-transform: uppercase; color: #9aa7ad;
+  margin: 20px auto 0; width: fit-content; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.4px; text-transform: uppercase; color: var(--blue);
+  background: rgba(0,111,158,0.1); border-radius: 999px; padding: 8px 18px;
 }
-.scroll-more-hint::after { content: "↓"; font-size: 15px; animation: bob 1.6s ease-in-out infinite; }
+.scroll-more-hint::after { content: "↓"; font-size: 16px; animation: bob 1.6s ease-in-out infinite; }
+/* No icon here — a slow, gentle glow (not a hard blink) instead, since a
+   click-to-continue step has no directional cue to point in. */
+@keyframes pick-hint-glow {
+  0%, 100% { background: rgba(0,111,158,0.1); color: var(--blue); }
+  50% { background: rgba(0,111,158,0.28); color: var(--navy); }
+}
+.pick-hint { animation: pick-hint-glow 2.4s ease-in-out infinite; }
 
 .step-panel { display: none; }
 .step-panel.active { display: block; border-radius: 6px; }
 /* Nudge — steps 1-2 need an actual click to move on, so scrolling past
    the pinned story with nothing picked yet used to just fall through to
    the browser's native scroll and dump the page into .closing early.
-   This plays instead: a quick highlight ring on the option list itself,
-   prompting the pick rather than silently doing nothing (or worse,
-   jumping to unrelated content). */
+   This plays instead: a highlight ring + brief scale punch on the option
+   list itself, prompting the pick rather than silently doing nothing (or
+   worse, jumping to unrelated content). Sized to actually catch the eye —
+   the original 0.55s/10px version was easy to miss entirely. */
 @keyframes nudge-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(0,111,158,0.4); }
-  60% { box-shadow: 0 0 0 10px rgba(0,111,158,0); }
+  0% { box-shadow: 0 0 0 0 rgba(0,111,158,0.55); }
+  35% { box-shadow: 0 0 0 16px rgba(0,111,158,0); transform: scale(1.006); }
+  70% { transform: scale(1); }
   100% { box-shadow: 0 0 0 0 rgba(0,111,158,0); }
 }
-.step-panel.nudge { animation: nudge-pulse 0.55s ease-out; }
+.step-panel.nudge { animation: nudge-pulse 0.9s ease-out; }
 .continue-btn {
   display: block; width: 100%; margin-top: 14px;
   background: var(--blue); color: #fff; border: none; border-radius: 4px;

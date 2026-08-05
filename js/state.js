@@ -66,6 +66,7 @@ export const state = {
   // Scroll story + scroll-advance.
   storyScrollTrigger: null, // cached once in scroll-story.js — avoids an O(n) ScrollTrigger.getAll().find() on every wheel/touch tick
   scrollNormalizer: null,
+  wizardScrollLocked: false, // tracks whether scroll-story.js has disabled scrollNormalizer for the active wizard
   lastScrollAdvanceAt: 0,
   lastNudgeAt: 0,
 

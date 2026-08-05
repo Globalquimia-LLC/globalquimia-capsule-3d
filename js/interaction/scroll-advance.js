@@ -49,7 +49,18 @@ function tryAdvanceOnScroll(deltaY) {
   // exactly the gap that let .closing peek through). So: predict where
   // this tick would land, and if it would cross st.end, clamp the actual
   // scroll to land exactly on it instead of wherever the raw delta says.
-  if (window.scrollY < st.end - 2) {
+  // This predictive clamp only matters while still approaching the pin —
+  // normalizeScroll's own engine is still driving scroll then, and is what
+  // can overshoot past st.end in one tick (see comment above). Once the
+  // wizard is active, scroll-story.js has already disabled scrollNormalizer
+  // and every wheel/touch event down here gets swallowed (falls through to
+  // the step-advance/retreat logic below, which returns true), so scrollY
+  // never actually moves again — comparing it to st.end at that point would
+  // only ever misfire (e.g. right after a step goToStep() left scrollY
+  // sitting anywhere from an earlier native scroll), and a deltaY < 0 catch
+  // here would swallow scroll-up retreats before they ever reach the
+  // step-back logic below.
+  if (!state.wizardScrollLocked && window.scrollY < st.end - 2) {
     if (deltaY > 0 && window.scrollY + deltaY > st.end) {
       window.scrollTo(0, st.end);
       return true;
@@ -58,7 +69,14 @@ function tryAdvanceOnScroll(deltaY) {
   }
 
   if (state.tunnelTimeline && state.tunnelPlaying) {
+    // Symmetric control: scroll up unwinds the sequence, scroll down drives
+    // it forward again — either direction can interrupt and take over from
+    // wherever the other one left off. Without the play() branch, scrolling
+    // down after a partial reverse did nothing (event still swallowed
+    // below), leaving the timeline to keep auto-unwinding on its own
+    // regardless of the user then trying to scroll back into it.
     if (deltaY < 0) state.tunnelTimeline.reverse();
+    else if (deltaY > 0) state.tunnelTimeline.play();
     return true; // swallow all scroll while the tunnel is animating either way
   }
 

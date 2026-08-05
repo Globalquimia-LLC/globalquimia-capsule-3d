@@ -40,11 +40,28 @@ export function initScrollStory(maxDim, camDist) {
         // stale target while the user's just left it dragged.
         state.chaseUntil = performance.now() + ROTATION_CHASE_WINDOW_MS;
         document.getElementById('progress-fill').style.height = (self.progress * 100) + '%';
-        designerEl.classList.toggle('active', self.progress > 0.93);
-        document.getElementById('step-number').classList.toggle('visible', state.isDesktopLayout && self.progress > 0.93);
-        if (!state.hasRevealedStep1 && self.progress > 0.93) {
+        const wizardActive = self.progress > 0.93;
+        designerEl.classList.toggle('active', wizardActive);
+        document.getElementById('step-number').classList.toggle('visible', state.isDesktopLayout && wizardActive);
+        if (!state.hasRevealedStep1 && wizardActive) {
           state.hasRevealedStep1 = true;
           revealStepChildren(document.querySelector('.step-panel[data-step="1"]'));
+        }
+
+        // Once the wizard is showing, normalizeScroll's own scroll engine
+        // is exactly what let a plain wheel/touch event slip past the pin
+        // into .closing even on step 1 — a preventDefault() in
+        // tryAdvanceOnScroll stops the BROWSER's native scroll, but not
+        // normalizeScroll's separate internal one, which kept nudging
+        // scrollY forward on its own regardless. Disabling it here hands
+        // scroll fully back to native behavior (which preventDefault DOES
+        // stop) for as long as the wizard is up, and re-enables it the
+        // moment scrolling back out drops below the threshold again, so
+        // the earlier scroll-driven story stages stay paced as before.
+        if (state.scrollNormalizer && wizardActive !== state.wizardScrollLocked) {
+          state.wizardScrollLocked = wizardActive;
+          if (wizardActive) state.scrollNormalizer.disable();
+          else state.scrollNormalizer.enable();
         }
       },
     },

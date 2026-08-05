@@ -13,20 +13,28 @@ export function updateStepper(step) {
   });
 }
 
-// Short accumulated-choice chips, shown from step 1 onward — not just in
-// the step 5 summary — so the running selection is always visible.
+// Short accumulated-choice chips for steps already CONFIRMED (passed on
+// the way forward) — tipo/tamaño/color all start out pre-filled with a
+// sane default (see initStepTipo/initStepTamano) so the 3D capsule always
+// has something to render, but a default nobody actually picked yet isn't
+// a "choice" worth summarizing. Gating each chip behind currentStep means
+// step 1 shows nothing at all until the user has actually moved past it,
+// instead of a full-looking 4-chip summary appearing before any real pick.
 export function updateRunningSummary() {
   const el = document.getElementById('running-summary');
   if (!el) return;
-  const { selectedTipo, selectedSize, appliedColor, customization } = state;
-  const chips = [
-    selectedTipo.replace(/\s*-\s*[A-Z-]+$/, ''),
-    `Talla ${selectedSize.code}`,
-    `${FINISH_LABELS[appliedColor.cap.finish]} tapa ${appliedColor.cap.hex.toUpperCase()}`,
-    `${FINISH_LABELS[appliedColor.body.finish]} cuerpo ${appliedColor.body.hex.toUpperCase()}`,
-  ];
-  if (customization.cap.logoName || customization.body.logoName) chips.push('Con logo');
-  if (customization.cap.text || customization.body.text) chips.push('Con texto grabado');
+  const { currentStep, selectedTipo, selectedSize, appliedColor, customization } = state;
+  const chips = [];
+  if (currentStep > 1) chips.push(selectedTipo.replace(/\s*-\s*[A-Z-]+$/, ''));
+  if (currentStep > 2) chips.push(`Talla ${selectedSize.code}`);
+  if (currentStep > 3) {
+    chips.push(`${FINISH_LABELS[appliedColor.cap.finish]} tapa ${appliedColor.cap.hex.toUpperCase()}`);
+    chips.push(`${FINISH_LABELS[appliedColor.body.finish]} cuerpo ${appliedColor.body.hex.toUpperCase()}`);
+  }
+  if (currentStep > 4) {
+    if (customization.cap.logoName || customization.body.logoName) chips.push('Con logo');
+    if (customization.cap.text || customization.body.text) chips.push('Con texto grabado');
+  }
   el.innerHTML = chips.map((c) => `<span class="chip">${c}</span>`).join('');
 }
 
