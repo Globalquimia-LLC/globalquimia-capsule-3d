@@ -104,9 +104,12 @@ export function playTunnelSequence() {
       },
     }, 1.7)
     // 4. Logo at the end of the tunnel (overlay is fully black by the
-    // time the dolly above finishes).
+    // time the dolly above finishes). Short beat after, not the long
+    // pause this used to be — the summary below is meant to read as
+    // arriving on the SAME dark screen right after the logo, not as a
+    // separate screen the user waits for.
     .to(logo, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' })
-    .to({}, { duration: 0.9 })
+    .to({}, { duration: 0.2 })
     // Past this point is the point of no return: the page itself
     // navigates to .closing, so scrolling back up from here on is normal
     // page scroll again rather than something this timeline can reverse.
@@ -129,16 +132,35 @@ export function playTunnelSequence() {
     // releases in the same tick.
     .call(() => {
       state.tunnelPlaying = false;
-      const targetY = document.querySelector('.closing').getBoundingClientRect().top + window.scrollY;
+      // Remove the intro + the whole scroll-driven wizard from the document
+      // instead of just scrolling past them — .closing becomes the real top
+      // of the page, not something sitting far down a still-scrollable
+      // document. "Volver a diseñar la cápsula" (wizard.js's resetWizard)
+      // undoes this.
+      document.documentElement.classList.add('quote-complete');
       if (state.scrollNormalizer) {
         state.scrollNormalizer.enable();
-        state.scrollNormalizer.scrollY(targetY);
+        state.scrollNormalizer.scrollY(0);
       } else {
-        window.scrollTo(0, targetY);
+        window.scrollTo(0, 0);
       }
+      // .closing-item's reveal (js/intro.js's initIntro()) is a ScrollTrigger
+      // firing on scroll CROSSING "top 75%" of .closing — that's built for a
+      // gradual scroll, and landing here is an instant position jump instead
+      // (intro/#story just vanished, scrollY snapped straight to 0), which
+      // isn't guaranteed to register as a clean crossing. Forcing it
+      // directly removes that dependency instead of hoping the trigger
+      // fires; overwrite:true so it wins over whatever state that
+      // ScrollTrigger tween is in.
+      gsap.to('.closing-item', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', overwrite: true });
     })
+    // Starts right on top of the .closing-item reveal above (was '+=0.4',
+    // a beat AFTER it) — the summary fades in while the overlay is still
+    // mostly black and only just starting to clear, so it reads as
+    // appearing on the same dark screen as the logo instead of the
+    // overlay fully clearing first and revealing a new one underneath.
     .to(overlay, {
       opacity: 0, duration: 1.0, ease: 'power1.out',
       onComplete: () => { overlay.style.pointerEvents = 'none'; },
-    }, '+=0.4');
+    }, '<');
 }
