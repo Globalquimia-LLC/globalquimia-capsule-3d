@@ -499,25 +499,23 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 }
 .quote-copy-btn:hover { background: rgba(0,111,158,0.06); }
 
+/* .closing is only ever reached one way: the tunnel completing sets
+   quote-complete on <html>, which also removes .intro/#story entirely
+   (see the rule above) — there's no "arrive here mid-scroll" case to
+   design for anymore, so content starts right under the fixed header
+   instead of being vertically centered in a tall, now mostly-empty
+   section. (This used to be a separate html.quote-complete-scoped
+   override; folded into the base rule since quote-complete is the only
+   way .closing is ever actually shown, and depending on that class
+   having been applied in time was the previous version's bug.) */
 .closing {
   position: relative;
   min-height: 70vh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; padding: 60px 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  text-align: center; padding: 120px 24px 60px;
   background-color: var(--navy);
   color: #fff;
   overflow: hidden;
-}
-/* html.quote-complete removes #story entirely (see above) instead of just
-   scrolling past it — .closing's own justify-content:center + min-height:70vh
-   were tuned for arriving at it mid-scroll, so left as-is here they leave a
-   tall block of empty space above the summary where the wizard used to be,
-   even though there's nothing left to scroll through to reach it. Starting
-   content right under the fixed header instead removes that gap outright. */
-html.quote-complete .closing {
-  min-height: 0;
-  justify-content: flex-start;
-  padding-top: 120px;
 }
 /* Brand mark as a huge, barely-there watermark — parallax-scrolled at
    its own rate (see the closing ScrollTrigger) rather than pinned flat
@@ -629,7 +627,7 @@ html.quote-complete .closing {
      on narrow screens — move it out of the way instead of overlapping. */
   .progress-rail { right: 10px; height: 90px; }
 
-  .closing { padding: 48px 20px; }
+  .closing { padding: 100px 20px 48px; }
   .closing h2 { font-size: clamp(20px, 6vw, 26px); }
 }
 
