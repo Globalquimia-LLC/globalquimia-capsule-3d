@@ -33,7 +33,11 @@ export function initDragRotation() {
   const { container } = state;
 
   container.addEventListener('pointerdown', (e) => {
-    if (e.pointerType !== 'mouse' || !state.capsuleGroup) return;
+    // Step 4 locks rotation so logo/text placement stays predictable —
+    // decal-drag.js takes over pointer handling on this same container
+    // instead. isDragging never gets set here, so pointermove/up below
+    // stay correctly inert for the whole gesture.
+    if (e.pointerType !== 'mouse' || !state.capsuleGroup || state.rotationLocked) return;
     state.isDragging = true;
     state.spinVelocityY = 0; // grabbing it again stops any momentum spin in progress
     dragStartX = e.clientX;

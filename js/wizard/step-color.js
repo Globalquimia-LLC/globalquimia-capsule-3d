@@ -30,8 +30,9 @@ function refreshDisplay(target, finishKey, hexStr) {
 }
 
 // Applies a color AND a finish (roughness/metalness) to the actual 3D
-// material, then syncs that finish's own controls to match.
-function setPieceColor(target, finishKey, hexStr, material) {
+// material, then syncs that finish's own controls to match. Exported so
+// wizard.js's resetWizard() can re-apply the original defaults.
+export function setPieceColor(target, finishKey, hexStr, material) {
   material.color.set(hexStr);
   const props = FINISH_PROPS[finishKey];
   material.roughness = props.roughness;

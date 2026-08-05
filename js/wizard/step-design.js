@@ -1,14 +1,25 @@
 import * as THREE from 'three';
 import { DecalGeometry } from 'three/addons/geometries/DecalGeometry.js';
 import { state } from '../state.js';
-import { TEXT_COLOR_PALETTE, DECAL_CANVAS, DECAL_FONT_PX } from '../constants.js';
+import { TEXT_COLOR_PALETTE, DECAL_CANVAS, DECAL_FONT_SIZE_RANGE, DECAL_ROTATION_RANGE, DECAL_SCALE_RANGE, FONT_FAMILIES, DECAL_MIN_LOGO_PX } from '../constants.js';
 import { updateRunningSummary } from './wizard.js';
 
 // ---------------------------------------------------------------------
 // 4. Logo y Texto — the one section that must actually render onto the
-// 3D capsule. Both pieces are tracked independently; each keeps its own
-// logo image + text + color + size, composited onto one canvas and
-// projected onto that piece's visible surface as a THREE.DecalGeometry.
+// 3D capsule. Logo and text are independent decals (their own canvas,
+// geometry, and placement) so each can be dragged to a different spot on
+// the same piece — see decal-drag.js for the actual drag interaction;
+// this module owns building/rebuilding the decal meshes themselves and
+// the wizard-panel UI that feeds their content.
+//
+// Placement persistence: state.customization[target].placement.{logo,text}
+// is null until first placed, then { localPoint, localNormal } in
+// capsuleGroup-LOCAL space. Every rebuild converts that one stored local
+// value against the CURRENT capsuleGroup.matrixWorld — never chained from
+// a previous world value — so it survives the capsule rotating on other
+// steps with zero drift. Only valid because capMeshObj/bodyMeshObj never
+// move relative to capsuleGroup during steps 1-5 (capNode's own open/close
+// offset is pinned for that whole span — see scroll-story.js/tunnel.js).
 //
 // One shared piece toggle drives BOTH the Logo and Texto sections —
 // previously each section had its own independent Tapa/Cuerpo tabs, so
@@ -31,18 +42,75 @@ function setupDesignPieceToggle() {
   });
 }
 
+// Rotation (degrees) + scale (percent) sliders — identical wiring for the
+// logo and text sections, just targeting `${type}RotationDeg`/`${type}ScalePct`
+// on the active piece's customization and rebuilding that type's decal.
+// Returns a refresh() that syncs the sliders to whatever's active.
+function setupRotateScaleControls(type, rotSlider, rotReadout, scaleSlider, scaleReadout) {
+  rotSlider.min = DECAL_ROTATION_RANGE.min;
+  rotSlider.max = DECAL_ROTATION_RANGE.max;
+  rotSlider.step = DECAL_ROTATION_RANGE.step;
+  scaleSlider.min = DECAL_SCALE_RANGE.min;
+  scaleSlider.max = DECAL_SCALE_RANGE.max;
+  scaleSlider.step = DECAL_SCALE_RANGE.step;
+
+  const rotKey = type + 'RotationDeg';
+  const scaleKey = type + 'ScalePct';
+
+  rotSlider.addEventListener('input', () => {
+    const target = state.activeDesignTarget;
+    state.customization[target][rotKey] = Number(rotSlider.value);
+    rotReadout.textContent = rotSlider.value + '°';
+    scheduleDecalUpdate(target, type);
+  });
+  scaleSlider.addEventListener('input', () => {
+    const target = state.activeDesignTarget;
+    state.customization[target][scaleKey] = Number(scaleSlider.value);
+    scaleReadout.textContent = scaleSlider.value + '%';
+    scheduleDecalUpdate(target, type);
+  });
+
+  return () => {
+    const s = state.customization[state.activeDesignTarget];
+    rotSlider.value = s[rotKey];
+    rotReadout.textContent = s[rotKey] + '°';
+    scaleSlider.value = s[scaleKey];
+    scaleReadout.textContent = s[scaleKey] + '%';
+  };
+}
+
 function setupLogoSection() {
   const fileInput = document.getElementById('logo-file-input');
   const fileNameEl = document.getElementById('logo-file-name');
   const clearBtn = document.getElementById('logo-clear-btn');
+  const errorEl = document.getElementById('logo-error');
+  const warningEl = document.getElementById('logo-quality-warning');
+
+  const refreshLogoTransform = setupRotateScaleControls(
+    'logo',
+    document.getElementById('logo-rotation-slider'), document.getElementById('logo-rotation-readout'),
+    document.getElementById('logo-scale-slider'), document.getElementById('logo-scale-readout')
+  );
 
   refreshLogoUI = () => {
     fileNameEl.textContent = state.customization[state.activeDesignTarget].logoName || 'Ningún archivo seleccionado';
+    errorEl.hidden = true;
+    warningEl.hidden = !state.customization[state.activeDesignTarget].logoImg
+      || !state.customization[state.activeDesignTarget].logoLowRes;
+    refreshLogoTransform();
   };
 
   fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
     if (!file) return;
+    if (file.type !== 'image/png') {
+      errorEl.textContent = 'El logo debe ser un archivo PNG (con transparencia).';
+      errorEl.hidden = false;
+      warningEl.hidden = true;
+      fileInput.value = '';
+      return;
+    }
+    errorEl.hidden = true;
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
@@ -50,8 +118,12 @@ function setupLogoSection() {
         const target = state.activeDesignTarget;
         state.customization[target].logoImg = img;
         state.customization[target].logoName = file.name;
+        // Non-blocking — a small but simple logo can still look fine, but a
+        // low-res image projected onto the decal's physical size is the
+        // most common way this ends up visibly pixelated.
+        state.customization[target].logoLowRes = Math.min(img.width, img.height) < DECAL_MIN_LOGO_PX;
         refreshLogoUI();
-        scheduleDecalUpdate(target);
+        scheduleDecalUpdate(target, 'logo');
       };
       img.src = reader.result;
     };
@@ -63,8 +135,12 @@ function setupLogoSection() {
     const target = state.activeDesignTarget;
     state.customization[target].logoImg = null;
     state.customization[target].logoName = '';
+    state.customization[target].logoLowRes = false;
+    state.customization[target].placement.logo = null; // fresh upload starts at the default spot again
+    state.customization[target].logoRotationDeg = DECAL_ROTATION_RANGE.default;
+    state.customization[target].logoScalePct = DECAL_SCALE_RANGE.default;
     refreshLogoUI();
-    scheduleDecalUpdate(target);
+    scheduleDecalUpdate(target, 'logo');
   });
 
   refreshLogoUI();
@@ -72,10 +148,30 @@ function setupLogoSection() {
 
 function setupTextoSection() {
   const input = document.getElementById('text-input');
-  const sizeBtnsWrap = document.getElementById('font-size-btns');
+  const sizeSlider = document.getElementById('font-size-slider');
+  const sizeReadout = document.getElementById('font-size-readout');
+  const familySelect = document.getElementById('font-family-select');
+  const weightBtnsWrap = document.getElementById('font-weight-btns');
   const resetBtn = document.getElementById('text-reset-btn');
   const clearBtn = document.getElementById('text-clear-btn');
   const swatchWrap = document.getElementById('text-color-swatches');
+
+  sizeSlider.min = DECAL_FONT_SIZE_RANGE.min;
+  sizeSlider.max = DECAL_FONT_SIZE_RANGE.max;
+  sizeSlider.step = DECAL_FONT_SIZE_RANGE.step;
+
+  const refreshTextTransform = setupRotateScaleControls(
+    'text',
+    document.getElementById('text-rotation-slider'), document.getElementById('text-rotation-readout'),
+    document.getElementById('text-scale-slider'), document.getElementById('text-scale-readout')
+  );
+
+  FONT_FAMILIES.forEach((f) => {
+    const opt = document.createElement('option');
+    opt.value = f.css;
+    opt.textContent = f.name;
+    familySelect.appendChild(opt);
+  });
 
   TEXT_COLOR_PALETTE.forEach((c) => {
     const hexStr = '#' + c.hex.toString(16).padStart(6, '0');
@@ -88,7 +184,7 @@ function setupTextoSection() {
       const target = state.activeDesignTarget;
       state.customization[target].textColor = hexStr;
       refreshTextoUI();
-      scheduleDecalUpdate(target);
+      scheduleDecalUpdate(target, 'text');
     });
     swatchWrap.appendChild(btn);
   });
@@ -96,42 +192,66 @@ function setupTextoSection() {
   refreshTextoUI = () => {
     const s = state.customization[state.activeDesignTarget];
     input.value = s.text;
-    sizeBtnsWrap.querySelectorAll('.font-size-btn').forEach((b) => {
-      b.classList.toggle('active', b.dataset.size === s.fontSize);
+    sizeSlider.value = s.fontSizePx;
+    sizeReadout.textContent = s.fontSizePx + 'px';
+    familySelect.value = s.fontFamily;
+    weightBtnsWrap.querySelectorAll('.font-size-btn').forEach((b) => {
+      b.classList.toggle('active', b.dataset.weight === s.fontWeight);
     });
     swatchWrap.querySelectorAll('.swatch').forEach((sw) => {
       sw.classList.toggle('selected', sw.dataset.hex === s.textColor);
     });
+    refreshTextTransform();
   };
 
   input.addEventListener('input', () => {
     const target = state.activeDesignTarget;
     state.customization[target].text = input.value;
-    scheduleDecalUpdate(target);
+    scheduleDecalUpdate(target, 'text');
   });
 
-  sizeBtnsWrap.querySelectorAll('.font-size-btn').forEach((btn) => {
+  sizeSlider.addEventListener('input', () => {
+    const target = state.activeDesignTarget;
+    state.customization[target].fontSizePx = Number(sizeSlider.value);
+    sizeReadout.textContent = sizeSlider.value + 'px';
+    scheduleDecalUpdate(target, 'text');
+  });
+
+  familySelect.addEventListener('change', () => {
+    const target = state.activeDesignTarget;
+    state.customization[target].fontFamily = familySelect.value;
+    scheduleDecalUpdate(target, 'text');
+  });
+
+  weightBtnsWrap.querySelectorAll('.font-size-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const target = state.activeDesignTarget;
-      state.customization[target].fontSize = btn.dataset.size;
+      state.customization[target].fontWeight = btn.dataset.weight;
       refreshTextoUI();
-      scheduleDecalUpdate(target);
+      scheduleDecalUpdate(target, 'text');
     });
   });
 
   resetBtn.addEventListener('click', () => {
     const target = state.activeDesignTarget;
-    state.customization[target].fontSize = 'medium';
-    state.customization[target].textColor = '#000000';
+    const s = state.customization[target];
+    s.fontSizePx = DECAL_FONT_SIZE_RANGE.default;
+    s.fontFamily = FONT_FAMILIES[0].css;
+    s.fontWeight = '700';
+    s.textColor = '#000000';
+    s.textRotationDeg = DECAL_ROTATION_RANGE.default;
+    s.textScalePct = DECAL_SCALE_RANGE.default;
+    s.placement.text = null; // full reset, including position
     refreshTextoUI();
-    scheduleDecalUpdate(target);
+    scheduleDecalUpdate(target, 'text');
   });
 
   clearBtn.addEventListener('click', () => {
     const target = state.activeDesignTarget;
     state.customization[target].text = '';
+    state.customization[target].placement.text = null;
     input.value = '';
-    scheduleDecalUpdate(target);
+    scheduleDecalUpdate(target, 'text');
   });
 
   refreshTextoUI();
@@ -141,64 +261,63 @@ function setupTextoSection() {
 // DecalGeometry — cheap individually, but not something to redo on every
 // single keystroke. Debounce to once per short pause in typing.
 const decalUpdateTimers = {};
-function scheduleDecalUpdate(target) {
+function scheduleDecalUpdate(target, type) {
   updateRunningSummary(); // cheap — refresh immediately, don't wait on the debounce below
-  clearTimeout(decalUpdateTimers[target]);
-  decalUpdateTimers[target] = setTimeout(() => updateDecalForTarget(target), 200);
+  const key = target + ':' + type;
+  clearTimeout(decalUpdateTimers[key]);
+  decalUpdateTimers[key] = setTimeout(() => updateDecalForTarget(target, type), 200);
 }
 
-function disposeDecal(target) {
-  const mesh = state.decalMeshes[target];
+function disposeDecal(target, type) {
+  const mesh = state.decalMeshes[target][type];
   if (!mesh) return;
   if (mesh.parent) mesh.parent.remove(mesh);
   mesh.geometry.dispose();
   if (mesh.material.map) mesh.material.map.dispose();
   mesh.material.dispose();
-  state.decalMeshes[target] = null;
+  state.decalMeshes[target][type] = null;
 }
 
-function buildDecalCanvas(s) {
+function buildLogoCanvas(s) {
   const canvas = document.createElement('canvas');
   canvas.width = DECAL_CANVAS.w;
   canvas.height = DECAL_CANVAS.h;
   const ctx = canvas.getContext('2d');
-  const hasLogo = !!s.logoImg;
-  const hasText = !!s.text.trim();
-  let textY = canvas.height / 2;
+  const logoH = canvas.height * 0.8;
+  const logoW = Math.min(canvas.width * 0.9, logoH * (s.logoImg.width / s.logoImg.height));
+  ctx.drawImage(s.logoImg, (canvas.width - logoW) / 2, (canvas.height - logoH) / 2, logoW, logoH);
+  return canvas;
+}
 
-  if (hasLogo && hasText) {
-    const logoH = canvas.height * 0.42;
-    const logoW = Math.min(canvas.width * 0.7, logoH * (s.logoImg.width / s.logoImg.height));
-    ctx.drawImage(s.logoImg, (canvas.width - logoW) / 2, canvas.height * 0.05, logoW, logoH);
-    textY = canvas.height * 0.8;
-  } else if (hasLogo) {
-    const logoH = canvas.height * 0.7;
-    const logoW = Math.min(canvas.width * 0.85, logoH * (s.logoImg.width / s.logoImg.height));
-    ctx.drawImage(s.logoImg, (canvas.width - logoW) / 2, (canvas.height - logoH) / 2, logoW, logoH);
+function buildTextCanvas(s) {
+  const canvas = document.createElement('canvas');
+  canvas.width = DECAL_CANVAS.w;
+  canvas.height = DECAL_CANVAS.h;
+  const ctx = canvas.getContext('2d');
+  // The decal is clipped to a fixed physical box on the capsule — long text
+  // at a fixed font size can run past that box and get cut off. Shrink to
+  // fit the canvas width instead of letting that happen.
+  let fontPx = s.fontSizePx;
+  const maxTextWidth = canvas.width * 0.88;
+  ctx.font = `${s.fontWeight} ${fontPx}px ${s.fontFamily}`;
+  while (ctx.measureText(s.text).width > maxTextWidth && fontPx > 14) {
+    fontPx -= 2;
+    ctx.font = `${s.fontWeight} ${fontPx}px ${s.fontFamily}`;
   }
-  if (hasText) {
-    // The decal is clipped to a fixed physical box on the capsule — long
-    // text at a fixed font size can run past that box and get cut off.
-    // Shrink to fit the canvas width instead of letting that happen.
-    let fontPx = DECAL_FONT_PX[s.fontSize];
-    const maxTextWidth = canvas.width * 0.88;
-    ctx.font = `700 ${fontPx}px Arial, Helvetica, sans-serif`;
-    while (ctx.measureText(s.text).width > maxTextWidth && fontPx > 14) {
-      fontPx -= 2;
-      ctx.font = `700 ${fontPx}px Arial, Helvetica, sans-serif`;
-    }
-    ctx.fillStyle = s.textColor;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(s.text, canvas.width / 2, textY);
-  }
+  ctx.fillStyle = s.textColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(s.text, canvas.width / 2, canvas.height / 2);
   return canvas;
 }
 
 // Finds a point + outward normal on `mesh`'s camera-facing surface by
 // raycasting from the camera's side straight at it — stays correct
 // regardless of the capsule's current rotation, with no hand-derived
-// cylinder-surface trigonometry to get wrong.
+// cylinder-surface trigonometry to get wrong. Used only as the DEFAULT
+// placement the first time a logo/text is added — after that, the user's
+// own drag (decal-drag.js) takes over and this is never called again for
+// that piece+type until it's cleared.
 function findVisibleSurfacePoint(mesh) {
   const { camera } = state;
   if (!camera.userData.baseDir) return null;
@@ -216,42 +335,102 @@ function findVisibleSurfacePoint(mesh) {
   return { point: hit.point, normal: worldNormal, pieceSize };
 }
 
-function updateDecalForTarget(target) {
-  disposeDecal(target);
+// World <-> capsuleGroup-local conversion for stored placements — the only
+// two directions this ever needs, factored out so decal-drag.js's live
+// reposition path and this module's content-rebuild path share the exact
+// same math instead of it existing in two places and drifting apart.
+// transformDirection (not the full normal matrix) is correct here only
+// because capsuleGroup's scale is uniform (every capsule size is a uniform
+// scale of the same reference model, per SIZE_REFERENCE_LENGTH in
+// constants.js) — transformDirection normalizes away the scale, which for
+// a uniform scale gives the exact same direction the true inverse-transpose
+// normal matrix would. A future non-uniform scale on capsuleGroup would
+// need the general normal-matrix form instead.
+export function worldToLocalPlacement(worldPoint, worldNormal) {
+  const inv = state.capsuleGroup.matrixWorld.clone().invert();
+  return {
+    localPoint: worldPoint.clone().applyMatrix4(inv),
+    localNormal: worldNormal.clone().transformDirection(inv).normalize(),
+  };
+}
+
+export function localToWorldPlacement(placement) {
+  const mw = state.capsuleGroup.matrixWorld;
+  return {
+    worldPoint: placement.localPoint.clone().applyMatrix4(mw),
+    worldNormal: placement.localNormal.clone().transformDirection(mw).normalize(),
+  };
+}
+
+// Shared by the content-rebuild path below and decal-drag.js's live
+// reposition path — the only place DecalGeometry actually gets built, so
+// the trickiest math (world-space construction + local-space reparenting)
+// exists in exactly one place.
+//
+// rotation (radians) twists the decal in-plane around its own surface
+// normal; scale multiplies its footprint. Both default to identity so
+// existing callers that don't care about them still work.
+export function buildDecalGeometryAt(mesh, worldPoint, worldNormal, pieceSize, rotation = 0, scale = 1) {
+  const dummy = new THREE.Object3D();
+  dummy.position.copy(worldPoint);
+  dummy.lookAt(worldPoint.clone().add(worldNormal));
+  dummy.rotateZ(rotation); // around the projection axis (dummy's local Z, i.e. worldNormal) - twists the printed image, not its placement
+
+  // decalW covers roughly half the piece's diameter (scaled by the user's
+  // own size control on top). decalDepth is the box's extent along the
+  // projection axis (split evenly in front of / behind the surface point) -
+  // the capsule is a thin HOLLOW shell, not solid, so there's nothing
+  // physically stopping a too-deep box from reaching all the way through to
+  // the far side of the same curved cross-section and clipping a second,
+  // unwanted copy of the decal there. Deep enough to comfortably cover the
+  // local curvature under decalW (sag there is roughly decalW^2/(4*diameter),
+  // well under a tenth of diameter even at max scale) but well short of the
+  // ~diameter reach needed to punch through to the opposite wall.
+  const diameter = Math.max(pieceSize.x, pieceSize.y);
+  const decalW = diameter * 0.55 * scale;
+  const decalH = decalW * (DECAL_CANVAS.h / DECAL_CANVAS.w);
+  const decalDepth = diameter * 0.4;
+  const decalSize = new THREE.Vector3(decalW, decalH, decalDepth);
+
+  const geometry = new DecalGeometry(mesh, worldPoint, dummy.rotation, decalSize);
+  // DecalGeometry bakes vertices in WORLD space using mesh.matrixWorld at
+  // this exact moment. capsuleGroup keeps rotating as the user scrolls (on
+  // steps other than 4), so the geometry has to be converted into
+  // capsuleGroup's local space before parenting under it — otherwise the
+  // decal stays fixed in world space while the capsule spins away from
+  // underneath it.
+  geometry.applyMatrix4(state.capsuleGroup.matrixWorld.clone().invert());
+  return geometry;
+}
+
+export function updateDecalForTarget(target, type) {
+  disposeDecal(target, type);
   const mesh = target === 'cap' ? state.capMeshObj : state.bodyMeshObj;
   const s = state.customization[target];
-  if (!mesh || !state.capsuleGroup || (!s.logoImg && !s.text.trim())) return;
+  const hasContent = type === 'logo' ? !!s.logoImg : !!s.text.trim();
+  if (!mesh || !state.capsuleGroup || !hasContent) return;
 
-  const surface = findVisibleSurfacePoint(mesh);
-  if (!surface) return;
+  let worldPoint, worldNormal, pieceSize;
+  if (s.placement[type]) {
+    ({ worldPoint, worldNormal } = localToWorldPlacement(s.placement[type]));
+    pieceSize = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3());
+  } else {
+    const surface = findVisibleSurfacePoint(mesh);
+    if (!surface) return;
+    worldPoint = surface.point;
+    worldNormal = surface.normal;
+    pieceSize = surface.pieceSize;
+    s.placement[type] = worldToLocalPlacement(worldPoint, worldNormal); // persist the default so it doesn't re-derive (and potentially drift) on every rebuild
+  }
 
-  const canvas = buildDecalCanvas(s);
+  const canvas = type === 'logo' ? buildLogoCanvas(s) : buildTextCanvas(s);
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
   texture.colorSpace = THREE.SRGBColorSpace;
 
-  const dummy = new THREE.Object3D();
-  dummy.position.copy(surface.point);
-  dummy.lookAt(surface.point.clone().add(surface.normal));
-
-  // decalW covers most of the piece's diameter; decalDepth needs to be
-  // generous — it's the box's extent along the projection axis, and a
-  // curved surface recedes away from that axis fast, so a shallow box
-  // clips the projection before it reaches the edges of decalW at all.
-  const diameter = Math.max(surface.pieceSize.x, surface.pieceSize.y);
-  const decalW = diameter * 0.7;
-  const decalH = decalW * (DECAL_CANVAS.h / DECAL_CANVAS.w);
-  const decalDepth = diameter * 2.2;
-  const decalSize = new THREE.Vector3(decalW, decalH, decalDepth);
-
-  const geometry = new DecalGeometry(mesh, surface.point, dummy.rotation, decalSize);
-  // DecalGeometry bakes vertices in WORLD space using mesh.matrixWorld at
-  // this exact moment. capsuleGroup keeps rotating as the user scrolls,
-  // so the geometry has to be converted into capsuleGroup's local space
-  // before parenting under it — otherwise the decal stays fixed in world
-  // space while the capsule spins away from underneath it.
-  geometry.applyMatrix4(state.capsuleGroup.matrixWorld.clone().invert());
-
+  const rotation = THREE.MathUtils.degToRad(s[type + 'RotationDeg']);
+  const scale = s[type + 'ScalePct'] / 100;
+  const geometry = buildDecalGeometryAt(mesh, worldPoint, worldNormal, pieceSize, rotation, scale);
   const material = new THREE.MeshStandardMaterial({
     map: texture,
     transparent: true,
@@ -264,7 +443,41 @@ function updateDecalForTarget(target) {
   });
   const decalMesh = new THREE.Mesh(geometry, material);
   state.capsuleGroup.add(decalMesh);
-  state.decalMeshes[target] = decalMesh;
+  state.decalMeshes[target][type] = decalMesh;
+}
+
+// Full reset for "Volver a diseñar la cápsula" (wizard.js's resetWizard) —
+// disposes every decal and puts both pieces' customization back to their
+// initial defaults, then refreshes the panel UI (file input, text input,
+// sliders) to match. refreshLogoUI/refreshTextoUI are the same module-level
+// closures the section setup functions assign, safe to call directly here.
+export function resetDesignCustomization() {
+  ['cap', 'body'].forEach((target) => {
+    disposeDecal(target, 'logo');
+    disposeDecal(target, 'text');
+    const s = state.customization[target];
+    s.logoImg = null;
+    s.logoName = '';
+    s.logoLowRes = false;
+    s.text = '';
+    s.textColor = '#000000';
+    s.fontSizePx = DECAL_FONT_SIZE_RANGE.default;
+    s.fontFamily = FONT_FAMILIES[0].css;
+    s.fontWeight = '700';
+    s.placement = { logo: null, text: null };
+    s.logoRotationDeg = DECAL_ROTATION_RANGE.default;
+    s.logoScalePct = DECAL_SCALE_RANGE.default;
+    s.textRotationDeg = DECAL_ROTATION_RANGE.default;
+    s.textScalePct = DECAL_SCALE_RANGE.default;
+  });
+  state.activeDesignTarget = 'cap';
+  document.querySelectorAll('#design-piece-toggle .piece-toggle-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.target === 'cap');
+  });
+  document.getElementById('logo-file-input').value = '';
+  document.getElementById('text-input').value = '';
+  refreshLogoUI();
+  refreshTextoUI();
 }
 
 export function initStepDesign() {

@@ -110,10 +110,32 @@ export function playTunnelSequence() {
     // Past this point is the point of no return: the page itself
     // navigates to .closing, so scrolling back up from here on is normal
     // page scroll again rather than something this timeline can reverse.
+    //
+    // This can fire while the page is still sitting at the pinned #story
+    // position (button-triggered from step 5, never having scrolled past
+    // it) rather than already right at the pin's end (the old scroll-
+    // triggered path). element.scrollIntoView() is a native DOM API — with
+    // normalizeScroll re-enabled a line above, it drives an animated scroll
+    // that normalizeScroll's own internal position tracking never sees,
+    // the same class of desync that caused every other normalizeScroll bug
+    // this project has hit. The visible symptom: #story's ScrollTrigger
+    // pin never receives a clean "crossed past end" signal, so it stays
+    // visually stuck pinned - the wizard panel keeps showing over .closing
+    // instead of releasing - and the transition reads as a stray extra
+    // scroll animation on top of the tunnel's own. Going through the
+    // normalizer's own scrollY() setter (same mechanism scroll-story.js's
+    // onLeave already uses to snap position) is an instant, correctly-
+    // observed jump instead - no second scroll animation, and the pin
+    // releases in the same tick.
     .call(() => {
       state.tunnelPlaying = false;
-      if (state.scrollNormalizer) state.scrollNormalizer.enable();
-      document.querySelector('.closing').scrollIntoView({ behavior: 'smooth' });
+      const targetY = document.querySelector('.closing').getBoundingClientRect().top + window.scrollY;
+      if (state.scrollNormalizer) {
+        state.scrollNormalizer.enable();
+        state.scrollNormalizer.scrollY(targetY);
+      } else {
+        window.scrollTo(0, targetY);
+      }
     })
     .to(overlay, {
       opacity: 0, duration: 1.0, ease: 'power1.out',

@@ -130,7 +130,45 @@ export const TEXT_COLOR_PALETTE = [
   { name: 'Dorado',      hex: 0xe8b923 },
 ];
 export const DECAL_CANVAS = { w: 512, h: 256 };
-export const DECAL_FONT_PX = { small: 34, medium: 52, large: 74 };
+// Continuous slider instead of a fixed small/medium/large set — min/max/step
+// are in real px on the DECAL_CANVAS's own coordinate space (buildTextCanvas
+// still shrinks-to-fit if a large size + long text would overflow).
+export const DECAL_FONT_SIZE_RANGE = { min: 18, max: 110, step: 2, default: 52 };
+// Free rotate/resize for a placed logo or text decal, on top of drag-to-
+// reposition — degrees and percent so the values map directly onto slider
+// UI, converted only where buildDecalGeometryAt actually needs radians/a
+// plain multiplier.
+export const DECAL_ROTATION_RANGE = { min: -180, max: 180, step: 5, default: 0 };
+export const DECAL_SCALE_RANGE = { min: 50, max: 200, step: 5, default: 100 };
+// No @font-face — canvas ctx.font can only use fonts already on the device,
+// and this project doesn't load external fonts. Each entry's css string is
+// what actually goes into ctx.font, fallback stack included.
+export const FONT_FAMILIES = [
+  { name: 'Arial', css: 'Arial, Helvetica, sans-serif' },
+  { name: 'Helvetica', css: 'Helvetica, Arial, sans-serif' },
+  { name: 'Verdana', css: 'Verdana, Geneva, sans-serif' },
+  { name: 'Tahoma', css: 'Tahoma, Geneva, sans-serif' },
+  { name: 'Trebuchet MS', css: '"Trebuchet MS", sans-serif' },
+  { name: 'Segoe UI', css: '"Segoe UI", Arial, sans-serif' },
+  { name: 'Calibri', css: 'Calibri, Candara, sans-serif' },
+  { name: 'Century Gothic', css: '"Century Gothic", "Segoe UI", sans-serif' },
+  { name: 'Georgia', css: 'Georgia, serif' },
+  { name: 'Times New Roman', css: '"Times New Roman", Times, serif' },
+  { name: 'Garamond', css: 'Garamond, Georgia, serif' },
+  { name: 'Palatino', css: '"Palatino Linotype", Palatino, serif' },
+  { name: 'Cambria', css: 'Cambria, Georgia, serif' },
+  { name: 'Courier New', css: '"Courier New", Courier, monospace' },
+  { name: 'Consolas', css: 'Consolas, "Courier New", monospace' },
+  { name: 'Impact', css: 'Impact, Haettenschweiler, sans-serif' },
+  { name: 'Comic Sans MS', css: '"Comic Sans MS", "Comic Sans", cursive' },
+];
+export const FONT_WEIGHTS = [
+  { name: 'Normal', value: '400' },
+  { name: 'Negrita', value: '700' },
+];
+// Soft-warning threshold (px, shorter image dimension) for logo upload
+// resolution — below this the projected decal is likely to look blurry.
+export const DECAL_MIN_LOGO_PX = 300;
 
 // ---------------------------------------------------------------------
 // 5. Cantidad y cotización — deliberately does NOT compute a live price:
@@ -151,6 +189,6 @@ export const STEP_INSTRUCTIONS = {
   1: 'Elegí el tipo de cápsula para tu producto.',
   2: 'Elegí la talla — la cápsula escala en vivo a la proporción real.',
   3: 'Elegí acabado y color para la tapa y el cuerpo.',
-  4: 'Agregá tu logo o un texto grabado sobre la cápsula.',
+  4: 'Agregá tu logo o un texto grabado y arrastralo sobre la cápsula para ubicarlo donde quieras.',
   5: 'Revisá tu selección, ajustá la cantidad y pedí la cotización.',
 };

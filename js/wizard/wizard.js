@@ -1,6 +1,22 @@
 import { state } from '../state.js';
-import { STEP_TITLES, STEP_INSTRUCTIONS, FINISH_LABELS } from '../constants.js';
+import { STEP_TITLES, STEP_INSTRUCTIONS, FINISH_LABELS, TIPO_OPTIONS, DEFAULT_TIPO_INDEX, SIZE_OPTIONS } from '../constants.js';
 import { renderQuoteSummary } from './step-quote.js';
+import { setPieceColor } from './step-color.js';
+import { resetDesignCustomization } from './step-design.js';
+
+// The pose the capsule locks to for step 4: long axis horizontal AND
+// perpendicular to the viewer (lying flat across the screen, full side
+// visible — not angled toward/away from the camera). Derived from the
+// camera's own fixed viewing direction rather than a hand-picked angle, so
+// it stays correct if scene.js's camera yaw/pitch ever changes: the
+// capsule's local Z axis, after a pure Y-rotation by theta, points at
+// world (sin(theta), 0, cos(theta)) — solving for that to be parallel to
+// the camera's world-space "right" vector (derived from baseDir, since the
+// camera has no roll) gives theta = atan2(baseDir.z, -baseDir.x).
+function computeStep4LockRotationY() {
+  const dir = state.camera.userData.baseDir;
+  return Math.atan2(dir.z, -dir.x);
+}
 
 export function updateStepper(step) {
   document.querySelectorAll('.stepper-item').forEach((item) => {
@@ -97,13 +113,89 @@ export function goToStep(newStep) {
   gsap.killTweensOf(stepNumberEl);
   gsap.fromTo(stepNumberEl, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power1.out' });
 
+  // Step 4 needs the capsule to hold still so logo/text placement is
+  // predictable — computed fresh on every call (not "set true entering 4,
+  // false entering 5") so going back 4 -> 3 also correctly unlocks it.
+  state.rotationLocked = newStep === 4;
+  state.container.classList.toggle('rotation-locked', state.rotationLocked);
+
   // The capsule keeps turning to greet each new step (a bit of motion, not
-  // a side swap) — same fixed left/right layout throughout.
+  // a side swap) — same fixed left/right layout throughout. Step 4 instead
+  // snaps to a fixed pose and stays there for the whole step.
   if (state.isDesktopLayout && state.capsuleGroup) {
-    gsap.to(state.capsuleGroup.rotation, { y: state.capsuleGroup.rotation.y + Math.PI * 0.6, duration: 0.95, ease: 'power3.inOut' });
+    gsap.killTweensOf(state.capsuleGroup.rotation);
+    if (state.rotationLocked) {
+      state.spinVelocityY = 0; // momentum isn't a tween — killTweensOf above doesn't touch it
+      gsap.to(state.capsuleGroup.rotation, { x: 0, y: computeStep4LockRotationY(), duration: 0.9, ease: 'power3.inOut' });
+    } else {
+      gsap.to(state.capsuleGroup.rotation, { y: state.capsuleGroup.rotation.y + Math.PI * 0.6, duration: 0.95, ease: 'power3.inOut' });
+    }
   }
 }
 
 export function initWizardShell() {
   document.getElementById('step-back').addEventListener('click', () => goToStep(state.currentStep - 1));
+  document.getElementById('closing-redesign-btn').addEventListener('click', resetWizard);
+}
+
+// "Volver a diseñar la cápsula" (.closing, after a completed quote) — a
+// full reset back to step 1, not just a scroll back. Only reachable once
+// the tunnel has actually finished (tunnelStarted stays true past the
+// "point of no return" — see tunnel.js), so currentStep is always 5 here.
+export function resetWizard() {
+  // progress(0) restores cap position, body orientation, camera position,
+  // and overlay opacity to exactly what they were right before
+  // playTunnelSequence() started — the same restoration .reverse() already
+  // does via scroll-up, just instant instead of animated back through the
+  // whole choreography. Then kill it outright so a later
+  // playTunnelSequence() call builds a completely fresh timeline.
+  if (state.tunnelTimeline) {
+    state.tunnelTimeline.progress(0);
+    state.tunnelTimeline.kill();
+    state.tunnelTimeline = null;
+  }
+  state.tunnelStarted = false;
+  state.tunnelPlaying = false;
+  const overlay = document.getElementById('tunnel-overlay');
+  overlay.style.opacity = 0;
+  overlay.style.pointerEvents = 'none';
+  document.getElementById('tunnel-logo').style.opacity = 0;
+
+  state.selectedTipo = TIPO_OPTIONS[DEFAULT_TIPO_INDEX];
+  document.querySelectorAll('#tipo-list .option-row').forEach((row, i) => {
+    row.classList.toggle('selected', i === DEFAULT_TIPO_INDEX);
+  });
+  state.selectedSize = SIZE_OPTIONS.find((s) => s.code === '0');
+  document.querySelectorAll('#size-list .size-row').forEach((row, i) => {
+    row.classList.toggle('selected', SIZE_OPTIONS[i].code === '0');
+  });
+  if (state.capsuleGroup) state.capsuleGroup.scale.setScalar(1); // ratio for size '0' (the reference length) is 1
+
+  // Re-applies to the actual materials, not just state, so the capsule
+  // visually resets too — same defaults scene.js's GLTF-load callback
+  // originally applied.
+  if (state.capMaterial) setPieceColor('cap', 'tradicionales', '#2e8ad6', state.capMaterial);
+  if (state.bodyMaterial) setPieceColor('body', 'tradicionales', '#f8f8f8', state.bodyMaterial);
+
+  resetDesignCustomization();
+
+  state.hasRevealedStep1 = false; // step 1's entrance stagger plays again, like a genuine first visit
+  goToStep(1);
+
+  // Land back on the wizard itself, not the very top of the page — .closing
+  // sits well past #story's pin, so a plain "scroll to 0" would surface the
+  // marketing intro before the wizard even starts, exactly the confusing
+  // state this button exists to get out of. Same normalizer.scrollY()
+  // pattern used everywhere else in this project for a programmatic jump,
+  // for the same reason: a native scrollTo/scrollIntoView here would desync
+  // from normalizeScroll's own position tracking.
+  const st = state.storyScrollTrigger;
+  if (st) {
+    if (state.scrollNormalizer) {
+      state.scrollNormalizer.enable();
+      state.scrollNormalizer.scrollY(st.end);
+    } else {
+      window.scrollTo(0, st.end);
+    }
+  }
 }

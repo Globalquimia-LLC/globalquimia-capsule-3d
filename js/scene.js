@@ -162,10 +162,10 @@ export function initScene() {
     // Momentum spin: only once the pointer's been released (a live drag
     // already sets rotation.y directly in drag.js) and only while it's
     // still fast enough to notice — decays a little more every frame.
-    if (!state.isDragging && state.capsuleGroup && Math.abs(state.spinVelocityY) > SPIN_MIN_VELOCITY) {
+    if (!state.isDragging && !state.rotationLocked && state.capsuleGroup && Math.abs(state.spinVelocityY) > SPIN_MIN_VELOCITY) {
       state.capsuleGroup.rotation.y += state.spinVelocityY;
       state.spinVelocityY *= SPIN_FRICTION;
-    } else if (!state.isDragging && state.capsuleGroup && performance.now() < state.chaseUntil) {
+    } else if (!state.isDragging && !state.rotationLocked && state.capsuleGroup && performance.now() < state.chaseUntil) {
       // Story scroll is actively driving rotationTarget right now (see the
       // ScrollTrigger onUpdate in scroll-story.js) — ease toward it instead
       // of snapping, so resuming scroll after a manual drag glides back

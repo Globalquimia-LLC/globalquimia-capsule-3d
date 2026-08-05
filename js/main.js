@@ -5,6 +5,7 @@
 import { initIntro } from './intro.js';
 import { initScene } from './scene.js';
 import { initDragRotation } from './interaction/drag.js';
+import { initDecalDrag } from './interaction/decal-drag.js';
 import { initScrollAdvance } from './interaction/scroll-advance.js';
 import { initWizardShell } from './wizard/wizard.js';
 import { initStepTipo } from './wizard/step-tipo.js';
@@ -30,6 +31,7 @@ initWizardShell();
 initStepTipo();
 initStepTamano();
 initStepDesign();
+initDecalDrag();
 initStepQuote();
 initAccordion();
 

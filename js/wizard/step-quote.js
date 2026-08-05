@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { PRICE_TABLE, FINISH_LABELS, WHATSAPP_NUMBER } from '../constants.js';
+import { playTunnelSequence } from '../interaction/tunnel.js';
 
 // ---------------------------------------------------------------------
 // 5. Cantidad y cotización — assembles every choice made in steps 1-4
@@ -35,8 +36,13 @@ export function renderQuoteSummary() {
   if (customization.body.text) lines.push(`Texto cuerpo: "${customization.body.text}"`);
   lines.push(`Cantidad: ${qty.toLocaleString('es-CO')} unidades`);
 
-  const listEl = document.getElementById('quote-summary-list');
-  listEl.innerHTML = lines.map((l) => `<li>${l}</li>`).join('');
+  const itemsHTML = lines.map((l) => `<li>${l}</li>`).join('');
+  document.getElementById('quote-summary-list').innerHTML = itemsHTML;
+  // Also feeds .closing's own summary — that section only becomes visible
+  // once the tunnel animation finishes, well past the step-5 panel this
+  // list normally lives in, so it needs its own copy of the same content.
+  const closingListEl = document.getElementById('closing-summary-list');
+  if (closingListEl) closingListEl.innerHTML = itemsHTML;
 
   const estimate = computeEstimate(selectedSize.code, selectedTipo, qty);
   document.getElementById('quote-estimate').textContent = estimate
@@ -49,7 +55,17 @@ export function renderQuoteSummary() {
 export function initStepQuote() {
   document.getElementById('quote-qty').addEventListener('input', renderQuoteSummary);
 
+  // "Solicitar cotización" no longer opens WhatsApp directly — it plays the
+  // closing tunnel (capsule flies open, camera dives through it, the
+  // Globalquimia logo appears at the end) and hands off into .closing,
+  // which carries its own copy of this same summary plus the actual
+  // WhatsApp contact action below.
   document.getElementById('quote-whatsapp-btn').addEventListener('click', () => {
+    renderQuoteSummary();
+    playTunnelSequence();
+  });
+
+  document.getElementById('closing-whatsapp-btn').addEventListener('click', () => {
     const summary = renderQuoteSummary();
     const msg = `Hola, quiero cotizar cápsulas personalizadas:\n${summary}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');

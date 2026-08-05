@@ -43,18 +43,39 @@ export const state = {
   },
   pickrInstances: {},
 
-  // Step 4 — Logo y Texto.
+  // Step 4 — Logo y Texto. `placement.{logo,text}` is null until first
+  // placed, then `{ localPoint, localNormal }` in capsuleGroup-LOCAL space —
+  // valid across the capsule rotating on other steps with zero drift, since
+  // it's converted to world space fresh off the CURRENT matrixWorld on every
+  // rebuild rather than chained from a previous world value. Only holds
+  // because capMeshObj/bodyMeshObj never move relative to capsuleGroup
+  // during steps 1-5 (see step-design.js's buildDecalGeometryAt) — a future
+  // feature animating the cap open during step 4/5 would break that.
   activeDesignTarget: 'cap',
   customization: {
-    cap: { logoImg: null, logoName: '', text: '', textColor: '#000000', fontSize: 'medium' },
-    body: { logoImg: null, logoName: '', text: '', textColor: '#000000', fontSize: 'medium' },
+    cap: {
+      logoImg: null, logoName: '', logoLowRes: false, text: '', textColor: '#000000', fontSizePx: 52,
+      fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: '700', placement: { logo: null, text: null },
+      // Degrees / percent (not radians / raw multiplier) — these feed slider
+      // UI directly; converted at the one point buildDecalGeometryAt needs them.
+      logoRotationDeg: 0, logoScalePct: 100, textRotationDeg: 0, textScalePct: 100,
+    },
+    body: {
+      logoImg: null, logoName: '', logoLowRes: false, text: '', textColor: '#000000', fontSizePx: 52,
+      fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: '700', placement: { logo: null, text: null },
+      logoRotationDeg: 0, logoScalePct: 100, textRotationDeg: 0, textScalePct: 100,
+    },
   },
-  decalMeshes: { cap: null, body: null },
+  decalMeshes: { cap: { logo: null, text: null }, body: { logo: null, text: null } },
 
   // Cursor-drag rotation + momentum spin (scene.js's animate() loop reads
   // isDragging/spinVelocityY every frame).
   isDragging: false,
   spinVelocityY: 0,
+  // True only on step 4 — capsule holds a fixed pose so logo/text placement
+  // is predictable. drag.js and scene.js's animate() both check this; the
+  // decal-drag module is what's active instead while it's true.
+  rotationLocked: false,
 
   // Story-scrub rotation goes through this proxy instead of directly onto
   // capsuleGroup.rotation.y so a resumed scroll after a manual drag glides

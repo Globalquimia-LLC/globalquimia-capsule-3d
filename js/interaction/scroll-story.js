@@ -128,7 +128,7 @@ export function initScrollStory(maxDim, camDist) {
   // skew) slides left to make room for it.
   tl.fromTo(designerInner, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.1, overwrite: false }, 0.90);
   if (state.isDesktopLayout) {
-    tl.to(canvasContainer, { xPercent: -14, duration: 0.1, ease: 'power1.inOut', overwrite: false }, 0.90);
+    tl.to(canvasContainer, { xPercent: -26, duration: 0.1, ease: 'power1.inOut', overwrite: false }, 0.90);
     designerEl.classList.add('side-right');
   }
 
