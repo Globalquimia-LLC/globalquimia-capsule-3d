@@ -531,18 +531,6 @@ html.quote-complete .closing {
 .closing > * { position: relative; z-index: 1; }
 .closing-item { opacity: 0; transform: translateY(24px); }
 .closing h2 { font-size: clamp(22px, 4vw, 34px); margin: 0 0 14px 0; max-width: 640px; }
-/* Everything after the tunnel is meant to read as "done" first, action
-   second — no recap of the whole configuration (that already lived once
-   in step 5's own panel), just a confirmation plus the one real action
-   (the WhatsApp send) and a way back if something needs changing. */
-.closing-ok { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-bottom: 34px; }
-.closing-ok-check {
-  width: 60px; height: 60px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--cyan); color: var(--navy);
-  font-size: 28px; font-weight: 900; line-height: 1;
-}
-.closing-ok span:last-child { font-size: clamp(22px, 4vw, 30px); font-weight: 900; letter-spacing: 3px; color: #fff; }
 .closing p { font-size: 14px; color: #a9bccb; margin: 0 0 26px 0; }
 .closing .cta {
   display: inline-block; background: var(--yellow); color: var(--navy);
