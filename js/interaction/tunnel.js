@@ -19,6 +19,15 @@ export function playTunnelSequence() {
   if (state.tunnelStarted || !camera.userData.baseDir || !capsuleGroup || !capNode) return;
   state.tunnelStarted = true;
   state.tunnelPlaying = true;
+  // tryAdvanceOnScroll (scroll-advance.js) swallows wheel/touch events
+  // while the tunnel plays, but normalizeScroll drives the actual page
+  // position through its own internal engine — a wheel event being
+  // "prevented" doesn't stop THAT engine from still nudging scrollY on
+  // its own, which is what let .closing peek in underneath mid-animation.
+  // Disabling it here freezes scroll completely (our own wheel listener
+  // keeps receiving events regardless, so scroll-up-to-reverse still
+  // works); re-enabled right before the scrollIntoView handoff below.
+  if (state.scrollNormalizer) state.scrollNormalizer.disable();
   const overlay = document.getElementById('tunnel-overlay');
   const logo = document.getElementById('tunnel-logo');
   const dir = camera.userData.baseDir;
@@ -54,6 +63,7 @@ export function playTunnelSequence() {
       state.tunnelStarted = false;
       state.tunnelPlaying = false;
       overlay.style.pointerEvents = 'none';
+      if (state.scrollNormalizer) state.scrollNormalizer.enable();
     },
   })
     // 1. Cap flies off — far past CAP_OPEN_DELTA, then fades and hides.
@@ -102,6 +112,7 @@ export function playTunnelSequence() {
     // page scroll again rather than something this timeline can reverse.
     .call(() => {
       state.tunnelPlaying = false;
+      if (state.scrollNormalizer) state.scrollNormalizer.enable();
       document.querySelector('.closing').scrollIntoView({ behavior: 'smooth' });
     })
     .to(overlay, {
