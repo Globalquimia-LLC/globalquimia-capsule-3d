@@ -537,12 +537,6 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .closing .cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(253,196,0,0.3); }
-.closing-summary-list {
-  list-style: none; margin: 0 0 26px 0; padding: 0; max-width: 420px;
-  font-size: 13px; color: #cfe0ea; line-height: 1.9; text-align: left;
-}
-.closing-summary-list li { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 4px 0; }
-.closing-summary-list li:last-child { border-bottom: none; }
 .closing-redesign-btn {
   display: inline-block; background: none; color: #cfe0ea;
   font-weight: 700; font-size: 13px; font-family: inherit; text-decoration: underline;
@@ -551,6 +545,15 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 }
 .closing-redesign-btn:hover { color: #fff; }
 .closing .contact { margin-top: 30px; font-size: 12px; color: #7d93a4; }
+/* Re-added — this rule existed before but got dropped in an earlier pass
+   that removed the element along with it. Sits AFTER the two buttons now
+   (was before), so margin is top-only instead of bottom-only. */
+.closing-summary-list {
+  list-style: none; margin: 30px 0 0; padding: 0; max-width: 420px;
+  font-size: 13px; color: #cfe0ea; line-height: 1.9; text-align: left;
+}
+.closing-summary-list li { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 4px 0; }
+.closing-summary-list li:last-child { border-bottom: none; }
 
 /* Closing tunnel — camera dolly-in + this overlay darkening together read
    as "flying into the capsule and everything going dark", without having
