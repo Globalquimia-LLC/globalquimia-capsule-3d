@@ -1,0 +1,546 @@
+:root {
+  --navy: #1c405d;
+  --blue: #006f9e;
+  --cyan: #1dbadf;
+  --yellow: #fdc400;
+  --bg: #fdfaf5;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); font-family: Arial, Helvetica, sans-serif; color: var(--navy); overflow-x: hidden; }
+
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 28px;
+  mix-blend-mode: normal;
+}
+header img { height: 28px; display: block; }
+header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-transform: uppercase; }
+
+.intro {
+  position: relative;
+  height: 90vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 0 24px;
+  overflow: hidden;
+}
+/* Brand hex pattern (MANUAL DE MARCA assets), kept very faint and
+   desaturated so it reads as texture/depth rather than a loud graphic —
+   scrolled at a different rate than the content via ScrollTrigger below
+   for a subtle parallax layer. */
+.intro-pattern {
+  position: absolute; inset: -15% -15%;
+  background-image: url('../assets/patron-hex.png');
+  background-repeat: repeat;
+  background-size: 320px auto;
+  opacity: 0.05;
+  filter: grayscale(1);
+  pointer-events: none;
+  z-index: 0;
+}
+.intro > * { position: relative; z-index: 1; }
+.intro-item { opacity: 0; transform: translateY(26px); }
+.intro h1 { font-size: clamp(28px, 5vw, 48px); margin: 0 0 14px 0; max-width: 720px; line-height: 1.15; }
+.intro p { font-size: 15px; color: #5b6b74; max-width: 480px; margin: 0 0 26px 0; }
+.intro .hint { font-size: 12px; color: #9aa7ad; letter-spacing: 0.5px; }
+.intro .hint::after { content: "↓"; display: block; margin-top: 8px; animation: bob 1.6s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+
+#story { position: relative; height: 100vh; overflow: hidden; }
+/* z-index:2, above .step-number (1) — the canvas itself is transparent
+   (alpha:true, no scene background), so the number shows through
+   everywhere except where the opaque capsule mesh actually paints over
+   it, giving the "peeking out from behind" effect with no extra work. */
+#canvas-container { position: absolute; inset: 0; z-index: 2; cursor: grab; }
+#canvas-container.dragging { cursor: grabbing; }
+#canvas-container canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* Big background numeral for the current wizard step — always on the
+   same side as the capsule (see #step-number toggling in goToStep).
+   Starts hidden: it's only relevant once the designer wizard itself is
+   active, not during the earlier scroll-driven story stages. */
+.step-number {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  font-size: clamp(160px, 24vw, 340px); font-weight: 900; line-height: 1;
+  color: rgba(28,64,93,0.22);
+  -webkit-text-stroke: 1px rgba(28,64,93,0.3);
+  z-index: 1; pointer-events: none; user-select: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.step-number.visible { opacity: 1; }
+.step-number.side-left { left: 1%; }
+.step-number.side-right { right: 1%; }
+/* Small "N / 5" tag riding just above the numeral — the numeral alone
+   reads as decoration; this is what actually tells you it's a step count. */
+.step-number .of-total {
+  display: block; font-size: 0.14em; font-weight: 700; letter-spacing: 2px;
+  color: rgba(28,64,93,0.45); -webkit-text-stroke: 0;
+  margin-bottom: 0.05em;
+}
+
+/* Text sits at the SIDES (never over the capsule, which stays centered) and
+   scales up/down via GSAP as it enters/exits — the outer element only
+   handles fixed side positioning, the inner .inner is what GSAP scales, so
+   the two transforms never fight each other. */
+.story-text {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(360px, 38vw);
+  z-index: 5;
+  pointer-events: none;
+}
+.story-text.side-left { left: 5%; text-align: left; }
+.story-text.side-right { right: 5%; text-align: right; }
+/* Stage 2's text collides with the capsule's cap as it swells during the
+   zoom (see initScrollStory's stage-2 canvas shift) — pushed down a bit
+   for clearance, matched by nudging the capsule itself up. Scoped to
+   desktop only: the mobile media query already stacks text below the
+   capsule as a bottom banner, where this vertical conflict can't happen. */
+@media (min-width: 761px) {
+  #stage-2 { top: 62%; }
+}
+.story-text .inner { opacity: 0; transform: scale(0.7); transform-origin: center; }
+.story-text .eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--blue); margin: 0 0 10px 0;
+}
+.story-text h2 { font-size: clamp(20px, 2.8vw, 30px); margin: 0 0 10px 0; line-height: 1.25; color: var(--navy); }
+.story-text p { font-size: 14px; line-height: 1.5; color: #5b6b74; margin: 0; }
+
+/* Sits opposite the capsule (see goToStep, which flips both every step) —
+   same outer/.inner split as .story-text: the outer element only handles
+   fixed side positioning, GSAP only ever touches .inner's opacity/transform. */
+.designer {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  text-align: center;
+  z-index: 6;
+  pointer-events: none;
+  width: min(560px, 48vw);
+}
+.designer.side-right { right: 6%; left: auto; }
+.designer.side-left { left: 6%; right: auto; }
+.designer.active { pointer-events: auto; }
+.designer .inner { opacity: 0; }
+.designer .eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--blue); margin: 0 0 4px 0;
+}
+.designer h2 { font-size: clamp(18px, 2.6vw, 24px); margin: 0 0 16px 0; color: var(--navy); }
+
+.step-back {
+  display: none; background: none; border: none; cursor: pointer; font-family: inherit;
+  font-size: 12px; font-weight: 700; color: #5b6b74; padding: 0 0 10px 0;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.step-back:hover { color: var(--blue); transform: translateX(-2px); }
+.step-back.visible { display: inline-block; }
+/* Real step indicator — 5 numbered/labeled stops instead of plain dots,
+   so it's clear up front how many steps there are and which one you're
+   on, not just that "some step" is active. */
+.stepper { display: flex; align-items: flex-start; margin-bottom: 16px; }
+.stepper-item { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: none; }
+.stepper-circle {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #9aa7ad;
+  background: #fff; border: 2px solid rgba(28,64,93,0.18);
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+.stepper-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+  color: #9aa7ad; white-space: nowrap; transition: color 0.25s ease;
+}
+.stepper-line { flex: 1 1 auto; height: 2px; background: rgba(28,64,93,0.16); margin: 11px 4px 0 4px; transition: background 0.25s ease; }
+.stepper-item.completed .stepper-circle { background: var(--cyan); border-color: var(--cyan); color: #fff; }
+.stepper-item.completed .stepper-label { color: var(--navy); }
+.stepper-item.active .stepper-circle { background: var(--blue); border-color: var(--blue); color: #fff; transform: scale(1.18); }
+.stepper-item.active .stepper-label { color: var(--navy); }
+.stepper-line.completed { background: var(--cyan); }
+
+.step-instruction { font-size: 13px; color: #5b6b74; line-height: 1.5; margin: 0 0 16px 0; }
+
+/* Running summary — visible from step 1 onward, not just at the end, so
+   the accumulated choice is always in view. */
+.running-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; min-height: 22px; }
+.running-summary .chip {
+  font-size: 10.5px; font-weight: 700; color: var(--blue);
+  background: rgba(0,111,158,0.08); border-radius: 999px; padding: 4px 11px;
+  letter-spacing: 0.2px; white-space: nowrap;
+}
+
+/* "Keep scrolling" affordance, replacing the removed Continuar buttons on
+   steps that don't need an explicit pick to move on — same bobbing-arrow
+   language as the intro's own scroll hint, for visual consistency. */
+.scroll-more-hint {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin-top: 18px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px;
+  text-transform: uppercase; color: #9aa7ad;
+}
+.scroll-more-hint::after { content: "↓"; font-size: 15px; animation: bob 1.6s ease-in-out infinite; }
+
+.step-panel { display: none; }
+.step-panel.active { display: block; border-radius: 6px; }
+/* Nudge — steps 1-2 need an actual click to move on, so scrolling past
+   the pinned story with nothing picked yet used to just fall through to
+   the browser's native scroll and dump the page into .closing early.
+   This plays instead: a quick highlight ring on the option list itself,
+   prompting the pick rather than silently doing nothing (or worse,
+   jumping to unrelated content). */
+@keyframes nudge-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0,111,158,0.4); }
+  60% { box-shadow: 0 0 0 10px rgba(0,111,158,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,111,158,0); }
+}
+.step-panel.nudge { animation: nudge-pulse 0.55s ease-out; }
+.continue-btn {
+  display: block; width: 100%; margin-top: 14px;
+  background: var(--blue); color: #fff; border: none; border-radius: 4px;
+  font-family: inherit; font-size: 13px; font-weight: 700; padding: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.continue-btn:hover { background: var(--navy); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(28,64,93,0.25); }
+
+/* Accordion: 1. Color > 1.1 Tradicionales / 1.2 Mate / 1.3 Metalizados.
+   Only one of the three finish sub-items is open at a time; "Color" itself
+   stays collapsible too so future categories (2. Textura, etc.) can slot
+   in beside it later without restructuring. */
+.acc-menu {
+  text-align: left; background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
+  border-radius: 16px; overflow-y: auto; max-height: 64vh;
+  box-shadow: 0 8px 24px rgba(28,64,93,0.08);
+  scrollbar-width: thin; scrollbar-color: rgba(28,64,93,0.35) transparent;
+}
+.acc-menu::-webkit-scrollbar { width: 6px; }
+.acc-menu::-webkit-scrollbar-track { background: transparent; }
+.acc-menu::-webkit-scrollbar-thumb { background: rgba(28,64,93,0.3); border-radius: 3px; }
+.acc-item { border-bottom: 1px solid rgba(28,64,93,0.08); }
+.acc-item:last-child { border-bottom: none; }
+.acc-header {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  padding: 15px 18px; font-size: 15px; font-weight: 800; color: var(--navy);
+}
+.acc-header.acc-sub { padding: 12px 18px 12px 30px; font-size: 12px; color: var(--blue); font-weight: 700; }
+.acc-chevron { font-size: 11px; color: #9aa7ad; transition: transform 0.3s ease; }
+
+/* Finish headers (Tradicionales/Mate/Metalizados) — a small preview
+   swatch next to the label so the finish is legible at a glance, not
+   just a name. */
+.finish-header { display: flex; align-items: center; gap: 10px; }
+.finish-swatch { width: 20px; height: 20px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(28,64,93,0.15); }
+.finish-swatch-tradicionales { background: radial-gradient(circle at 32% 28%, #6db8ea 0%, #006f9e 55%, #003a55 100%); }
+.finish-swatch-mate { background: radial-gradient(circle at 32% 28%, #b9c2c7 0%, #7c8890 70%, #5c666d 100%); }
+.finish-swatch-metalizados { background: linear-gradient(135deg, #f2f2f2 0%, #b8b8b8 30%, #e8e8e8 50%, #8a8a8a 70%, #f5f5f5 100%); }
+
+/* Two columns (Tapa | Cuerpo) shown together — simpler than a tab you
+   have to switch to see the other piece. */
+.color-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.color-col-label {
+  display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 8px;
+}
+.acc-item.open > .acc-header .acc-chevron { transform: rotate(180deg); }
+.acc-header:hover { background: rgba(0,111,158,0.05); }
+/* height starts at 0/overflow:hidden — GSAP animates the actual pixel
+   height on open/close (see openAccBody/closeAccBody) instead of the
+   usual CSS max-height trick, which either overshoots a guessed cap or
+   clips content that's taller than it; animating to the real
+   scrollHeight always matches the actual content. */
+.acc-item > .acc-body { overflow: hidden; height: 0; }
+/* Default for whichever item starts open in the static HTML — before any
+   click, GSAP hasn't set an inline height yet, so this CSS fallback is
+   what actually renders it; JS-driven opens/closes take over afterward
+   via inline height, which always wins over this rule. */
+.acc-item.open > .acc-body { height: auto; }
+.acc-item.open[data-finish] > .acc-body { padding: 0 18px 14px 18px; }
+
+.piece-tabs { display: flex; gap: 18px; margin-bottom: 12px; }
+.piece-tab {
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  font-size: 12px; font-weight: 700; color: #9aa7ad;
+  padding: 0 0 6px 0; border-bottom: 2px solid transparent;
+}
+.piece-tab.active { color: var(--navy); border-bottom-color: var(--blue); }
+.metal-swatches { flex-wrap: wrap; gap: 8px; }
+
+/* Free-spectrum picker (Tradicionales/Mate — Metalizados stays a closed
+   swatch set). Pickr (vendor/pickr.min.js + classic theme CSS, loaded in
+   <head>) renders inline (not a popup) directly into .picker-mount, so
+   it's a real embedded panel, not a click-to-open dialog. Its own trigger
+   button is hidden — redundant once the app is always visible. */
+.picker-mount .pcr-button { display: none; }
+.picker-mount .pcr-app {
+  position: static !important; width: 100% !important; box-shadow: none !important;
+  border: 1px solid rgba(28,64,93,0.1);
+}
+.picker-mount .pcr-app .pcr-selection .pcr-color-palette,
+.picker-mount .pcr-app .pcr-selection .pcr-color-chooser,
+.picker-mount .pcr-app .pcr-selection .pcr-color-opacity {
+  height: 140px;
+}
+
+.quick-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid rgba(28,64,93,0.15);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.swatch:hover { transform: scale(1.15); }
+.swatch.selected { border-color: var(--navy); }
+.color-readout {
+  display: block; margin-top: 8px;
+  font-size: 11px; font-family: 'Courier New', monospace; color: var(--navy);
+  text-align: left;
+}
+
+/* 1. Tipo de cápsula — a plain selectable list; the header text mirrors
+   whichever row is currently selected. */
+.option-list { display: flex; flex-direction: column; }
+.option-row {
+  background: none; border: none; border-bottom: 1px solid rgba(28,64,93,0.08);
+  font-family: inherit; text-align: left; cursor: pointer;
+  padding: 10px 4px; font-size: 13px; color: var(--blue);
+  border-radius: 4px;
+  transition: background 0.15s ease, padding-left 0.15s ease, color 0.15s ease;
+}
+.option-row:last-child { border-bottom: none; }
+.option-row:hover { background: rgba(0,111,158,0.06); padding-left: 10px; }
+.option-row.selected { font-weight: 700; color: var(--navy); }
+
+/* 2. Tamaño — same idea, plus a scaled capsule icon per row and its own
+   scrollbar (real capsule charts list 8 sizes; not all fit at once). */
+.size-list {
+  display: flex; flex-direction: column; max-height: 230px; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: rgba(28,64,93,0.35) transparent;
+}
+.size-list::-webkit-scrollbar { width: 6px; }
+.size-list::-webkit-scrollbar-track { background: transparent; }
+.size-list::-webkit-scrollbar-thumb { background: rgba(28,64,93,0.3); border-radius: 3px; }
+.size-row {
+  display: flex; align-items: center; gap: 14px;
+  background: none; border: none; border-bottom: 1px solid rgba(28,64,93,0.08);
+  font-family: inherit; text-align: left; cursor: pointer;
+  padding: 10px 4px; font-size: 13px; color: var(--blue);
+  border-radius: 4px;
+  transition: background 0.15s ease, padding-left 0.15s ease;
+}
+.size-row:last-child { border-bottom: none; }
+.size-row:hover { background: rgba(0,111,158,0.06); padding-left: 10px; }
+.size-row.selected { font-weight: 700; color: var(--navy); }
+.capsule-icon { flex: none; display: block; height: 18px; transition: transform 0.15s ease; }
+.capsule-icon .cap-half { fill: var(--cyan); }
+.capsule-icon .body-half { fill: var(--navy); }
+.size-row:hover .capsule-icon { transform: scale(1.08); }
+
+/* 4. Logo y Texto — one piece toggle for the whole step (was: two
+   separate, independently-stateful Tapa/Cuerpo tabs, one per section,
+   easy to lose track of which piece you were even editing), and the
+   two sections shown directly instead of behind an accordion click. */
+.piece-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
+.piece-toggle-btn {
+  flex: 1 1 0; background: rgba(255,255,255,0.7); border: 1px solid rgba(28,64,93,0.16); border-radius: 8px;
+  font-family: inherit; font-size: 12.5px; font-weight: 700; color: #5b6b74; padding: 10px 8px; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.piece-toggle-btn:hover { border-color: var(--blue); }
+.piece-toggle-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+.design-section {
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(28,64,93,0.08); padding: 16px 18px; margin-bottom: 14px; text-align: left;
+}
+.design-section-label {
+  display: block; font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--navy); margin-bottom: 12px;
+}
+
+.logo-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.logo-upload-btn {
+  display: inline-block; background: var(--blue); color: #fff;
+  font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.logo-upload-btn:hover { background: var(--navy); transform: translateY(-1px); }
+.logo-upload-name { font-size: 12px; color: #5b6b74; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-btn {
+  background: none; border: 1px solid rgba(28,64,93,0.15); border-radius: 4px;
+  width: 30px; height: 30px; font-size: 14px; line-height: 1; cursor: pointer;
+  color: var(--navy);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.icon-btn:hover { background: rgba(0,111,158,0.08); border-color: var(--blue); }
+.text-toolbar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px 0; gap: 10px; flex-wrap: wrap; }
+.font-size-btns { display: flex; gap: 6px; }
+.font-size-btn {
+  background: none; border: 1px solid rgba(28,64,93,0.18); border-radius: 6px; cursor: pointer; font-family: inherit;
+  color: #5b6b74; font-size: 11px; font-weight: 700; padding: 6px 12px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.font-size-btn:hover { border-color: var(--blue); }
+.font-size-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.text-toolbar-actions { display: flex; gap: 8px; }
+.text-input {
+  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px;
+  padding: 9px 12px; border: 1px solid rgba(28,64,93,0.2); border-radius: 4px;
+  color: var(--navy); margin-bottom: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.text-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,111,158,0.12); }
+.text-input::placeholder { color: #9aa7ad; }
+
+/* 5. Cantidad y cotización — summary card + qty input, styled like the
+   rest of the wizard (acc-menu card look, text-input pattern for the
+   number field) rather than introducing a new visual language. */
+.quote-summary {
+  text-align: left; background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
+  border-radius: 16px; box-shadow: 0 8px 24px rgba(28,64,93,0.08);
+  padding: 18px 20px;
+}
+.quote-summary-list {
+  list-style: none; margin: 0 0 14px 0; padding: 0;
+  font-size: 13px; color: var(--navy); line-height: 1.9;
+}
+.quote-summary-list li { border-bottom: 1px solid rgba(28,64,93,0.08); padding: 4px 0; }
+.quote-summary-list li:last-child { border-bottom: none; }
+.quote-qty-label {
+  display: block; font-size: 12px; font-weight: 700; color: var(--blue);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.quote-qty-input {
+  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px;
+  padding: 9px 12px; border: 1px solid rgba(28,64,93,0.2); border-radius: 4px;
+  color: var(--navy); margin-bottom: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.quote-qty-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,111,158,0.12); }
+.quote-note { font-size: 11px; color: #9aa7ad; line-height: 1.5; margin: 0 0 10px 0; }
+.quote-estimate { font-size: 13px; font-weight: 700; color: var(--navy); margin: 0; }
+.quote-actions { margin-top: 14px; }
+.quote-copy-btn {
+  display: block; width: 100%; margin-top: 8px;
+  background: none; color: var(--blue); border: 1px solid rgba(0,111,158,0.3); border-radius: 4px;
+  font-family: inherit; font-size: 12px; font-weight: 700; padding: 10px;
+  cursor: pointer; transition: background 0.15s ease;
+}
+.quote-copy-btn:hover { background: rgba(0,111,158,0.06); }
+
+.closing {
+  position: relative;
+  min-height: 70vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 60px 24px;
+  background-color: var(--navy);
+  color: #fff;
+  overflow: hidden;
+}
+/* Brand mark as a huge, barely-there watermark — parallax-scrolled at
+   its own rate (see the closing ScrollTrigger) rather than pinned flat
+   to the background, so it drifts subtly as the section is in view. */
+.closing-symbol {
+  position: absolute; top: 50%; left: 50%;
+  width: clamp(240px, 85vw, 760px); height: auto;
+  transform: translate(-50%, -50%);
+  opacity: 0.06; pointer-events: none; z-index: 0;
+}
+.closing > * { position: relative; z-index: 1; }
+.closing-item { opacity: 0; transform: translateY(24px); }
+.closing h2 { font-size: clamp(22px, 4vw, 34px); margin: 0 0 14px 0; max-width: 640px; }
+.closing p { font-size: 14px; color: #a9bccb; margin: 0 0 26px 0; }
+.closing a.cta {
+  display: inline-block; background: var(--yellow); color: var(--navy);
+  font-weight: 700; font-size: 14px; text-decoration: none;
+  padding: 13px 30px; border-radius: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.closing a.cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(253,196,0,0.3); }
+.closing .contact { margin-top: 30px; font-size: 12px; color: #7d93a4; }
+
+/* Closing tunnel — camera dolly-in + this overlay darkening together read
+   as "flying into the capsule and everything going dark", without having
+   to navigate the camera literally through the thin-walled geometry. */
+.tunnel-overlay {
+  position: fixed; inset: 0; z-index: 100; background: #000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+}
+.tunnel-logo { width: min(220px, 40vw); height: auto; opacity: 0; transform: scale(0.85); }
+
+.progress-rail {
+  position: fixed; right: 22px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 140px; background: rgba(28,64,93,0.12); border-radius: 2px;
+  z-index: 40;
+}
+.progress-fill {
+  width: 100%; height: 0%; background: var(--cyan); border-radius: 2px;
+}
+
+/* ---------- Mobile / narrow viewports ---------- */
+@media (max-width: 760px) {
+  header { padding: 14px 16px; }
+  header img { height: 20px; }
+  header span { font-size: 9px; letter-spacing: 0.5px; }
+
+  .intro { height: 88vh; padding: 0 20px; }
+  .intro h1 { font-size: clamp(24px, 7vw, 32px); }
+  .intro p { font-size: 13px; max-width: 340px; }
+
+  /* Side text doesn't work on a narrow screen (no room next to the
+     capsule) — becomes a centered bottom banner instead, same as the
+     designer panel. GSAP still only touches .inner's scale/opacity, so no
+     JS changes are needed for this reflow. */
+  .story-text {
+    top: auto; bottom: 5%;
+    width: 90vw;
+    transform: none;
+  }
+  .story-text.side-left, .story-text.side-right {
+    left: 50%; right: auto;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+  .story-text h2 { font-size: 19px; }
+  .story-text p { font-size: 13px; }
+
+  /* The right-sidebar layout needs room beside the capsule that a narrow
+     screen doesn't have — falls back to the same bottom-banner treatment
+     as .story-text, and the capsule stays centered (see initScrollStory,
+     which only applies the left-shift above the 760px breakpoint). */
+  .designer, .designer.side-left, .designer.side-right {
+    left: 50%; right: auto;
+    top: auto; bottom: 3%;
+    transform: translateX(-50%);
+    width: 94vw;
+  }
+  .designer h2 { font-size: 18px; }
+  .quick-swatches { justify-content: center; flex-wrap: wrap; }
+  .color-readout { width: 100%; text-align: center; margin-top: 2px; }
+
+  /* No room to slide the capsule side to side on a phone screen — the big
+     step numeral (tied to that side-swap) would just look like a random
+     watermark without it, so it's hidden rather than repositioned. */
+  .step-number { display: none; }
+
+  .acc-menu { max-height: 56vh; }
+  .acc-header { padding: 12px 14px; font-size: 12px; }
+  .acc-header.acc-sub { padding: 10px 14px 10px 22px; font-size: 11px; }
+  .acc-item.open[data-finish] > .acc-body { padding: 0 14px 12px 14px; }
+  .piece-tabs { justify-content: center; gap: 14px; }
+
+  /* The side rail visually collided with the bottom-anchored text/designer
+     on narrow screens — move it out of the way instead of overlapping. */
+  .progress-rail { right: 10px; height: 90px; }
+
+  .closing { padding: 48px 20px; }
+  .closing h2 { font-size: clamp(20px, 6vw, 26px); }
+}
+
+@media (max-width: 400px) {
+  .story-text h2 { font-size: 17px; }
+  .swatch { width: 18px; height: 18px; }
+}

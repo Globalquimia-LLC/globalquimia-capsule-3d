@@ -1,0 +1,120 @@
+import { state } from '../state.js';
+import { goToStep } from '../wizard/wizard.js';
+import { playTunnelSequence } from './tunnel.js';
+
+// ---------------------------------------------------------------------
+// Scroll-to-continue — replaces "Continuar" buttons on steps 3/4, and
+// carries step 5 on into the closing tunnel. Once the main scroll story
+// is fully consumed (progress ~1, which is exactly when the wizard is
+// showing at all), further downward scroll/wheel/swipe would normally
+// just unpin #story and drop straight into .closing — intercepted here
+// instead and repurposed as "move to the next step" while on 3, 4 or 5.
+// Steps 1-2 stay click-driven on purpose: picking a tipo/tamaño is an
+// actual decision, not a "continue when ready" beat.
+//
+// Scrolling back up mirrors scrolling down: while the tunnel is
+// mid-flight it reverses (same eased path, backwards, via GSAP's own
+// .reverse() — that's what keeps it feeling like one continuous motion
+// instead of a jump-cut back to step 5), and once it's fully closed
+// again (or was never entered) an upward scroll retreats the wizard a
+// step at a time — 5 -> 4 -> 3 -> 2 -> 1 — showing each one's own
+// content as it lands, same as clicking "Volver" repeatedly but
+// scroll-driven.
+// ---------------------------------------------------------------------
+function nudgeStepMenu() {
+  const now = performance.now();
+  if (now - state.lastNudgeAt < 500) return; // already mid-pulse — let it finish instead of restacking
+  state.lastNudgeAt = now;
+  const panel = document.querySelector('.step-panel.active');
+  if (!panel) return;
+  panel.classList.remove('nudge');
+  void panel.offsetWidth; // force reflow so re-adding the class restarts the animation
+  panel.classList.add('nudge');
+}
+
+function tryAdvanceOnScroll(deltaY) {
+  const st = state.storyScrollTrigger;
+  if (!st) return false;
+  // st.progress is smoothed by scrub:1 — it lags up to ~1s behind the
+  // real scroll position, so gating on it (progress >= 0.999) let the
+  // first wheel tick or two slip past the pin's actual end before this
+  // caught up, unpinning #story into .closing for a frame. window.scrollY
+  // vs st.end (both real pixel values, no smoothing) has no such lag —
+  // but a plain "< st.end" check alone still isn't enough: the *last*
+  // tick before actually reaching the end is still legitimately let
+  // through (correct, so the final bit of story motion isn't skipped),
+  // and a single wheel/trackpad tick's delta can easily be bigger than
+  // whatever's left of that gap, overshooting past st.end in one motion
+  // (measured: a 150px tick from 30px out landed 120px past the end —
+  // exactly the gap that let .closing peek through). So: predict where
+  // this tick would land, and if it would cross st.end, clamp the actual
+  // scroll to land exactly on it instead of wherever the raw delta says.
+  if (window.scrollY < st.end - 2) {
+    if (deltaY > 0 && window.scrollY + deltaY > st.end) {
+      window.scrollTo(0, st.end);
+      return true;
+    }
+    return false;
+  }
+
+  if (state.tunnelTimeline && state.tunnelPlaying) {
+    if (deltaY < 0) state.tunnelTimeline.reverse();
+    return true; // swallow all scroll while the tunnel is animating either way
+  }
+
+  if (deltaY === 0) return false;
+  if (deltaY > 0 && state.currentStep < 3) {
+    // Steps 1-2 stay click-only going forward — but letting the event
+    // fall through to native scroll here used to unpin #story once its
+    // scrub was maxed out, dropping straight into .closing early. Swallow
+    // it and nudge the option list instead of doing nothing (or worse).
+    nudgeStepMenu();
+    return true;
+  }
+  if (deltaY < 0 && state.currentStep <= 1) return false; // nothing to retreat to before step 1
+
+  // A hard swipe/wheel burst can dispatch many events in a row — without
+  // a cooldown that would blow through 2-3 steps on one gesture instead
+  // of feeling like "one scroll, one step".
+  const now = performance.now();
+  if (now - state.lastScrollAdvanceAt < 700) return true; // still swallow the event so the page itself doesn't scroll
+  state.lastScrollAdvanceAt = now;
+
+  if (deltaY > 0) {
+    if (state.currentStep < 5) goToStep(state.currentStep + 1);
+    else playTunnelSequence();
+  } else {
+    goToStep(state.currentStep - 1);
+  }
+  return true;
+}
+
+export function initScrollAdvance() {
+  window.addEventListener('wheel', (e) => {
+    if (tryAdvanceOnScroll(e.deltaY)) e.preventDefault();
+  }, { passive: false });
+
+  let lastTouchY = null;
+  window.addEventListener('touchstart', (e) => {
+    lastTouchY = e.touches[0].clientY;
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (lastTouchY === null) return;
+    const dy = lastTouchY - e.touches[0].clientY; // finger moving up = scrolling down
+    if (tryAdvanceOnScroll(dy)) e.preventDefault();
+    lastTouchY = e.touches[0].clientY;
+  }, { passive: false });
+
+  // normalizeScroll installs its OWN wheel/touch listeners on this same
+  // window — DOM listeners for one event type run in registration order,
+  // so calling this only now (after ours, above) means our handler always
+  // gets first look at every event and can preventDefault() before
+  // normalizeScroll's own listener acts on it. Called the other way
+  // around (right after registerPlugin, before any of our own listeners
+  // existed), normalizeScroll saw and acted on every wheel/touch event a
+  // beat before tryAdvanceOnScroll ever ran — so its own preventDefault()
+  // came too late to matter, and a fast flick could still blow straight
+  // through the pinned wizard into .closing despite the clamping logic
+  // above being otherwise correct.
+  state.scrollNormalizer = ScrollTrigger.normalizeScroll(true);
+}
