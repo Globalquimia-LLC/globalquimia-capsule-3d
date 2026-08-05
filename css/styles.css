@@ -7,17 +7,6 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--bg); font-family: Arial, Helvetica, sans-serif; color: var(--navy); overflow-x: hidden; }
-/* Set on <html> once the closing tunnel reaches .closing (tunnel.js),
-   cleared by "Volver a diseñar la cápsula" (wizard.js's resetWizard) —
-   removes the marketing intro and the whole scroll-driven wizard from the
-   document entirely, rather than just scrolling past them, so .closing
-   sits at the actual top of the page. Scrolling itself stays normal —
-   with intro/#story gone there's nothing left to scroll to anyway once
-   .closing's own content fits the viewport. */
-html.quote-complete .intro, html.quote-complete #story { display: none; }
-/* Tracked wizard scroll progress — pointless once #story (what it was
-   tracking) is gone. */
-html.quote-complete .progress-rail { display: none; }
 
 header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
@@ -471,12 +460,6 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   border-radius: 16px; box-shadow: 0 8px 24px rgba(28,64,93,0.08);
   padding: 18px 20px;
 }
-.quote-summary-list {
-  list-style: none; margin: 0 0 14px 0; padding: 0;
-  font-size: 13px; color: var(--navy); line-height: 1.9;
-}
-.quote-summary-list li { border-bottom: 1px solid rgba(28,64,93,0.08); padding: 4px 0; }
-.quote-summary-list li:last-child { border-bottom: none; }
 .quote-qty-label {
   display: block; font-size: 12px; font-weight: 700; color: var(--blue);
   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
@@ -498,62 +481,6 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   cursor: pointer; transition: background 0.15s ease;
 }
 .quote-copy-btn:hover { background: rgba(0,111,158,0.06); }
-
-/* .closing is only ever reached one way: the tunnel completing sets
-   quote-complete on <html>, which also removes .intro/#story entirely
-   (see the rule above) — there's no "arrive here mid-scroll" case to
-   design for anymore, so content starts right under the fixed header
-   instead of being vertically centered in a tall, now mostly-empty
-   section. (This used to be a separate html.quote-complete-scoped
-   override; folded into the base rule since quote-complete is the only
-   way .closing is ever actually shown, and depending on that class
-   having been applied in time was the previous version's bug.) */
-.closing {
-  position: relative;
-  min-height: 70vh;
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  text-align: center; padding: 120px 24px 60px;
-  background-color: var(--navy);
-  color: #fff;
-  overflow: hidden;
-}
-/* Brand mark as a huge, barely-there watermark — parallax-scrolled at
-   its own rate (see the closing ScrollTrigger) rather than pinned flat
-   to the background, so it drifts subtly as the section is in view. */
-.closing-symbol {
-  position: absolute; top: 50%; left: 50%;
-  width: clamp(240px, 85vw, 760px); height: auto;
-  transform: translate(-50%, -50%);
-  opacity: 0.06; pointer-events: none; z-index: 0;
-}
-.closing > * { position: relative; z-index: 1; }
-.closing-item { opacity: 0; transform: translateY(24px); }
-.closing h2 { font-size: clamp(22px, 4vw, 34px); margin: 0 0 14px 0; max-width: 640px; }
-.closing p { font-size: 14px; color: #a9bccb; margin: 0 0 26px 0; }
-.closing .cta {
-  display: inline-block; background: var(--yellow); color: var(--navy);
-  font-weight: 700; font-size: 14px; text-decoration: none;
-  padding: 13px 30px; border-radius: 4px; border: none; cursor: pointer; font-family: inherit;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.closing .cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(253,196,0,0.3); }
-.closing-redesign-btn {
-  display: inline-block; background: none; color: #cfe0ea;
-  font-weight: 700; font-size: 13px; font-family: inherit; text-decoration: underline;
-  text-underline-offset: 3px; border: none; cursor: pointer; padding: 14px 10px 0;
-  transition: color 0.15s ease;
-}
-.closing-redesign-btn:hover { color: #fff; }
-.closing .contact { margin-top: 30px; font-size: 12px; color: #7d93a4; }
-/* Re-added — this rule existed before but got dropped in an earlier pass
-   that removed the element along with it. Sits AFTER the two buttons now
-   (was before), so margin is top-only instead of bottom-only. */
-.closing-summary-list {
-  list-style: none; margin: 30px 0 0; padding: 0; max-width: 420px;
-  font-size: 13px; color: #cfe0ea; line-height: 1.9; text-align: left;
-}
-.closing-summary-list li { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 4px 0; }
-.closing-summary-list li:last-child { border-bottom: none; }
 
 /* Closing tunnel — camera dolly-in + this overlay darkening together read
    as "flying into the capsule and everything going dark", without having
@@ -629,9 +556,6 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   /* The side rail visually collided with the bottom-anchored text/designer
      on narrow screens — move it out of the way instead of overlapping. */
   .progress-rail { right: 10px; height: 90px; }
-
-  .closing { padding: 100px 20px 48px; }
-  .closing h2 { font-size: clamp(20px, 6vw, 26px); }
 }
 
 @media (max-width: 400px) {

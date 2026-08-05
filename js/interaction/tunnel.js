@@ -12,9 +12,11 @@ import { CAP_OPEN_DELTA } from '../constants.js';
 //   3. The camera pushes into that opening while a full-screen overlay
 //      darkens over it — together reading as "flying into the capsule".
 //   4. Once fully black, the Globalquimia logo fades in at the end of
-//      the tunnel, then the page auto-scrolls into .closing underneath.
+//      the tunnel, then onComplete runs (resetWizard, in practice) while
+//      the screen is still black, so the reset is hidden behind the
+//      overlay instead of visibly snapping the wizard back to step 1.
 // ---------------------------------------------------------------------
-export function playTunnelSequence() {
+export function playTunnelSequence(onComplete) {
   const { camera, capsuleGroup, capNode, capMaterial, capMeshObj, maxDimGlobal } = state;
   if (state.tunnelStarted || !camera.userData.baseDir || !capsuleGroup || !capNode) return;
   state.tunnelStarted = true;
@@ -23,10 +25,10 @@ export function playTunnelSequence() {
   // while the tunnel plays, but normalizeScroll drives the actual page
   // position through its own internal engine — a wheel event being
   // "prevented" doesn't stop THAT engine from still nudging scrollY on
-  // its own, which is what let .closing peek in underneath mid-animation.
-  // Disabling it here freezes scroll completely (our own wheel listener
-  // keeps receiving events regardless, so scroll-up-to-reverse still
-  // works); re-enabled right before the scrollIntoView handoff below.
+  // its own. Disabling it here freezes scroll completely (our own wheel
+  // listener keeps receiving events regardless, so scroll-up-to-reverse
+  // still works); onComplete (resetWizard) re-enables it once the tunnel
+  // finishes.
   if (state.scrollNormalizer) state.scrollNormalizer.disable();
   const overlay = document.getElementById('tunnel-overlay');
   const logo = document.getElementById('tunnel-logo');
@@ -104,63 +106,14 @@ export function playTunnelSequence() {
       },
     }, 1.7)
     // 4. Logo at the end of the tunnel (overlay is fully black by the
-    // time the dolly above finishes). Short beat after, not the long
-    // pause this used to be — the summary below is meant to read as
-    // arriving on the SAME dark screen right after the logo, not as a
-    // separate screen the user waits for.
+    // time the dolly above finishes), a short beat holding on it, then
+    // onComplete runs while still fully black — resetWizard (its actual
+    // caller) sets the overlay back to transparent/non-blocking itself as
+    // part of the reset, so no separate fade-out tween is needed here.
     .to(logo, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' })
-    .to({}, { duration: 0.2 })
-    // Past this point is the point of no return: the page itself
-    // navigates to .closing, so scrolling back up from here on is normal
-    // page scroll again rather than something this timeline can reverse.
-    //
-    // This can fire while the page is still sitting at the pinned #story
-    // position (button-triggered from step 5, never having scrolled past
-    // it) rather than already right at the pin's end (the old scroll-
-    // triggered path). element.scrollIntoView() is a native DOM API — with
-    // normalizeScroll re-enabled a line above, it drives an animated scroll
-    // that normalizeScroll's own internal position tracking never sees,
-    // the same class of desync that caused every other normalizeScroll bug
-    // this project has hit. The visible symptom: #story's ScrollTrigger
-    // pin never receives a clean "crossed past end" signal, so it stays
-    // visually stuck pinned - the wizard panel keeps showing over .closing
-    // instead of releasing - and the transition reads as a stray extra
-    // scroll animation on top of the tunnel's own. Going through the
-    // normalizer's own scrollY() setter (same mechanism scroll-story.js's
-    // onLeave already uses to snap position) is an instant, correctly-
-    // observed jump instead - no second scroll animation, and the pin
-    // releases in the same tick.
+    .to({}, { duration: 0.4 })
     .call(() => {
       state.tunnelPlaying = false;
-      // Remove the intro + the whole scroll-driven wizard from the document
-      // instead of just scrolling past them — .closing becomes the real top
-      // of the page, not something sitting far down a still-scrollable
-      // document. "Volver a diseñar la cápsula" (wizard.js's resetWizard)
-      // undoes this.
-      document.documentElement.classList.add('quote-complete');
-      if (state.scrollNormalizer) {
-        state.scrollNormalizer.enable();
-        state.scrollNormalizer.scrollY(0);
-      } else {
-        window.scrollTo(0, 0);
-      }
-      // .closing-item's reveal (js/intro.js's initIntro()) is a ScrollTrigger
-      // firing on scroll CROSSING "top 75%" of .closing — that's built for a
-      // gradual scroll, and landing here is an instant position jump instead
-      // (intro/#story just vanished, scrollY snapped straight to 0), which
-      // isn't guaranteed to register as a clean crossing. Forcing it
-      // directly removes that dependency instead of hoping the trigger
-      // fires; overwrite:true so it wins over whatever state that
-      // ScrollTrigger tween is in.
-      gsap.to('.closing-item', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', overwrite: true });
-    })
-    // Starts right on top of the .closing-item reveal above (was '+=0.4',
-    // a beat AFTER it) — the summary fades in while the overlay is still
-    // mostly black and only just starting to clear, so it reads as
-    // appearing on the same dark screen as the logo instead of the
-    // overlay fully clearing first and revealing a new one underneath.
-    .to(overlay, {
-      opacity: 0, duration: 1.0, ease: 'power1.out',
-      onComplete: () => { overlay.style.pointerEvents = 'none'; },
-    }, '<');
+      if (onComplete) onComplete();
+    });
 }

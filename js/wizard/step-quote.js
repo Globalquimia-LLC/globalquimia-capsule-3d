@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { PRICE_TABLE, FINISH_LABELS, WHATSAPP_NUMBER } from '../constants.js';
 import { playTunnelSequence } from '../interaction/tunnel.js';
+import { resetWizard } from './wizard.js';
 
 // ---------------------------------------------------------------------
 // 5. Cantidad y cotización — assembles every choice made in steps 1-4
@@ -17,8 +18,10 @@ function computeEstimate(sizeCode, tipoLabel, qty) {
   return perThousand ? (perThousand * qty) / 1000 : null;
 }
 
-// Renders the summary list + estimate, and returns the plain-text
-// version used by both the WhatsApp link and "copiar resumen".
+// Builds the plain-text summary used by the WhatsApp message and
+// "copiar resumen", and refreshes the price estimate note. There's no
+// on-screen list anymore — the summary only ever leaves the page as
+// WhatsApp/clipboard text.
 export function renderQuoteSummary() {
   const qtyInput = document.getElementById('quote-qty');
   const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
@@ -36,14 +39,6 @@ export function renderQuoteSummary() {
   if (customization.body.text) lines.push(`Texto cuerpo: "${customization.body.text}"`);
   lines.push(`Cantidad: ${qty.toLocaleString('es-CO')} unidades`);
 
-  const itemsHTML = lines.map((l) => `<li>${l}</li>`).join('');
-  document.getElementById('quote-summary-list').innerHTML = itemsHTML;
-  // Also feeds .closing's own summary — that section only becomes visible
-  // once the tunnel animation finishes, well past the step-5 panel this
-  // list normally lives in, so it needs its own copy of the same content.
-  const closingListEl = document.getElementById('closing-summary-list');
-  if (closingListEl) closingListEl.innerHTML = itemsHTML;
-
   const estimate = computeEstimate(selectedSize.code, selectedTipo, qty);
   document.getElementById('quote-estimate').textContent = estimate
     ? `Estimado: $${estimate.toFixed(2)} USD`
@@ -52,23 +47,23 @@ export function renderQuoteSummary() {
   return lines.join('\n');
 }
 
+function openWhatsApp(summary) {
+  const msg = `Hola, quiero cotizar cápsulas personalizadas:\n${summary}`;
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
 export function initStepQuote() {
   document.getElementById('quote-qty').addEventListener('input', renderQuoteSummary);
 
-  // "Solicitar cotización" no longer opens WhatsApp directly — it plays the
-  // closing tunnel (capsule flies open, camera dives through it, the
-  // Globalquimia logo appears at the end) and hands off into .closing,
-  // which carries its own copy of this same summary plus the actual
-  // WhatsApp contact action below.
+  // "Solicitar cotización" opens WhatsApp in a new tab right away — no
+  // waiting on any animation for that — and also plays the tunnel (capsule
+  // flies open, camera dives through it, the Globalquimia logo appears at
+  // the end) as the visual payoff on the page itself; resetWizard runs once
+  // the tunnel finishes, landing back on a fresh step 1.
   document.getElementById('quote-whatsapp-btn').addEventListener('click', () => {
-    renderQuoteSummary();
-    playTunnelSequence();
-  });
-
-  document.getElementById('closing-whatsapp-btn').addEventListener('click', () => {
     const summary = renderQuoteSummary();
-    const msg = `Hola, quiero cotizar cápsulas personalizadas:\n${summary}`;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    openWhatsApp(summary);
+    playTunnelSequence(resetWizard);
   });
 
   document.getElementById('quote-copy-btn').addEventListener('click', () => {

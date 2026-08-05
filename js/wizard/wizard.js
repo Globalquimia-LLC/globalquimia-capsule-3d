@@ -135,20 +135,13 @@ export function goToStep(newStep) {
 
 export function initWizardShell() {
   document.getElementById('step-back').addEventListener('click', () => goToStep(state.currentStep - 1));
-  document.getElementById('closing-redesign-btn').addEventListener('click', resetWizard);
 }
 
-// "Volver a diseñar la cápsula" (.closing, after a completed quote) — a
-// full reset back to step 1, not just a scroll back. Only reachable once
-// the tunnel has actually finished (tunnelStarted stays true past the
-// "point of no return" — see tunnel.js), so currentStep is always 5 here.
+// Runs automatically as the closing tunnel's onComplete (see tunnel.js,
+// wired from step-quote.js's "Solicitar cotización" handler) — a full
+// reset back to step 1 once the tunnel animation finishes, so the wizard
+// is ready for another quote without the user having to do anything.
 export function resetWizard() {
-  // Undo tunnel.js's "hide the intro + wizard entirely" — bringing #story
-  // back into layout changes its height, so the ScrollTrigger refresh below
-  // (right before using its .end) is what makes storyScrollTrigger's cached
-  // start/end reflect that again instead of the collapsed display:none ones.
-  document.documentElement.classList.remove('quote-complete');
-
   // progress(0) restores cap position, body orientation, camera position,
   // and overlay opacity to exactly what they were right before
   // playTunnelSequence() started — the same restoration .reverse() already
@@ -188,13 +181,12 @@ export function resetWizard() {
   state.hasRevealedStep1 = false; // step 1's entrance stagger plays again, like a genuine first visit
   goToStep(1);
 
-  // Land back on the wizard itself, not the very top of the page — .closing
-  // sits well past #story's pin, so a plain "scroll to 0" would surface the
-  // marketing intro before the wizard even starts, exactly the confusing
-  // state this button exists to get out of. Same normalizer.scrollY()
-  // pattern used everywhere else in this project for a programmatic jump,
-  // for the same reason: a native scrollTo/scrollIntoView here would desync
-  // from normalizeScroll's own position tracking.
+  // Land back on the wizard itself, not the very top of the page — a plain
+  // "scroll to 0" would surface the marketing intro before the wizard even
+  // starts, exactly the confusing state this reset exists to avoid. Same
+  // normalizer.scrollY() pattern used everywhere else in this project for a
+  // programmatic jump, for the same reason: a native scrollTo/scrollIntoView
+  // here would desync from normalizeScroll's own position tracking.
   const st = state.storyScrollTrigger;
   if (st) {
     ScrollTrigger.refresh(); // re-measure #story's pin distance now that it's back in layout, so st.end below is current
