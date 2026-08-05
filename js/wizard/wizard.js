@@ -63,26 +63,32 @@ export function goToStep(newStep) {
   updateStepper(newStep);
   updateRunningSummary();
 
-  gsap.to(inner, {
-    opacity: 0, y: -6, duration: 0.22, ease: 'power2.in',
-    onComplete: () => {
-      if (oldPanel) oldPanel.classList.remove('active');
-      if (newPanel) newPanel.classList.add('active');
-      heading.textContent = STEP_TITLES[newStep];
-      instruction.textContent = STEP_INSTRUCTIONS[newStep];
-      gsap.fromTo(inner, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' });
-      revealStepChildren(newPanel);
-      if (newStep === 5) renderQuoteSummary();
-    },
-  });
+  // Everything that determines WHAT is showing (active panel, heading,
+  // instruction, the step number itself) is applied immediately/
+  // synchronously — never gated behind a tween's onComplete. Under a
+  // contended GPU/tab-heavy browser, GSAP's own ticker can run far slower
+  // than real time (its lag-smoothing spreads a stalled frame instead of
+  // jumping), which used to leave the panel/number showing the *previous*
+  // step for however long that tween took to catch up — sometimes several
+  // seconds. The fade below is purely decorative on top of an already-
+  // correct DOM; if it stutters or never gets a frame, the content is
+  // still right.
+  if (oldPanel) oldPanel.classList.remove('active');
+  if (newPanel) newPanel.classList.add('active');
+  heading.textContent = STEP_TITLES[newStep];
+  instruction.textContent = STEP_INSTRUCTIONS[newStep];
+  stepNumberEl.innerHTML = `<span class="of-total">Paso ${newStep} de 5</span>${newStep}`;
+  if (newStep === 5) renderQuoteSummary();
+  revealStepChildren(newPanel);
 
-  gsap.to(stepNumberEl, {
-    opacity: 0, duration: 0.25, ease: 'power1.in',
-    onComplete: () => {
-      stepNumberEl.innerHTML = `<span class="of-total">Paso ${newStep} de 5</span>${newStep}`;
-      gsap.to(stepNumberEl, { opacity: 1, duration: 0.3, ease: 'power1.out' });
-    },
-  });
+  // gsap.killTweensOf so a rapid string of steps doesn't pile up competing
+  // fade tweens on the same elements — each new step's fade simply takes
+  // over from wherever the last one got to.
+  gsap.killTweensOf(inner);
+  gsap.fromTo(inner, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' });
+  gsap.killTweensOf(stepNumberEl);
+  gsap.fromTo(stepNumberEl, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power1.out' });
+
   // The capsule keeps turning to greet each new step (a bit of motion, not
   // a side swap) — same fixed left/right layout throughout.
   if (state.isDesktopLayout && state.capsuleGroup) {
