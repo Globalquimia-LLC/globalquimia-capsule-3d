@@ -146,7 +146,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
   color: var(--blue); margin: 0 0 4px 0;
 }
-.designer h2 { font-size: clamp(18px, 2.6vw, 24px); margin: 0 0 16px 0; color: var(--navy); }
+.designer h2 { font-size: clamp(16px, 2.2vw, 21px); margin: 0 0 10px 0; color: var(--navy); line-height: 1.2; }
 
 .step-back {
   display: none; background: none; border: none; cursor: pointer; font-family: inherit;
@@ -158,34 +158,34 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 /* Real step indicator — 5 numbered/labeled stops instead of plain dots,
    so it's clear up front how many steps there are and which one you're
    on, not just that "some step" is active. */
-.stepper { display: flex; align-items: flex-start; margin-bottom: 16px; }
-.stepper-item { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: none; }
+.stepper { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.stepper-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
 .stepper-circle {
-  width: 24px; height: 24px; border-radius: 50%;
+  width: 19px; height: 19px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: #9aa7ad;
+  font-size: 10px; font-weight: 700; color: #9aa7ad;
   background: #fff; border: 2px solid rgba(28,64,93,0.18);
   transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
 }
 .stepper-label {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+  font-size: 8px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
   color: #9aa7ad; white-space: nowrap; transition: color 0.25s ease;
 }
-.stepper-line { flex: 1 1 auto; height: 2px; background: rgba(28,64,93,0.16); margin: 11px 4px 0 4px; transition: background 0.25s ease; }
+.stepper-line { flex: 1 1 auto; height: 2px; background: rgba(28,64,93,0.16); margin: 8px 4px 0 4px; transition: background 0.25s ease; }
 .stepper-item.completed .stepper-circle { background: var(--cyan); border-color: var(--cyan); color: #fff; }
 .stepper-item.completed .stepper-label { color: var(--navy); }
 .stepper-item.active .stepper-circle { background: var(--blue); border-color: var(--blue); color: #fff; transform: scale(1.18); }
 .stepper-item.active .stepper-label { color: var(--navy); }
 .stepper-line.completed { background: var(--cyan); }
 
-.step-instruction { font-size: 13px; color: #5b6b74; line-height: 1.5; margin: 0 0 16px 0; }
+.step-instruction { font-size: 12px; color: #5b6b74; line-height: 1.35; margin: 0 0 10px 0; }
 
 /* Running summary — visible from step 1 onward, not just at the end, so
    the accumulated choice is always in view. */
-.running-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; min-height: 22px; }
+.running-summary { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; min-height: 18px; }
 .running-summary .chip {
-  font-size: 10.5px; font-weight: 700; color: var(--blue);
-  background: rgba(0,111,158,0.08); border-radius: 999px; padding: 4px 11px;
+  font-size: 10px; font-weight: 700; color: var(--blue);
+  background: rgba(0,111,158,0.08); border-radius: 999px; padding: 3px 9px;
   letter-spacing: 0.2px; white-space: nowrap;
 }
 
@@ -197,10 +197,10 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    to show no static guidance at all and relied only on the (easy-to-miss)
    nudge pulse below to explain why scrolling wasn't moving them on. */
 .scroll-more-hint, .pick-hint {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  margin: 20px auto 0; width: fit-content; font-size: 12px; font-weight: 700;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  margin: 12px auto 0; width: fit-content; font-size: 11px; font-weight: 700;
   letter-spacing: 0.4px; text-transform: uppercase; color: var(--blue);
-  background: rgba(0,111,158,0.1); border-radius: 999px; padding: 8px 18px;
+  background: rgba(0,111,158,0.1); border-radius: 999px; padding: 6px 15px;
 }
 .scroll-more-hint::after { content: "↓"; font-size: 16px; animation: bob 1.6s ease-in-out infinite; }
 /* No icon here — a slow, gentle glow (not a hard blink) instead, since a
@@ -228,9 +228,9 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 }
 .step-panel.nudge { animation: nudge-pulse 0.9s ease-out; }
 .continue-btn {
-  display: block; width: 100%; margin-top: 14px;
+  display: block; width: 100%; margin-top: 10px;
   background: var(--blue); color: #fff; border: none; border-radius: 4px;
-  font-family: inherit; font-size: 13px; font-weight: 700; padding: 12px;
+  font-family: inherit; font-size: 12px; font-weight: 700; padding: 10px;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -254,26 +254,26 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .acc-header {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
   background: none; border: none; cursor: pointer; font-family: inherit;
-  padding: 15px 18px; font-size: 15px; font-weight: 800; color: var(--navy);
+  padding: 10px 14px; font-size: 13px; font-weight: 800; color: var(--navy);
 }
-.acc-header.acc-sub { padding: 12px 18px 12px 30px; font-size: 12px; color: var(--blue); font-weight: 700; }
+.acc-header.acc-sub { padding: 8px 14px 8px 26px; font-size: 11px; color: var(--blue); font-weight: 700; }
 .acc-chevron { font-size: 11px; color: #9aa7ad; transition: transform 0.3s ease; }
 
 /* Finish headers (Tradicionales/Mate/Metalizados) — a small preview
    swatch next to the label so the finish is legible at a glance, not
    just a name. */
-.finish-header { display: flex; align-items: center; gap: 10px; }
-.finish-swatch { width: 20px; height: 20px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(28,64,93,0.15); }
+.finish-header { display: flex; align-items: center; gap: 8px; }
+.finish-swatch { width: 16px; height: 16px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(28,64,93,0.15); }
 .finish-swatch-tradicionales { background: radial-gradient(circle at 32% 28%, #6db8ea 0%, #006f9e 55%, #003a55 100%); }
 .finish-swatch-mate { background: radial-gradient(circle at 32% 28%, #b9c2c7 0%, #7c8890 70%, #5c666d 100%); }
 .finish-swatch-metalizados { background: linear-gradient(135deg, #f2f2f2 0%, #b8b8b8 30%, #e8e8e8 50%, #8a8a8a 70%, #f5f5f5 100%); }
 
 /* Two columns (Tapa | Cuerpo) shown together — simpler than a tab you
    have to switch to see the other piece. */
-.color-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.color-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .color-col-label {
-  display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
-  color: var(--blue); margin-bottom: 8px;
+  display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 5px;
 }
 .acc-item.open > .acc-header .acc-chevron { transform: rotate(180deg); }
 .acc-header:hover { background: rgba(0,111,158,0.05); }
@@ -288,7 +288,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    what actually renders it; JS-driven opens/closes take over afterward
    via inline height, which always wins over this rule. */
 .acc-item.open > .acc-body { height: auto; }
-.acc-item.open[data-finish] > .acc-body { padding: 0 18px 14px 18px; }
+.acc-item.open[data-finish] > .acc-body { padding: 0 14px 10px 14px; }
 
 .piece-tabs { display: flex; gap: 18px; margin-bottom: 12px; }
 .piece-tab {
@@ -312,12 +312,12 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .picker-mount .pcr-app .pcr-selection .pcr-color-palette,
 .picker-mount .pcr-app .pcr-selection .pcr-color-chooser,
 .picker-mount .pcr-app .pcr-selection .pcr-color-opacity {
-  height: 140px;
+  height: 108px;
 }
 
-.quick-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.quick-swatches { display: flex; flex-wrap: wrap; gap: 5px; }
 .swatch {
-  width: 20px; height: 20px; border-radius: 50%;
+  width: 16px; height: 16px; border-radius: 50%;
   border: 2px solid rgba(28,64,93,0.15);
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease;
@@ -325,8 +325,8 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .swatch:hover { transform: scale(1.15); }
 .swatch.selected { border-color: var(--navy); }
 .color-readout {
-  display: block; margin-top: 8px;
-  font-size: 11px; font-family: 'Courier New', monospace; color: var(--navy);
+  display: block; margin-top: 5px;
+  font-size: 10px; font-family: 'Courier New', monospace; color: var(--navy);
   text-align: left;
 }
 
@@ -336,7 +336,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .option-row {
   background: none; border: none; border-bottom: 1px solid rgba(28,64,93,0.08);
   font-family: inherit; text-align: left; cursor: pointer;
-  padding: 10px 4px; font-size: 13px; color: var(--blue);
+  padding: 7px 4px; font-size: 12px; color: var(--blue);
   border-radius: 4px;
   transition: background 0.15s ease, padding-left 0.15s ease, color 0.15s ease;
 }
@@ -354,10 +354,10 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .size-list::-webkit-scrollbar-track { background: transparent; }
 .size-list::-webkit-scrollbar-thumb { background: rgba(28,64,93,0.3); border-radius: 3px; }
 .size-row {
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 12px;
   background: none; border: none; border-bottom: 1px solid rgba(28,64,93,0.08);
   font-family: inherit; text-align: left; cursor: pointer;
-  padding: 10px 4px; font-size: 13px; color: var(--blue);
+  padding: 7px 4px; font-size: 12px; color: var(--blue);
   border-radius: 4px;
   transition: background 0.15s ease, padding-left 0.15s ease;
 }
@@ -373,80 +373,80 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    separate, independently-stateful Tapa/Cuerpo tabs, one per section,
    easy to lose track of which piece you were even editing), and the
    two sections shown directly instead of behind an accordion click. */
-.piece-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
+.piece-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
 .piece-toggle-btn {
   flex: 1 1 0; background: rgba(255,255,255,0.7); border: 1px solid rgba(28,64,93,0.16); border-radius: 8px;
-  font-family: inherit; font-size: 12.5px; font-weight: 700; color: #5b6b74; padding: 10px 8px; cursor: pointer;
+  font-family: inherit; font-size: 11.5px; font-weight: 700; color: #5b6b74; padding: 7px 6px; cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .piece-toggle-btn:hover { border-color: var(--blue); }
 .piece-toggle-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
 
 .design-section {
-  background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(28,64,93,0.08); padding: 16px 18px; margin-bottom: 14px; text-align: left;
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(28,64,93,0.08); padding: 12px 14px; margin-bottom: 10px; text-align: left;
 }
 .design-section-label {
-  display: block; font-size: 12px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
-  color: var(--navy); margin-bottom: 12px;
+  display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+  color: var(--navy); margin-bottom: 8px;
 }
 
-.logo-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.logo-upload { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .logo-upload-btn {
   display: inline-block; background: var(--blue); color: #fff;
-  font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; padding: 7px 13px; border-radius: 4px;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
 }
 .logo-upload-btn:hover { background: var(--navy); transform: translateY(-1px); }
-.logo-upload-name { font-size: 12px; color: #5b6b74; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.logo-error { display: block; margin-top: 8px; font-size: 11.5px; font-weight: 600; color: #c0392b; }
-.logo-quality-warning { display: block; margin-top: 8px; font-size: 11.5px; font-weight: 600; color: #b5730a; }
+.logo-upload-name { font-size: 11px; color: #5b6b74; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logo-error { display: block; margin-top: 5px; font-size: 10.5px; font-weight: 600; color: #c0392b; }
+.logo-quality-warning { display: block; margin-top: 5px; font-size: 10.5px; font-weight: 600; color: #b5730a; }
 .icon-btn {
   background: none; border: 1px solid rgba(28,64,93,0.15); border-radius: 4px;
-  width: 30px; height: 30px; font-size: 14px; line-height: 1; cursor: pointer;
+  width: 26px; height: 26px; font-size: 13px; line-height: 1; cursor: pointer;
   color: var(--navy);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .icon-btn:hover { background: rgba(0,111,158,0.08); border-color: var(--blue); }
-.text-style-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px 0; flex-wrap: wrap; }
+.text-style-row { display: flex; align-items: center; gap: 8px; margin: 3px 0 8px 0; flex-wrap: wrap; }
 .font-select {
-  flex: 1 1 auto; min-width: 120px; font-family: inherit; font-size: 12px; font-weight: 700;
+  flex: 1 1 auto; min-width: 120px; font-family: inherit; font-size: 11px; font-weight: 700;
   color: var(--navy); background: #fff; border: 1px solid rgba(28,64,93,0.18); border-radius: 6px;
-  padding: 7px 10px; cursor: pointer;
+  padding: 5px 8px; cursor: pointer;
   transition: border-color 0.15s ease;
 }
 .font-select:hover, .font-select:focus { border-color: var(--blue); outline: none; }
-.text-toolbar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px 0; gap: 10px; flex-wrap: wrap; }
-.font-size-slider-wrap { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 140px; }
+.text-toolbar { display: flex; align-items: center; justify-content: space-between; margin: 3px 0 8px 0; gap: 8px; flex-wrap: wrap; }
+.font-size-slider-wrap { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 140px; }
 .font-size-slider {
   flex: 1 1 auto; accent-color: var(--blue); cursor: pointer;
 }
 .font-size-readout {
-  font-size: 11px; font-weight: 700; color: var(--navy); min-width: 34px; text-align: right;
+  font-size: 10px; font-weight: 700; color: var(--navy); min-width: 30px; text-align: right;
   font-variant-numeric: tabular-nums;
 }
 /* Rotate/resize a placed decal — same slider look as font size, one row
    per control so the label stays readable at the panel's narrow width. */
-.transform-row { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 12px 0; }
-.transform-control { display: flex; align-items: center; gap: 10px; }
+.transform-row { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 8px 0; }
+.transform-control { display: flex; align-items: center; gap: 8px; }
 .transform-label {
-  font-size: 11px; font-weight: 700; color: #5b6b74; text-transform: uppercase;
-  letter-spacing: 0.3px; min-width: 44px; flex-shrink: 0;
+  font-size: 10px; font-weight: 700; color: #5b6b74; text-transform: uppercase;
+  letter-spacing: 0.3px; min-width: 40px; flex-shrink: 0;
 }
-.font-size-btns { display: flex; gap: 6px; }
+.font-size-btns { display: flex; gap: 5px; }
 .font-size-btn {
   background: none; border: 1px solid rgba(28,64,93,0.18); border-radius: 6px; cursor: pointer; font-family: inherit;
-  color: #5b6b74; font-size: 11px; font-weight: 700; padding: 6px 12px;
+  color: #5b6b74; font-size: 10px; font-weight: 700; padding: 5px 10px;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .font-size-btn:hover { border-color: var(--blue); }
 .font-size-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
-.text-toolbar-actions { display: flex; gap: 8px; }
+.text-toolbar-actions { display: flex; gap: 6px; }
 .text-input {
-  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px;
-  padding: 9px 12px; border: 1px solid rgba(28,64,93,0.2); border-radius: 4px;
-  color: var(--navy); margin-bottom: 12px;
+  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12px;
+  padding: 7px 10px; border: 1px solid rgba(28,64,93,0.2); border-radius: 4px;
+  color: var(--navy); margin-bottom: 8px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .text-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,111,158,0.12); }
@@ -457,27 +457,27 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    number field) rather than introducing a new visual language. */
 .quote-summary {
   text-align: left; background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
-  border-radius: 16px; box-shadow: 0 8px 24px rgba(28,64,93,0.08);
-  padding: 18px 20px;
+  border-radius: 14px; box-shadow: 0 8px 24px rgba(28,64,93,0.08);
+  padding: 14px 16px;
 }
 .quote-qty-label {
-  display: block; font-size: 12px; font-weight: 700; color: var(--blue);
-  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  display: block; font-size: 11px; font-weight: 700; color: var(--blue);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
 }
 .quote-qty-input {
-  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 13px;
-  padding: 9px 12px; border: 1px solid rgba(28,64,93,0.2); border-radius: 4px;
-  color: var(--navy); margin-bottom: 8px;
+  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 12px;
+  padding: 7px 10px; border: 1px solid rgba(28,64,93,0.2); border-radius: 4px;
+  color: var(--navy); margin-bottom: 6px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .quote-qty-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,111,158,0.12); }
-.quote-note { font-size: 11px; color: #9aa7ad; line-height: 1.5; margin: 0 0 10px 0; }
-.quote-estimate { font-size: 13px; font-weight: 700; color: var(--navy); margin: 0; }
-.quote-actions { margin-top: 14px; }
+.quote-note { font-size: 10.5px; color: #9aa7ad; line-height: 1.35; margin: 0 0 6px 0; }
+.quote-estimate { font-size: 12px; font-weight: 700; color: var(--navy); margin: 0; }
+.quote-actions { margin-top: 10px; }
 .quote-copy-btn {
-  display: block; width: 100%; margin-top: 8px;
+  display: block; width: 100%; margin-top: 6px;
   background: none; color: var(--blue); border: 1px solid rgba(0,111,158,0.3); border-radius: 4px;
-  font-family: inherit; font-size: 12px; font-weight: 700; padding: 10px;
+  font-family: inherit; font-size: 11px; font-weight: 700; padding: 8px;
   cursor: pointer; transition: background 0.15s ease;
 }
 .quote-copy-btn:hover { background: rgba(0,111,158,0.06); }
@@ -500,6 +500,32 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .progress-fill {
   width: 100%; height: 0%; background: var(--cyan); border-radius: 2px;
 }
+
+/* Prev/next controls — a keyboard/touch-only visitor (no mouse, no
+   trackpad) has no other way to move through the scroll-driven story or
+   step through the wizard, since almost everything here is wheel/touch
+   driven. Fixed bottom-right, clear of the progress rail (same side, but
+   vertically centered rather than bottom) and the designer panel (also
+   right-aligned, but vertically centered too). */
+.nav-controls {
+  position: fixed; right: 22px; bottom: 24px; z-index: 45;
+  display: flex; flex-direction: row; gap: 10px;
+}
+/* Solid navy + white icon (not the translucent-white pattern used
+   elsewhere) — this sits directly on the light --bg cream, where a
+   white-ish circle barely registers. High contrast is the point: it
+   needs to read as a control at a glance, not blend in as decoration. */
+.nav-btn {
+  width: 52px; height: 52px; border-radius: 50%; cursor: pointer;
+  background: var(--navy); border: 2px solid #fff;
+  box-shadow: 0 6px 20px rgba(28,64,93,0.4);
+  color: #fff; font-size: 28px; font-weight: 700; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.nav-btn:hover { background: var(--blue); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(28,64,93,0.5); }
+.nav-btn:active { transform: translateY(0); }
+.nav-btn.hidden { display: none; }
 
 /* ---------- Mobile / narrow viewports ---------- */
 @media (max-width: 760px) {
@@ -546,6 +572,12 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      step numeral (tied to that side-swap) would just look like a random
      watermark without it, so it's hidden rather than repositioned. */
   .step-number { display: none; }
+
+  /* .designer becomes a bottom-anchored banner on mobile (see above) —
+     bottom-right would sit right under/over it, so the nav controls move
+     up under the header instead of colliding with the wizard panel. */
+  .nav-controls { top: 64px; right: 12px; bottom: auto; }
+  .nav-btn { width: 44px; height: 44px; font-size: 22px; }
 
   .acc-menu { max-height: 56vh; }
   .acc-header { padding: 12px 14px; font-size: 12px; }
