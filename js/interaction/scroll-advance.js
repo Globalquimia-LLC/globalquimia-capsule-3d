@@ -128,7 +128,17 @@ function manualStep(direction) {
   let target = window.scrollY + direction * (window.innerHeight * 0.6);
   if (st) target = Math.min(target, st.end);
   target = Math.max(target, 0);
-  if (state.scrollNormalizer) state.scrollNormalizer.scrollY(target);
+  // scrollNormalizer.scrollY() only actually moves anything while the
+  // normalizer itself is the one driving scroll — this fallback is only
+  // ever reached in the two states where it's the ENABLED one (free-scroll
+  // story, pre-wizard) or the one it's explicitly DISABLED in (retreating
+  // back out of step 1, scroll-story.js hands scroll fully back to native
+  // once the wizard locks it). Calling the normalizer's own setter while
+  // it's disabled is a silent no-op — window.scrollY never actually
+  // changes, so retreating out of the wizard on mobile (no wheel event to
+  // fall through to native scroll on, unlike a real trackpad/wheel tick)
+  // would get stuck permanently docked (see #canvas-container.docked).
+  if (state.scrollNormalizer && !state.wizardScrollLocked) state.scrollNormalizer.scrollY(target);
   else window.scrollTo({ top: target, behavior: 'smooth' });
 }
 

@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { CAP_OPEN_DELTA, ROTATION_CHASE_WINDOW_MS } from '../constants.js';
 import { revealStepChildren } from '../wizard/wizard.js';
+import { reframeCapsuleCamera } from '../scene.js';
 
 // The main scroll-driven narrative: capsule spin/zoom/open-close synced to
 // a pinned #story section, ending with the wizard fading in. Called once
@@ -42,7 +43,22 @@ export function initScrollStory(maxDim, camDist) {
         document.getElementById('progress-fill').style.height = (self.progress * 100) + '%';
         const wizardActive = self.progress > 0.93;
         designerEl.classList.toggle('active', wizardActive);
-        document.getElementById('step-number').classList.toggle('visible', state.isDesktopLayout && wizardActive);
+        document.getElementById('step-number').classList.toggle('visible', wizardActive);
+        // Mobile only: the capsule fills the whole #story otherwise, which
+        // is what the intro/story cinematic zoom needs — but once the
+        // wizard's own bottom-anchored card takes over most of the screen,
+        // a full-bleed capsule floats in whatever gap is left over instead
+        // of occupying a predictable spot. Docking it to a fixed top band
+        // (see the mobile CSS) the moment the wizard activates keeps the
+        // capsule in the same place regardless of how tall any given
+        // step's content is; reframeCapsuleCamera re-fits it to that
+        // band's own aspect ratio right after the class change takes
+        // layout effect (classList.toggle is synchronous; the CSS applies
+        // before the next line runs).
+        if (!state.isDesktopLayout && wizardActive !== canvasContainer.classList.contains('docked')) {
+          canvasContainer.classList.toggle('docked', wizardActive);
+          reframeCapsuleCamera();
+        }
         if (!state.hasRevealedStep1 && wizardActive) {
           state.hasRevealedStep1 = true;
           revealStepChildren(document.querySelector('.step-panel[data-step="1"]'));

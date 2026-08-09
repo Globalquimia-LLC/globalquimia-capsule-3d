@@ -12,6 +12,31 @@ import { playTunnelSequence } from './interaction/tunnel.js';
 // render loop (momentum spin + scroll-rotation chase). Everything else
 // (wizard steps, drag input, scroll interception) reads/writes the pieces
 // this sets up on `state` rather than importing THREE objects directly.
+
+// Fixed viewing angle (3/4 view — a camera along the capsule's local Z
+// stares end-on into the rounded tip and just looks like a flat circle),
+// same yaw/pitch the static product renders (render_capsule.py) use.
+const YAW = THREE.MathUtils.degToRad(35);
+const PITCH = THREE.MathUtils.degToRad(-20);
+// 2.6 alone was tuned against a desktop-width (landscape) aspect — a
+// FIXED distance means the capsule's on-screen SIZE scales with how
+// narrow the viewport is, since the same distance covers proportionally
+// less physical width on a tall/narrow phone screen than on a wide
+// desktop one. The 1/aspect ratio keeps the capsule's rendered WIDTH
+// consistent across viewports on its own, but a phone in portrait also
+// has much less vertical room devoted to the capsule specifically once
+// the wizard's own card takes up most of the screen — so portrait gets
+// an extra pullback (MOBILE_EXTRA_PAD) on top of the width-matching
+// ratio, leaving the capsule comfortably smaller rather than filling the
+// whole narrow screen edge to edge. At aspect >= 1 (landscape/desktop,
+// and also the docked mobile band — see reframeCapsuleCamera) it's a
+// no-op, matching the original desktop framing exactly.
+const MOBILE_EXTRA_PAD = 1.6;
+function computeCamDist(maxDim, aspect) {
+  const aspectPad = aspect >= 1 ? 1 : (1 / aspect) * MOBILE_EXTRA_PAD;
+  return maxDim * 2.6 * aspectPad;
+}
+
 export function initScene() {
   state.container = document.getElementById('canvas-container');
   state.scene = new THREE.Scene();
@@ -138,39 +163,15 @@ export function initScene() {
     // stares end-on into the rounded tip (looks like a flat circle). Use a
     // 3/4 angled position instead, same yaw/pitch approach as the static
     // product renders (render_capsule.py) so it actually shows the capsule's
-    // elongated shape.
-    //
-    // 2.6 alone was tuned against a desktop-width (landscape) aspect — a
-    // FIXED distance means the capsule's on-screen SIZE scales with how
-    // narrow the viewport is, since the same distance covers proportionally
-    // less physical width on a tall/narrow phone screen than on a wide
-    // desktop one. aspectPad compensates: at aspect >= 1 it's a no-op
-    // (matches the original desktop framing exactly), and it grows as the
-    // viewport gets narrower than square, pulling the camera back so the
-    // capsule's rendered width stays consistent instead of overflowing into
-    // the wizard text next to/behind it. Same ratio re-derived (from camDist
-    // and maxDim, rather than passed separately) by scroll-story.js's own
-    // dolly stages, so the whole scroll-driven zoom sequence stays
-    // proportionally consistent at every viewport width, not just this
-    // first frame.
-    const aspect = window.innerWidth / window.innerHeight;
-    // The 1/aspect ratio alone (below) keeps the capsule's rendered WIDTH
-    // consistent across viewports, but a phone in portrait also has much
-    // less vertical room devoted to the capsule specifically once the
-    // wizard's own card takes up the bottom ~80% of the screen (see the
-    // mobile .designer rules) — so on top of the width-matching ratio,
-    // portrait gets an extra pullback (MOBILE_EXTRA_PAD) to leave the
-    // capsule comfortably smaller than "as wide as it can possibly be"
-    // rather than filling the whole narrow screen edge to edge.
-    const MOBILE_EXTRA_PAD = 1.6;
-    const aspectPad = aspect >= 1 ? 1 : (1 / aspect) * MOBILE_EXTRA_PAD;
-    const camDist = maxDim * 2.6 * aspectPad;
-    const yaw = THREE.MathUtils.degToRad(35);
-    const pitch = THREE.MathUtils.degToRad(-20);
+    // elongated shape. baseDir established here once; reframeCapsuleCamera
+    // (below) only ever changes ITS MAGNITUDE (camDist) afterward, never
+    // the direction, so scroll-story.js's applyDolly() — which always
+    // reads baseDir fresh — keeps working unchanged.
+    const camDist = computeCamDist(maxDim, camera.aspect);
     camera.position.set(
-      camDist * Math.cos(pitch) * Math.sin(yaw),
-      camDist * Math.sin(pitch) * -1,
-      camDist * Math.cos(pitch) * Math.cos(yaw)
+      camDist * Math.cos(PITCH) * Math.sin(YAW),
+      camDist * Math.sin(PITCH) * -1,
+      camDist * Math.cos(PITCH) * Math.cos(YAW)
     );
     camera.lookAt(0, 0, 0);
     camera.userData.baseDir = camera.position.clone().normalize();
@@ -203,16 +204,43 @@ export function initScene() {
 
   // Debounced (rAF-coalesced) so a continuous window-resize drag doesn't
   // thrash the renderer/projection matrix on every single mousemove tick —
-  // only the last size in a burst actually gets applied.
+  // only the last size in a burst actually gets applied. Deliberately
+  // does NOT touch camera.position — that stays under the scroll-driven
+  // dolly timeline's exclusive control (applyDolly in scroll-story.js);
+  // only aspect/size follow the container here, same as always.
   let resizeScheduled = false;
   window.addEventListener('resize', () => {
     if (resizeScheduled) return;
     resizeScheduled = true;
     requestAnimationFrame(() => {
       resizeScheduled = false;
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const rect = container.getBoundingClientRect();
+      camera.aspect = (rect.width || window.innerWidth) / (rect.height || window.innerHeight);
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(rect.width || window.innerWidth, rect.height || window.innerHeight);
     });
   });
+}
+
+// Exported so scroll-story.js can re-frame the camera when docking/
+// undocking #canvas-container on mobile (see initScrollStory) — resizes
+// the renderer/aspect to the container's CURRENT box (whatever CSS says
+// it is right now) and, unlike the plain resize handler above, also
+// repositions the camera along its existing baseDir at the new aspect's
+// camDist. Safe to reposition here specifically because docking only
+// ever toggles once scroll is already locked (wizardActive) — the dolly
+// timeline isn't mid-flight driving camera.position when this runs, so
+// there's nothing for this to fight with.
+export function reframeCapsuleCamera() {
+  const { camera, renderer, container, maxDimGlobal } = state;
+  if (!camera || !renderer || !container || !maxDimGlobal || !camera.userData.baseDir) return;
+  const rect = container.getBoundingClientRect();
+  const width = rect.width || window.innerWidth;
+  const height = rect.height || window.innerHeight;
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+  const camDist = computeCamDist(maxDimGlobal, camera.aspect);
+  camera.position.copy(camera.userData.baseDir).multiplyScalar(camDist);
+  camera.lookAt(0, 0, 0);
 }

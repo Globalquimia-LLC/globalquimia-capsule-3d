@@ -301,6 +301,11 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    via inline height, which always wins over this rule. */
 .acc-item.open > .acc-body { height: auto; }
 .acc-item.open[data-finish] > .acc-body { padding: 0 14px 10px 14px; }
+/* Tapa/Cuerpo sub-accordions (Tradicionales/Mate) — same idea one level
+   in, [data-target] plays the role [data-finish] does for the outer
+   level. Left padding drops out (.acc-header.acc-sub already indents the
+   label to show nesting; the picker itself doesn't need to echo it). */
+.acc-item.open[data-target] > .acc-body { padding: 0 14px 12px 0; }
 
 .piece-tabs { display: flex; gap: 18px; margin-bottom: 12px; }
 .piece-tab {
@@ -381,19 +386,11 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .capsule-icon .body-half { fill: var(--navy); }
 .size-row:hover .capsule-icon { transform: scale(1.08); }
 
-/* 4. Logo y Texto — one piece toggle for the whole step (was: two
-   separate, independently-stateful Tapa/Cuerpo tabs, one per section,
-   easy to lose track of which piece you were even editing), and the
-   two sections shown directly instead of behind an accordion click. */
-.piece-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
-.piece-toggle-btn {
-  flex: 1 1 0; background: rgba(255,255,255,0.7); border: 1px solid rgba(28,64,93,0.16); border-radius: 8px;
-  font-family: inherit; font-size: 11.5px; font-weight: 700; color: #5b6b74; padding: 7px 6px; cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.piece-toggle-btn:hover { border-color: var(--blue); }
-.piece-toggle-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
-
+/* 4. Logo y Texto — Tapa/Cuerpo accordion (accordion.js), same pattern
+   as Color's finish/Tapa/Cuerpo nesting — one shared control block
+   (Logo + Texto grabado) gets moved into whichever side is open (see
+   setupDesignPieceToggle in step-design.js) rather than each side
+   keeping its own independent copy. */
 .design-section {
   background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); border-radius: 14px;
   box-shadow: 0 8px 24px rgba(28,64,93,0.08); padding: 12px 14px; margin-bottom: 10px; text-align: left;
@@ -545,12 +542,14 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   header img { height: 20px; }
   header span { font-size: 9px; letter-spacing: 0.5px; }
 
-  /* The capsule (now sized down for portrait — see scene.js's
-     MOBILE_EXTRA_PAD) still renders centered in #story's full 100vh by
-     default, floating in the empty gap above the bottom-anchored .designer
-     card. Shifting the canvas itself up brings it closer to the header
-     instead of sitting in the middle of dead space. */
+  /* Pre-wizard only (intro + the scroll-driven story stages, which still
+     need the full-bleed canvas for their zoom/pan) — nudges the capsule
+     up out of the vertical center toward the header instead of sitting in
+     the middle of the screen. Once docked (see #canvas-container.docked
+     below) positioning is handled entirely by that fixed top/height
+     instead, so this transform needs to get out of the way there. */
   #canvas-container { transform: translateY(-20%); }
+  #canvas-container.docked { transform: none; }
 
   .intro { height: 88vh; padding: 0 20px; }
   .intro h1 { font-size: clamp(24px, 7vw, 32px); }
@@ -608,10 +607,33 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   .quick-swatches { justify-content: center; flex-wrap: wrap; }
   .color-readout { width: 100%; text-align: center; margin-top: 2px; }
 
-  /* No room to slide the capsule side to side on a phone screen — the big
-     step numeral (tied to that side-swap) would just look like a random
-     watermark without it, so it's hidden rather than repositioned. */
-  .step-number { display: none; }
+  /* No room to slide the capsule side to side on a phone screen — the
+     desktop watermark-numeral treatment doesn't fit either, so it's a
+     small fixed tag pinned to the same top-left corner as the capsule's
+     own docked band (below) instead of the side-swapping desktop version. */
+  .step-number, .step-number.side-left, .step-number.side-right {
+    display: block;
+    position: fixed; top: 60px; left: 14px; right: auto; bottom: auto;
+    transform: none;
+    font-size: 34px;
+    -webkit-text-stroke: 0.5px rgba(28,64,93,0.3);
+    z-index: 4;
+  }
+  .step-number .of-total { font-size: 0.32em; }
+
+  /* Fixed to a real, predictable band (30% of viewport height, just under
+     the header) instead of filling the whole #story and floating in
+     whatever gap the wizard card's own height happens to leave — see
+     scroll-story.js, which toggles this class the moment the wizard
+     activates (mobile only; the intro/story scroll narrative before that
+     still needs the full-bleed canvas for its zoom/pan) and re-fits the
+     camera to match via reframeCapsuleCamera(). */
+  #canvas-container.docked {
+    position: fixed;
+    top: 56px; left: 0; right: 0; bottom: auto;
+    height: 30vh; height: 30dvh;
+    z-index: 3;
+  }
 
   /* .designer becomes a bottom-anchored banner on mobile (see above) —
      bottom-right would sit right under/over it, so the nav controls move
@@ -632,7 +654,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   .swatch { width: 30px; height: 30px; }
   .quick-swatches { gap: 10px; }
   .icon-btn { width: 40px; height: 40px; font-size: 16px; }
-  .font-size-btn, .piece-toggle-btn {
+  .font-size-btn {
     min-height: 44px; display: flex; align-items: center; justify-content: center;
   }
 

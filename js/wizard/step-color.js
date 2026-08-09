@@ -84,10 +84,28 @@ function createColorPicker(target, finishKey, material, initialHex) {
       interaction: { hex: true, input: true, save: false },
     },
   });
-  pickr.on('change', (color) => {
+  // Dragging across the gradient square/hue slider fires 'change' on every
+  // pixel of movement — committing each one would re-touch the 3D material
+  // (and re-render everything reading appliedColor) dozens of times per
+  // drag. 'changestop' (source-less variant, fired once on release) is the
+  // fix for THAT — but clicking one of Pickr's own quick swatches is a
+  // discrete pick that only ever emits 'change' with source 'swatch', not
+  // 'changestop' at all (verified in the vendored build), and same for the
+  // hex text input (source 'input', which emits both back to back — the
+  // extra changestop there is a harmless redundant commit). So: 'change'
+  // only commits for those two instant sources; every drag-driven source
+  // is left to 'changestop' alone. Pickr's own cursor still tracks the
+  // finger/mouse in real time regardless of which event this reacts to
+  // (that's its own internal UI) — dragging feels identical, the capsule
+  // and readouts just commit once, on release, instead of mid-drag.
+  const commitColor = (color) => {
     const hexStr = '#' + color.toHEXA().toString().replace('#', '').slice(0, 6);
     setPieceColor(target, finishKey, hexStr, material);
+  };
+  pickr.on('change', (color, source) => {
+    if (source === 'swatch' || source === 'input') commitColor(color);
   });
+  pickr.on('changestop', (_source, instance) => commitColor(instance.getColor()));
   // inline:true only changes how the popup is POSITIONED (in-flow vs a
   // floating overlay) — it does NOT make it visible on its own, and it
   // still runs its normal "click outside closes it" popup logic (any

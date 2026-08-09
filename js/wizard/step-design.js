@@ -21,21 +21,27 @@ import { updateRunningSummary } from './wizard.js';
 // move relative to capsuleGroup during steps 1-5 (capNode's own open/close
 // offset is pinned for that whole span — see scroll-story.js/tunnel.js).
 //
-// One shared piece toggle drives BOTH the Logo and Texto sections —
-// previously each section had its own independent Tapa/Cuerpo tabs, so
-// switching piece in one didn't affect the other and it was easy to edit
-// the wrong piece without noticing.
+// One shared control block (Logo + Texto grabado) drives whichever piece
+// is active — previously each section had its own independent Tapa/Cuerpo
+// tabs, so switching piece in one didn't affect the other and it was easy
+// to edit the wrong piece without noticing. Now presented as a Tapa/Cuerpo
+// accordion (accordion.js handles the actual open/close + height
+// animation via the generic .acc-header wiring in initAccordion() —
+// this only needs to move #design-controls-shared into whichever side's
+// .acc-body is being opened, and point it at that piece's stored data,
+// BEFORE that generic handler runs and measures the body's height (see
+// main.js's init order: initStepDesign() before initAccordion()).
 // ---------------------------------------------------------------------
 let refreshLogoUI = () => {};
 let refreshTextoUI = () => {};
 
 function setupDesignPieceToggle() {
-  const toggle = document.getElementById('design-piece-toggle');
-  toggle.querySelectorAll('.piece-toggle-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      toggle.querySelectorAll('.piece-toggle-btn').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.activeDesignTarget = btn.dataset.target;
+  const sharedControls = document.getElementById('design-controls-shared');
+  document.querySelectorAll('#design-accordion > .acc-item').forEach((item) => {
+    const header = item.querySelector(':scope > .acc-header');
+    header.addEventListener('click', () => {
+      state.activeDesignTarget = item.dataset.target;
+      item.querySelector(':scope > .acc-body').appendChild(sharedControls);
       refreshLogoUI();
       refreshTextoUI();
     });
