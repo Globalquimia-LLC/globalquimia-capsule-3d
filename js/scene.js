@@ -154,7 +154,16 @@ export function initScene() {
     // proportionally consistent at every viewport width, not just this
     // first frame.
     const aspect = window.innerWidth / window.innerHeight;
-    const aspectPad = Math.max(1, 1 / aspect);
+    // The 1/aspect ratio alone (below) keeps the capsule's rendered WIDTH
+    // consistent across viewports, but a phone in portrait also has much
+    // less vertical room devoted to the capsule specifically once the
+    // wizard's own card takes up the bottom ~80% of the screen (see the
+    // mobile .designer rules) — so on top of the width-matching ratio,
+    // portrait gets an extra pullback (MOBILE_EXTRA_PAD) to leave the
+    // capsule comfortably smaller than "as wide as it can possibly be"
+    // rather than filling the whole narrow screen edge to edge.
+    const MOBILE_EXTRA_PAD = 1.6;
+    const aspectPad = aspect >= 1 ? 1 : (1 / aspect) * MOBILE_EXTRA_PAD;
     const camDist = maxDim * 2.6 * aspectPad;
     const yaw = THREE.MathUtils.degToRad(35);
     const pitch = THREE.MathUtils.degToRad(-20);

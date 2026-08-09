@@ -533,6 +533,13 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   header img { height: 20px; }
   header span { font-size: 9px; letter-spacing: 0.5px; }
 
+  /* The capsule (now sized down for portrait — see scene.js's
+     MOBILE_EXTRA_PAD) still renders centered in #story's full 100vh by
+     default, floating in the empty gap above the bottom-anchored .designer
+     card. Shifting the canvas itself up brings it closer to the header
+     instead of sitting in the middle of dead space. */
+  #canvas-container { transform: translateY(-14%); }
+
   .intro { height: 88vh; padding: 0 20px; }
   .intro h1 { font-size: clamp(24px, 7vw, 32px); }
   .intro p { font-size: 13px; max-width: 340px; }
