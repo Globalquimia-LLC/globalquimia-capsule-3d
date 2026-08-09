@@ -12,7 +12,7 @@ import { initStepTipo } from './wizard/step-tipo.js';
 import { initStepTamano } from './wizard/step-tamano.js';
 import { initStepDesign } from './wizard/step-design.js';
 import { initStepQuote } from './wizard/step-quote.js';
-import { initAccordion } from './wizard/accordion.js';
+import { initAccordion, initPieceTabs } from './wizard/accordion.js';
 import { state } from './state.js';
 
 window.__stateDebug = state; // hook for automated testing
@@ -35,6 +35,7 @@ initStepDesign();
 initDecalDrag();
 initStepQuote();
 initAccordion();
+initPieceTabs();
 
 // Sets up its own wheel/touch listeners, then normalizeScroll — that
 // internal order matters (see the comment in scroll-advance.js) and is

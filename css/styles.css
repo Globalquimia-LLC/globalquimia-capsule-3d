@@ -312,19 +312,41 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    via inline height, which always wins over this rule. */
 .acc-item.open > .acc-body { height: auto; }
 .acc-item.open[data-finish] > .acc-body { padding: 0 14px 10px 14px; }
-/* Tapa/Cuerpo sub-accordions (Tradicionales/Mate) — same idea one level
-   in, [data-target] plays the role [data-finish] does for the outer
-   level. Left padding drops out (.acc-header.acc-sub already indents the
-   label to show nesting; the picker itself doesn't need to echo it). */
-.acc-item.open[data-target] > .acc-body { padding: 0 14px 12px 0; }
-
-.piece-tabs { display: flex; gap: 18px; margin-bottom: 12px; }
+/* Tapa/Cuerpo piece switcher — a flat two-tab folder control (classic
+   Windows-dialog tab look: rectangular tabs, the active one visually
+   merges into the panel border directly below it) instead of an
+   accordion. Reused at two levels: nested inside each finish's own body
+   (step 3 — Tradicionales/Mate) and as the sole switcher for step 4
+   (Logo y Texto, wrapping #design-controls-shared — see step-design.js).
+   Only one .piece-tab-panel is ever really "shown", but BOTH stay
+   stacked in the same grid cell via CSS Grid rather than display:none —
+   Pickr's inline picker (step 3) sizes its own canvas elements off the
+   mount's real box width at the moment it's created, and every picker is
+   built up front for both pieces (see buildAllColorControls), so a
+   display:none ancestor at that moment would bake in a zero-width
+   picker for whichever piece isn't the initially active tab. */
+.piece-tabgroup { margin: 2px 0 0 0; }
+.acc-menu > .piece-tabgroup { padding: 10px; }
+.piece-tabs { display: flex; gap: 2px; }
 .piece-tab {
-  background: none; border: none; cursor: pointer; font-family: inherit;
-  font-size: 12px; font-weight: 700; color: #9aa7ad;
-  padding: 0 0 6px 0; border-bottom: 2px solid transparent;
+  position: relative; top: 1px; z-index: 0;
+  background: rgba(28,64,93,0.06);
+  border: 1px solid rgba(28,64,93,0.18); border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  font-family: inherit; font-size: 11px; font-weight: 700; color: #5b6b74;
+  padding: 6px 16px; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.piece-tab.active { color: var(--navy); border-bottom-color: var(--blue); }
+.piece-tab:hover { background: rgba(0,111,158,0.1); color: var(--navy); }
+.piece-tab.active { background: #fff; color: var(--navy); z-index: 1; }
+.piece-tab-panels {
+  display: grid;
+  background: #fff; border: 1px solid rgba(28,64,93,0.18);
+  border-radius: 0 8px 8px 8px;
+  padding: 12px 14px;
+}
+.piece-tab-panel { grid-area: 1 / 1; visibility: hidden; pointer-events: none; }
+.piece-tab-panel.active { visibility: visible; pointer-events: auto; }
 .metal-swatches { flex-wrap: wrap; gap: 8px; }
 
 /* Free-spectrum picker (Tradicionales/Mate — Metalizados stays a closed
@@ -683,16 +705,19 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      swipe already drives that motion, and showing prev/next this early
      read as wizard navigation before there was any wizard to navigate. */
   .nav-controls {
-    top: 200px; left: 14px; right: auto; bottom: auto;
+    top: 185px; left: 14px; right: auto; bottom: auto; gap: 8px;
     opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
   }
   .nav-controls.visible { opacity: 1; pointer-events: auto; }
-  .nav-btn { width: 44px; height: 44px; font-size: 22px; }
+  .nav-btn { width: 34px; height: 34px; font-size: 16px; border-width: 1.5px; }
 
   /* Both take real vertical space in an already-tight left column /
      wizard card and duplicate controls that exist elsewhere now
-     (nav-controls for forward/back, swipe for continuing). */
-  .scroll-more-hint { display: none; }
+     (nav-controls for forward/back, swipe for continuing). Same for
+     .step-instruction/.pick-hint — the heading + option list already
+     say what to do; the extra sentence just ate space without adding
+     anything a first-time mobile visitor needed. */
+  .scroll-more-hint, .pick-hint, .step-instruction { display: none; }
   .step-back, .step-back.visible { display: none; }
 
   /* Map-style zoom control (see scene.js's adjustCapsuleZoom) — pinned
@@ -722,29 +747,31 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 
   .acc-menu { max-height: 38vh; }
   .acc-header { padding: 12px 14px; font-size: 12px; min-height: 44px; }
-  .acc-header.acc-sub { padding: 8px 14px 8px 20px; font-size: 10.5px; min-height: 34px; }
+  .acc-header.acc-sub { padding: 7px 12px 7px 18px; font-size: 10px; min-height: 32px; }
   .acc-item.open[data-finish] > .acc-body { padding: 0 14px 12px 14px; }
-  .piece-tabs { justify-content: center; gap: 14px; }
+  .piece-tab { font-size: 10px; padding: 4px 10px; }
+  .piece-tab-panels { padding: 6px 8px; }
+  .acc-menu > .piece-tabgroup { padding: 6px; }
 
   /* Step 4's Logo/Texto sub-accordion content, sized down from the
      desktop-width defaults above — at the docked band's ~60% top / 60vh
      card width those were cramped enough to overlap (real-device
      screenshot: labels, select and slider all colliding once "Cuerpo"
      opened). Everything here is a straight scale-down, no layout change. */
-  .design-section { padding: 0 10px 8px 0; }
-  .logo-upload { gap: 6px; }
-  .logo-upload-btn { font-size: 10px; padding: 6px 10px; }
-  .logo-upload-name { font-size: 10px; }
-  .icon-btn { width: 34px; height: 34px; font-size: 14px; }
-  .text-style-row { margin: 2px 0 6px 0; gap: 6px; }
-  .font-select { font-size: 10.5px; padding: 4px 6px; min-width: 90px; }
-  .text-toolbar { margin: 2px 0 6px 0; gap: 6px; }
-  .font-size-slider-wrap { min-width: 100px; }
-  .font-size-readout { font-size: 9px; min-width: 26px; }
-  .transform-row { gap: 4px; margin: 4px 0 6px 0; }
-  .transform-label { font-size: 9px; min-width: 34px; }
-  .font-size-btn { font-size: 9px; padding: 4px 8px; min-height: 30px; }
-  .text-input { font-size: 11px; padding: 6px 8px; margin-bottom: 6px; }
+  .design-section { padding: 0 6px 6px 0; }
+  .logo-upload { gap: 5px; }
+  .logo-upload-btn { font-size: 9.5px; padding: 5px 9px; }
+  .logo-upload-name { font-size: 9.5px; }
+  .icon-btn { width: 30px; height: 30px; font-size: 13px; }
+  .text-style-row { margin: 2px 0 5px 0; gap: 5px; }
+  .font-select { font-size: 10px; padding: 3px 5px; min-width: 84px; }
+  .text-toolbar { margin: 2px 0 5px 0; gap: 5px; }
+  .font-size-slider-wrap { min-width: 90px; }
+  .font-size-readout { font-size: 9px; min-width: 24px; }
+  .transform-row { gap: 3px; margin: 3px 0 5px 0; }
+  .transform-label { font-size: 9px; min-width: 32px; }
+  .font-size-btn { font-size: 9px; padding: 3px 7px; min-height: 26px; }
+  .text-input { font-size: 10.5px; padding: 5px 7px; margin-bottom: 5px; }
 
   /* Touch targets undersized for a finger (fine with a mouse's pixel
      precision, not on a phone) — color swatches at 16-18px and icon

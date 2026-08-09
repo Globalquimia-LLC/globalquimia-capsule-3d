@@ -40,7 +40,7 @@ export function updateRunningSummary() {
   const { currentStep, selectedTipo, selectedSize, appliedColor, customization } = state;
   const chips = [];
   if (currentStep > 1) chips.push(selectedTipo.replace(/\s*-\s*[A-Z-]+$/, ''));
-  if (currentStep > 2) chips.push(`Talla ${selectedSize.code}`);
+  if (currentStep > 2) chips.push(`Tamaño ${selectedSize.code}`);
   if (currentStep > 3) {
     chips.push(`${FINISH_LABELS[appliedColor.cap.finish]} tapa ${appliedColor.cap.hex.toUpperCase()}`);
     chips.push(`${FINISH_LABELS[appliedColor.body.finish]} cuerpo ${appliedColor.body.hex.toUpperCase()}`);

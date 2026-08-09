@@ -38,3 +38,26 @@ export function initAccordion() {
     });
   });
 }
+
+// Tapa/Cuerpo piece switcher — a flat tab-bar (see .piece-tabgroup in
+// styles.css) instead of an accordion: no open/close choreography, just
+// swap which .piece-tab-panel carries the 'active' class. Generic across
+// every .piece-tabgroup on the page (step 3's Tradicionales/Mate groups,
+// step 4's single group), driven purely by matching data-target between
+// a group's own .piece-tab buttons and its own .piece-tab-panel
+// children. Step 4 also needs to physically move #design-controls-shared
+// into whichever panel is now active — that extra behavior lives in
+// step-design.js's own click listener on the same buttons rather than
+// here, so this stays a plain, reusable switcher with no special case.
+export function initPieceTabs() {
+  document.querySelectorAll('.piece-tabgroup').forEach((group) => {
+    const tabs = group.querySelectorAll(':scope > .piece-tabs > .piece-tab');
+    const panels = group.querySelectorAll(':scope > .piece-tab-panels > .piece-tab-panel');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => t.classList.toggle('active', t === tab));
+        panels.forEach((p) => p.classList.toggle('active', p.dataset.target === tab.dataset.target));
+      });
+    });
+  });
+}

@@ -82,7 +82,7 @@
     <div class="stepper" id="stepper">
       <div class="stepper-item active" data-step="1"><span class="stepper-circle">1</span><span class="stepper-label">Tipo</span></div>
       <div class="stepper-line"></div>
-      <div class="stepper-item" data-step="2"><span class="stepper-circle">2</span><span class="stepper-label">Talla</span></div>
+      <div class="stepper-item" data-step="2"><span class="stepper-circle">2</span><span class="stepper-label">Tamaño</span></div>
       <div class="stepper-line"></div>
       <div class="stepper-item" data-step="3"><span class="stepper-circle">3</span><span class="stepper-label">Color</span></div>
       <div class="stepper-line"></div>
@@ -114,24 +114,20 @@
             <span class="acc-chevron">▲</span>
           </button>
           <div class="acc-body">
-            <div class="acc-item open" data-target="cap">
-              <button class="acc-header acc-sub" type="button">
-                <span>Tapa</span>
-                <span class="acc-chevron">▲</span>
-              </button>
-              <div class="acc-body">
-                <div class="picker-mount" data-finish="tradicionales" data-target="cap"><div id="mount-tradicionales-cap"></div></div>
-                <span class="color-readout" id="readout-tradicionales-cap" data-finish="tradicionales" data-target="cap"></span>
+            <div class="piece-tabgroup" data-finish="tradicionales">
+              <div class="piece-tabs">
+                <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
+                <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
               </div>
-            </div>
-            <div class="acc-item" data-target="body">
-              <button class="acc-header acc-sub" type="button">
-                <span>Cuerpo</span>
-                <span class="acc-chevron">▲</span>
-              </button>
-              <div class="acc-body">
-                <div class="picker-mount" data-finish="tradicionales" data-target="body"><div id="mount-tradicionales-body"></div></div>
-                <span class="color-readout" id="readout-tradicionales-body" data-finish="tradicionales" data-target="body"></span>
+              <div class="piece-tab-panels">
+                <div class="piece-tab-panel active" data-target="cap">
+                  <div class="picker-mount" data-finish="tradicionales" data-target="cap"><div id="mount-tradicionales-cap"></div></div>
+                  <span class="color-readout" id="readout-tradicionales-cap" data-finish="tradicionales" data-target="cap"></span>
+                </div>
+                <div class="piece-tab-panel" data-target="body">
+                  <div class="picker-mount" data-finish="tradicionales" data-target="body"><div id="mount-tradicionales-body"></div></div>
+                  <span class="color-readout" id="readout-tradicionales-body" data-finish="tradicionales" data-target="body"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -143,24 +139,20 @@
             <span class="acc-chevron">▲</span>
           </button>
           <div class="acc-body">
-            <div class="acc-item open" data-target="cap">
-              <button class="acc-header acc-sub" type="button">
-                <span>Tapa</span>
-                <span class="acc-chevron">▲</span>
-              </button>
-              <div class="acc-body">
-                <div class="picker-mount" data-finish="mate" data-target="cap"><div id="mount-mate-cap"></div></div>
-                <span class="color-readout" id="readout-mate-cap" data-finish="mate" data-target="cap"></span>
+            <div class="piece-tabgroup" data-finish="mate">
+              <div class="piece-tabs">
+                <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
+                <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
               </div>
-            </div>
-            <div class="acc-item" data-target="body">
-              <button class="acc-header acc-sub" type="button">
-                <span>Cuerpo</span>
-                <span class="acc-chevron">▲</span>
-              </button>
-              <div class="acc-body">
-                <div class="picker-mount" data-finish="mate" data-target="body"><div id="mount-mate-body"></div></div>
-                <span class="color-readout" id="readout-mate-body" data-finish="mate" data-target="body"></span>
+              <div class="piece-tab-panels">
+                <div class="piece-tab-panel active" data-target="cap">
+                  <div class="picker-mount" data-finish="mate" data-target="cap"><div id="mount-mate-cap"></div></div>
+                  <span class="color-readout" id="readout-mate-cap" data-finish="mate" data-target="cap"></span>
+                </div>
+                <div class="piece-tab-panel" data-target="body">
+                  <div class="picker-mount" data-finish="mate" data-target="body"><div id="mount-mate-body"></div></div>
+                  <span class="color-readout" id="readout-mate-body" data-finish="mate" data-target="body"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -192,13 +184,14 @@
     </div>
 
     <div class="step-panel" data-step="4">
-      <div class="acc-menu" id="design-accordion">
-        <div class="acc-item" data-target="cap">
-          <button class="acc-header" type="button">
-            <span>Tapa</span>
-            <span class="acc-chevron">▲</span>
-          </button>
-          <div class="acc-body">
+      <div class="acc-menu">
+        <div class="piece-tabgroup" id="design-piece-tabs">
+          <div class="piece-tabs">
+            <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
+            <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
+          </div>
+          <div class="piece-tab-panels">
+            <div class="piece-tab-panel active" data-target="cap">
             <div class="design-controls" id="design-controls-shared">
               <div class="acc-item open" data-subsection="logo">
                 <button class="acc-header acc-sub" type="button">
@@ -273,15 +266,9 @@
                 </div>
               </div>
             </div>
+            </div>
+            <div class="piece-tab-panel" data-target="body"></div>
           </div>
-        </div>
-
-        <div class="acc-item" data-target="body">
-          <button class="acc-header" type="button">
-            <span>Cuerpo</span>
-            <span class="acc-chevron">▲</span>
-          </button>
-          <div class="acc-body"></div>
         </div>
       </div>
 

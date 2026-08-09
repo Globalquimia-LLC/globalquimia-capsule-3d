@@ -6,9 +6,13 @@ import { buildDecalGeometryAt, worldToLocalPlacement } from '../wizard/step-desi
 // Drag-to-reposition for the logo/text decals — only active on step 4
 // (state.rotationLocked), which is exactly what makes this simple: the
 // capsule holds a fixed pose for the whole gesture, so the owner mesh's
-// matrixWorld doesn't move out from under a drag in progress. Mouse only,
-// same convention as drag.js (whole-capsule rotation), which this replaces
-// for the duration of step 4 — see the rotationLocked guard added there.
+// matrixWorld doesn't move out from under a drag in progress. Mouse and
+// touch both work here (same as drag.js's whole-capsule rotation, which
+// this replaces for the duration of step 4 — see the rotationLocked guard
+// added there); touch is safe unconditionally, not gated on
+// wizardScrollLocked like drag.js is, because this only ever runs once
+// rotationLocked is already true (step 4 only), which itself implies the
+// wizard is active.
 //
 // Grab-state is kept entirely module-local, never written to shared
 // `state`, specifically so it can't interfere with drag.js's own
@@ -71,7 +75,7 @@ export function initDecalDrag() {
   }
 
   container.addEventListener('pointerdown', (e) => {
-    if (e.pointerType !== 'mouse' || !state.rotationLocked || !state.capsuleGroup) return;
+    if ((e.pointerType !== 'mouse' && e.pointerType !== 'touch') || !state.rotationLocked || !state.capsuleGroup) return;
     const { meshes, lookup } = collectDecalMeshes();
     if (!meshes.length) return;
 

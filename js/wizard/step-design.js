@@ -23,25 +23,25 @@ import { updateRunningSummary } from './wizard.js';
 //
 // One shared control block (Logo + Texto grabado) drives whichever piece
 // is active — previously each section had its own independent Tapa/Cuerpo
-// tabs, so switching piece in one didn't affect the other and it was easy
+// copy, so switching piece in one didn't affect the other and it was easy
 // to edit the wrong piece without noticing. Now presented as a Tapa/Cuerpo
-// accordion (accordion.js handles the actual open/close + height
-// animation via the generic .acc-header wiring in initAccordion() —
-// this only needs to move #design-controls-shared into whichever side's
-// .acc-body is being opened, and point it at that piece's stored data,
-// BEFORE that generic handler runs and measures the body's height (see
-// main.js's init order: initStepDesign() before initAccordion()).
+// tab switcher (see .piece-tabgroup in styles.css and initPieceTabs() in
+// accordion.js, which owns the generic "swap which panel looks active"
+// behavior) — this only needs to move #design-controls-shared into
+// whichever tab's .piece-tab-panel was just clicked, and point it at that
+// piece's stored data.
 // ---------------------------------------------------------------------
 let refreshLogoUI = () => {};
 let refreshTextoUI = () => {};
 
 function setupDesignPieceToggle() {
   const sharedControls = document.getElementById('design-controls-shared');
-  document.querySelectorAll('#design-accordion > .acc-item').forEach((item) => {
-    const header = item.querySelector(':scope > .acc-header');
-    header.addEventListener('click', () => {
-      state.activeDesignTarget = item.dataset.target;
-      item.querySelector(':scope > .acc-body').appendChild(sharedControls);
+  const group = document.getElementById('design-piece-tabs');
+  if (!group) return;
+  group.querySelectorAll(':scope > .piece-tabs > .piece-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      state.activeDesignTarget = tab.dataset.target;
+      group.querySelector(`:scope > .piece-tab-panels > .piece-tab-panel[data-target="${tab.dataset.target}"]`).appendChild(sharedControls);
       refreshLogoUI();
       refreshTextoUI();
     });

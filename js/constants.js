@@ -187,7 +187,7 @@ export const WHATSAPP_NUMBER = '573217408144';
 export const STEP_TITLES = { 1: 'Tipo de cápsula', 2: 'Tamaño', 3: 'Color', 4: 'Logo y Texto', 5: 'Cantidad y cotización' };
 export const STEP_INSTRUCTIONS = {
   1: 'Elegí el tipo de cápsula para tu producto.',
-  2: 'Elegí la talla — la cápsula escala en vivo a la proporción real.',
+  2: 'Elegí el tamaño — la cápsula escala en vivo a la proporción real.',
   3: 'Elegí acabado y color para la tapa y el cuerpo.',
   4: 'Agregá tu logo o un texto grabado y arrastralo sobre la cápsula para ubicarlo donde quieras.',
   5: 'Revisá tu selección, ajustá la cantidad y pedí la cotización.',

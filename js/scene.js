@@ -32,9 +32,15 @@ const PITCH = THREE.MathUtils.degToRad(-20);
 // and also the docked mobile band — see reframeCapsuleCamera) it's a
 // no-op, matching the original desktop framing exactly.
 const MOBILE_EXTRA_PAD = 1.6;
+// 2.0 (was 2.6) — pulls the camera closer so the capsule reads about 30%
+// bigger on screen, for every capsule size and right from the initial
+// framing. scroll-story.js's dolly stages derive their own distances
+// proportionally from whatever this returns (see aspectPad there), so
+// this one constant scales the whole zoom sequence too, not just the
+// static starting pose.
 function computeCamDist(maxDim, aspect) {
   const aspectPad = aspect >= 1 ? 1 : (1 / aspect) * MOBILE_EXTRA_PAD;
-  return maxDim * 2.6 * aspectPad;
+  return maxDim * 2.0 * aspectPad;
 }
 
 export function initScene() {
