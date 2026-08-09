@@ -538,7 +538,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      default, floating in the empty gap above the bottom-anchored .designer
      card. Shifting the canvas itself up brings it closer to the header
      instead of sitting in the middle of dead space. */
-  #canvas-container { transform: translateY(-14%); }
+  #canvas-container { transform: translateY(-20%); }
 
   .intro { height: 88vh; padding: 0 20px; }
   .intro h1 { font-size: clamp(24px, 7vw, 32px); }
@@ -570,7 +570,13 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     top: auto; bottom: 3%;
     transform: translateX(-50%);
     width: 94vw;
-    max-height: 78vh;
+    /* Capped well short of the full available height (not just "whatever
+       fits") — the point isn't to show as much of a tall step (3's color
+       accordion, 4's logo+texto sections) as possible, it's to leave a
+       GUARANTEED band clear above the card for the capsule, on every step,
+       regardless of how long that step's own content is. Long content
+       scrolls inside the card instead of growing it. */
+    max-height: 60vh;
     overflow-y: auto;
   }
   /* The capsule fills the whole #story behind this panel — bottom-anchoring
@@ -601,7 +607,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   .nav-controls { top: 64px; right: 12px; bottom: auto; }
   .nav-btn { width: 44px; height: 44px; font-size: 22px; }
 
-  .acc-menu { max-height: 56vh; }
+  .acc-menu { max-height: 38vh; }
   .acc-header { padding: 12px 14px; font-size: 12px; }
   .acc-header.acc-sub { padding: 10px 14px 10px 22px; font-size: 11px; }
   .acc-item.open[data-finish] > .acc-body { padding: 0 14px 12px 14px; }
