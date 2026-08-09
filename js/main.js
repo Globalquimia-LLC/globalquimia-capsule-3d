@@ -3,7 +3,7 @@
 // file (and everything it imports) has to keep working served as-is by a
 // static file server, same as before the split.
 import { initIntro } from './intro.js';
-import { initScene } from './scene.js';
+import { initScene, initCapsuleZoomControls } from './scene.js';
 import { initDragRotation } from './interaction/drag.js';
 import { initDecalDrag } from './interaction/decal-drag.js';
 import { initScrollAdvance } from './interaction/scroll-advance.js';
@@ -26,6 +26,7 @@ initIntro();
 // after. Every other init below is independent of both and of each other.
 initScene();
 initDragRotation();
+initCapsuleZoomControls();
 
 initWizardShell();
 initStepTipo();

@@ -240,7 +240,32 @@ export function reframeCapsuleCamera() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
-  const camDist = computeCamDist(maxDimGlobal, camera.aspect);
+  // mobileZoomFactor divides the distance (bigger factor = closer camera =
+  // zoomed in) rather than multiplying it, so "zoom in" and "camera gets
+  // closer" move the same direction without a sign flip to remember.
+  const camDist = computeCamDist(maxDimGlobal, camera.aspect) / (state.mobileZoomFactor || 1);
   camera.position.copy(camera.userData.baseDir).multiplyScalar(camDist);
   camera.lookAt(0, 0, 0);
+}
+
+const ZOOM_MIN = 0.6;
+const ZOOM_MAX = 2.2;
+const ZOOM_STEP = 0.2;
+
+// Wired to the docked band's own +/- buttons (mobile only — see
+// scroll_full.html's .zoom-controls and its listeners below). Clamped
+// well short of the near/far planes at either extreme so the capsule
+// never clips through the lens or shrinks to an unreadable dot.
+export function adjustCapsuleZoom(direction) {
+  const next = (state.mobileZoomFactor || 1) + direction * ZOOM_STEP;
+  state.mobileZoomFactor = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next));
+  reframeCapsuleCamera();
+}
+
+export function initCapsuleZoomControls() {
+  const zoomIn = document.getElementById('zoom-in-btn');
+  const zoomOut = document.getElementById('zoom-out-btn');
+  if (!zoomIn || !zoomOut) return;
+  zoomIn.addEventListener('click', () => adjustCapsuleZoom(1));
+  zoomOut.addEventListener('click', () => adjustCapsuleZoom(-1));
 }

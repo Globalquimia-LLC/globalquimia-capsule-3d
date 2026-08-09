@@ -103,6 +103,10 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    original, in-card version instead); the mobile media query below is
    what actually positions and reveals this. */
 #step-heading-mobile { display: none; }
+/* Mobile-only zoom control for the docked capsule band — desktop's
+   capsule isn't box-constrained the same way (full drag-rotate, no fixed
+   band), so it has no equivalent. */
+.zoom-controls { display: none; }
 
 /* Text sits at the SIDES (never over the capsule, which stays centered) and
    scales up/down via GSAP as it enters/exits — the outer element only
@@ -397,15 +401,12 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    as Color's finish/Tapa/Cuerpo nesting — one shared control block
    (Logo + Texto grabado) gets moved into whichever side is open (see
    setupDesignPieceToggle in step-design.js) rather than each side
-   keeping its own independent copy. */
-.design-section {
-  background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(28,64,93,0.08); padding: 12px 14px; margin-bottom: 10px; text-align: left;
-}
-.design-section-label {
-  display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
-  color: var(--navy); margin-bottom: 8px;
-}
+   keeping its own independent copy. Logo/Texto grabado are themselves a
+   further level of sub-accordion (.acc-item[data-subsection]) — no own
+   card background here, the accordion header + indent already reads as
+   its own section without stacking a second card inside Tapa/Cuerpo's. */
+.design-section { padding: 0 14px 12px 0; text-align: left; }
+.acc-item.open[data-subsection] > .acc-body { padding: 0; }
 
 .logo-upload { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .logo-upload-btn {
@@ -626,6 +627,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   #step-heading-mobile {
     display: block;
     position: fixed; top: 122px; left: 14px; right: auto;
+    width: calc(40vw - 24px);
     z-index: 4; text-align: left;
     opacity: 0; transition: opacity 0.35s ease;
   }
@@ -634,7 +636,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     color: var(--blue); margin: 0;
   }
-  #step-heading-mobile h2 { font-size: 18px; margin: 2px 0 0; color: var(--navy); }
+  #step-heading-mobile h2 { font-size: 18px; margin: 2px 0 0; color: var(--navy); line-height: 1.2; }
   .quick-swatches { justify-content: center; flex-wrap: wrap; }
   .color-readout { width: 100%; text-align: center; margin-top: 2px; }
 
@@ -652,25 +654,56 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   }
   .step-number .of-total { font-size: 0.32em; }
 
-  /* Fixed to a real, predictable band (30% of viewport height, just under
-     the header) instead of filling the whole #story and floating in
-     whatever gap the wizard card's own height happens to leave — see
-     scroll-story.js, which toggles this class the moment the wizard
-     activates (mobile only; the intro/story scroll narrative before that
-     still needs the full-bleed canvas for its zoom/pan) and re-fits the
-     camera to match via reframeCapsuleCamera(). */
+  /* Fixed to a real, predictable band — the right 60% of the top area,
+     the left 40% (step number, heading, nav controls, all
+     fixed-positioned #story siblings) takes the rest — instead of
+     filling the whole #story and floating in whatever gap the wizard
+     card's own height happens to leave. See scroll-story.js, which
+     toggles this class the moment the wizard activates (mobile only;
+     the intro/story scroll narrative before that still needs the
+     full-bleed canvas for its zoom/pan) and re-fits the camera to match
+     via reframeCapsuleCamera(). A narrower-but-taller box than a
+     full-width band reads as BIGGER within its own zone (the aspect-fit
+     camera math always fills whatever box it's given proportionally the
+     same way — what changes here is how much actual screen real estate
+     that box gets). */
   #canvas-container.docked {
     position: fixed;
-    top: 56px; left: 0; right: 0; bottom: auto;
-    height: 30vh; height: 30dvh;
+    top: 56px; left: 40vw; right: 0; bottom: auto;
+    height: 38vh; height: 38dvh;
     z-index: 3;
   }
 
-  /* .designer becomes a bottom-anchored banner on mobile (see above) —
-     bottom-right would sit right under/over it, so the nav controls move
-     up under the header instead of colliding with the wizard panel. */
-  .nav-controls { top: 64px; right: 12px; bottom: auto; }
+  /* Left column, stacked below the heading instead of a separate
+     top-right corner — .designer becomes a bottom-anchored banner on
+     mobile (see above), so bottom-right would sit right under/over it. */
+  .nav-controls { top: 200px; left: 14px; right: auto; bottom: auto; }
   .nav-btn { width: 44px; height: 44px; font-size: 22px; }
+
+  /* Map-style zoom control (see scene.js's adjustCapsuleZoom) — pinned
+     near the TOP of the docked band rather than its bottom edge: the
+     wizard card below is only SOMETIMES this tall (max-height:60vh is a
+     cap, not a fixed height — a short step like 1/2 leaves the card well
+     short of it, a step with an open sub-accordion like 4 can reach
+     close to it), and a bottom-anchored zoom control ended up under the
+     card's top corner on those taller steps. Only makes sense once the
+     band exists, so it fades in/out with .docked via the sibling
+     selector below rather than a separate JS-driven class. */
+  .zoom-controls {
+    position: fixed; right: 10px; top: 170px;
+    z-index: 5; display: flex; flex-direction: column; gap: 6px;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  #canvas-container.docked ~ .zoom-controls { opacity: 1; pointer-events: auto; }
+  .zoom-btn {
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    background: rgba(255,255,255,0.9); border: 1px solid rgba(28,64,93,0.15);
+    color: var(--navy); font-size: 18px; font-weight: 700; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(28,64,93,0.15);
+    touch-action: manipulation;
+  }
+  .zoom-btn:active { background: #fff; transform: scale(0.94); }
 
   .acc-menu { max-height: 38vh; }
   .acc-header { padding: 12px 14px; font-size: 12px; min-height: 44px; }

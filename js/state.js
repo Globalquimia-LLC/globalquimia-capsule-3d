@@ -95,4 +95,11 @@ export const state = {
   tunnelStarted: false,
   tunnelPlaying: false,
   tunnelTimeline: null,
+
+  // Mobile's docked capsule band has its own +/- zoom controls (see
+  // scene.js's reframeCapsuleCamera/adjustCapsuleZoom) — 1 is the normal
+  // aspect-fit framing, >1 zoomed in (camera closer), <1 zoomed out.
+  // Reset to 1 whenever the band re-docks (scroll-story.js), so zooming
+  // in on one visit doesn't carry over and surprise the next.
+  mobileZoomFactor: 1,
 };

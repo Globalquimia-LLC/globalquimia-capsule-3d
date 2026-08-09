@@ -58,6 +58,11 @@ export function initScrollStory(maxDim, camDist) {
         // before the next line runs).
         if (!state.isDesktopLayout && wizardActive !== canvasContainer.classList.contains('docked')) {
           canvasContainer.classList.toggle('docked', wizardActive);
+          // Undocking (leaving the wizard) resets any mobile pinch/button
+          // zoom back to the default framing — otherwise re-entering the
+          // wizard on a later visit would start pre-zoomed with no visual
+          // explanation why.
+          if (!wizardActive) state.mobileZoomFactor = 1;
           reframeCapsuleCamera();
         }
         if (!state.hasRevealedStep1 && wizardActive) {

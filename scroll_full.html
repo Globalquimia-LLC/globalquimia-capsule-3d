@@ -46,6 +46,12 @@
     <h2 id="designer-heading-mobile">Tipo de cápsula</h2>
   </div>
   <div id="canvas-container"></div>
+  <!-- Mobile-only, overlaid on the docked capsule band's own corner —
+       see scene.js's adjustCapsuleZoom/initCapsuleZoomControls. -->
+  <div class="zoom-controls" id="zoom-controls">
+    <button class="zoom-btn" id="zoom-in-btn" type="button" aria-label="Acercar">+</button>
+    <button class="zoom-btn" id="zoom-out-btn" type="button" aria-label="Alejar">−</button>
+  </div>
 
   <div class="story-text side-left" id="stage-1" data-stage="1">
     <div class="inner">
@@ -194,63 +200,77 @@
           </button>
           <div class="acc-body">
             <div class="design-controls" id="design-controls-shared">
-              <div class="design-section">
-                <span class="design-section-label">Logo</span>
-                <div class="logo-upload">
-                  <label class="logo-upload-btn" for="logo-file-input">Subir logo</label>
-                  <input type="file" id="logo-file-input" accept="image/png" hidden />
-                  <span class="logo-upload-name" id="logo-file-name">Ningún archivo seleccionado</span>
-                  <button type="button" class="icon-btn" id="logo-clear-btn" title="Quitar logo" aria-label="Quitar logo">🗑</button>
-                </div>
-                <span class="logo-error" id="logo-error" hidden></span>
-                <span class="logo-quality-warning" id="logo-quality-warning" hidden>Resolución baja: el logo puede verse borroso al proyectarlo.</span>
-                <div class="transform-row">
-                  <div class="transform-control">
-                    <span class="transform-label">Rotar</span>
-                    <input type="range" id="logo-rotation-slider" class="font-size-slider" />
-                    <span class="font-size-readout" id="logo-rotation-readout"></span>
-                  </div>
-                  <div class="transform-control">
-                    <span class="transform-label">Tamaño</span>
-                    <input type="range" id="logo-scale-slider" class="font-size-slider" />
-                    <span class="font-size-readout" id="logo-scale-readout"></span>
+              <div class="acc-item open" data-subsection="logo">
+                <button class="acc-header acc-sub" type="button">
+                  <span>Logo</span>
+                  <span class="acc-chevron">▲</span>
+                </button>
+                <div class="acc-body">
+                  <div class="design-section">
+                    <div class="logo-upload">
+                      <label class="logo-upload-btn" for="logo-file-input">Subir logo</label>
+                      <input type="file" id="logo-file-input" accept="image/png" hidden />
+                      <span class="logo-upload-name" id="logo-file-name">Ningún archivo seleccionado</span>
+                      <button type="button" class="icon-btn" id="logo-clear-btn" title="Quitar logo" aria-label="Quitar logo">🗑</button>
+                    </div>
+                    <span class="logo-error" id="logo-error" hidden></span>
+                    <span class="logo-quality-warning" id="logo-quality-warning" hidden>Resolución baja: el logo puede verse borroso al proyectarlo.</span>
+                    <div class="transform-row">
+                      <div class="transform-control">
+                        <span class="transform-label">Rotar</span>
+                        <input type="range" id="logo-rotation-slider" class="font-size-slider" />
+                        <span class="font-size-readout" id="logo-rotation-readout"></span>
+                      </div>
+                      <div class="transform-control">
+                        <span class="transform-label">Tamaño</span>
+                        <input type="range" id="logo-scale-slider" class="font-size-slider" />
+                        <span class="font-size-readout" id="logo-scale-readout"></span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div class="design-section">
-                <span class="design-section-label">Texto grabado</span>
-                <input type="text" class="text-input" id="text-input" placeholder="Digite texto aquí" maxlength="24" />
-                <div class="text-style-row">
-                  <select id="font-family-select" class="font-select"></select>
-                  <div class="font-size-btns" id="font-weight-btns">
-                    <button type="button" class="font-size-btn active" data-weight="700">Negrita</button>
-                    <button type="button" class="font-size-btn" data-weight="400">Normal</button>
+              <div class="acc-item" data-subsection="texto">
+                <button class="acc-header acc-sub" type="button">
+                  <span>Texto grabado</span>
+                  <span class="acc-chevron">▲</span>
+                </button>
+                <div class="acc-body">
+                  <div class="design-section">
+                    <input type="text" class="text-input" id="text-input" placeholder="Digite texto aquí" maxlength="24" />
+                    <div class="text-style-row">
+                      <select id="font-family-select" class="font-select"></select>
+                      <div class="font-size-btns" id="font-weight-btns">
+                        <button type="button" class="font-size-btn active" data-weight="700">Negrita</button>
+                        <button type="button" class="font-size-btn" data-weight="400">Normal</button>
+                      </div>
+                    </div>
+                    <div class="text-toolbar">
+                      <div class="font-size-slider-wrap">
+                        <input type="range" id="font-size-slider" class="font-size-slider" />
+                        <span class="font-size-readout" id="font-size-readout"></span>
+                      </div>
+                      <div class="text-toolbar-actions">
+                        <button type="button" class="icon-btn" id="text-reset-btn" title="Restablecer" aria-label="Restablecer">⟲</button>
+                        <button type="button" class="icon-btn" id="text-clear-btn" title="Borrar texto" aria-label="Borrar texto">🗑</button>
+                      </div>
+                    </div>
+                    <div class="transform-row">
+                      <div class="transform-control">
+                        <span class="transform-label">Rotar</span>
+                        <input type="range" id="text-rotation-slider" class="font-size-slider" />
+                        <span class="font-size-readout" id="text-rotation-readout"></span>
+                      </div>
+                      <div class="transform-control">
+                        <span class="transform-label">Tamaño</span>
+                        <input type="range" id="text-scale-slider" class="font-size-slider" />
+                        <span class="font-size-readout" id="text-scale-readout"></span>
+                      </div>
+                    </div>
+                    <div class="quick-swatches" id="text-color-swatches"></div>
                   </div>
                 </div>
-                <div class="text-toolbar">
-                  <div class="font-size-slider-wrap">
-                    <input type="range" id="font-size-slider" class="font-size-slider" />
-                    <span class="font-size-readout" id="font-size-readout"></span>
-                  </div>
-                  <div class="text-toolbar-actions">
-                    <button type="button" class="icon-btn" id="text-reset-btn" title="Restablecer" aria-label="Restablecer">⟲</button>
-                    <button type="button" class="icon-btn" id="text-clear-btn" title="Borrar texto" aria-label="Borrar texto">🗑</button>
-                  </div>
-                </div>
-                <div class="transform-row">
-                  <div class="transform-control">
-                    <span class="transform-label">Rotar</span>
-                    <input type="range" id="text-rotation-slider" class="font-size-slider" />
-                    <span class="font-size-readout" id="text-rotation-readout"></span>
-                  </div>
-                  <div class="transform-control">
-                    <span class="transform-label">Tamaño</span>
-                    <input type="range" id="text-scale-slider" class="font-size-slider" />
-                    <span class="font-size-readout" id="text-scale-readout"></span>
-                  </div>
-                </div>
-                <div class="quick-swatches" id="text-color-swatches"></div>
               </div>
             </div>
           </div>
