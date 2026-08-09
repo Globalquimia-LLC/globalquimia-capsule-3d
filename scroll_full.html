@@ -45,6 +45,24 @@
     <p class="eyebrow">Personalización</p>
     <h2 id="designer-heading-mobile">Tipo de cápsula</h2>
   </div>
+  <!-- Mobile-only twin of #stepper (below) — same reasoning as
+       #step-heading-mobile above: a direct #story child so position:fixed
+       is scoped to the real viewport, not .designer's own transform.
+       updateStepper() in wizard.js targets .stepper-item/.stepper-line by
+       class, not by the container's id, so this stays in sync with zero
+       extra JS — it's just a second set of elements matching the same
+       selectors. -->
+  <div class="stepper" id="stepper-mobile">
+    <div class="stepper-item active" data-step="1"><span class="stepper-circle">1</span><span class="stepper-label">Tipo</span></div>
+    <div class="stepper-line"></div>
+    <div class="stepper-item" data-step="2"><span class="stepper-circle">2</span><span class="stepper-label">Tamaño</span></div>
+    <div class="stepper-line"></div>
+    <div class="stepper-item" data-step="3"><span class="stepper-circle">3</span><span class="stepper-label">Color</span></div>
+    <div class="stepper-line"></div>
+    <div class="stepper-item" data-step="4"><span class="stepper-circle">4</span><span class="stepper-label">Diseño</span></div>
+    <div class="stepper-line"></div>
+    <div class="stepper-item" data-step="5"><span class="stepper-circle">5</span><span class="stepper-label">Cotizar</span></div>
+  </div>
   <div id="canvas-container"></div>
   <!-- Mobile-only, overlaid on the docked capsule band's own corner —
        see scene.js's adjustCapsuleZoom/initCapsuleZoomControls. -->

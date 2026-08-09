@@ -103,6 +103,9 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    original, in-card version instead); the mobile media query below is
    what actually positions and reveals this. */
 #step-heading-mobile { display: none; }
+/* Mobile-only twin of #stepper — same reasoning, see the HTML comment on
+   #stepper-mobile. Desktop keeps the original, in-card stepper. */
+#stepper-mobile { display: none; }
 /* Mobile-only zoom control for the docked capsule band — desktop's
    capsule isn't box-constrained the same way (full drag-rotate, no fixed
    band), so it has no equivalent. */
@@ -318,13 +321,20 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    accordion. Reused at two levels: nested inside each finish's own body
    (step 3 — Tradicionales/Mate) and as the sole switcher for step 4
    (Logo y Texto, wrapping #design-controls-shared — see step-design.js).
-   Only one .piece-tab-panel is ever really "shown", but BOTH stay
-   stacked in the same grid cell via CSS Grid rather than display:none —
-   Pickr's inline picker (step 3) sizes its own canvas elements off the
-   mount's real box width at the moment it's created, and every picker is
-   built up front for both pieces (see buildAllColorControls), so a
-   display:none ancestor at that moment would bake in a zero-width
-   picker for whichever piece isn't the initially active tab. */
+   Only one .piece-tab-panel is ever really "shown" — height:0 +
+   overflow:hidden on the inactive one (swapped for height:auto on the
+   active one), same technique the old nested accordion used for its own
+   open/close, NOT display:none and NOT a CSS-grid overlay. Both of those
+   alternatives broke Pickr's inline color picker (step 3): every picker
+   is built up front for both pieces (see buildAllColorControls), and
+   Pickr sizes its own hue/gradient-slider elements off the mount's real
+   box width at the moment it's created — display:none collapses that
+   width to 0 outright, and a grid overlay (grid-area: 1/1 on both
+   panels sharing one auto-sized track) left the browser free to size
+   that shared track off whichever panel's intrinsic content happened to
+   win, instead of the full designer-card width either panel actually
+   needs. Plain block-flow height clipping never touches width at all,
+   which is exactly why the accordion never had this problem. */
 .piece-tabgroup { margin: 2px 0 0 0; }
 .acc-menu > .piece-tabgroup { padding: 10px; }
 .piece-tabs { display: flex; gap: 2px; }
@@ -340,13 +350,12 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .piece-tab:hover { background: rgba(0,111,158,0.1); color: var(--navy); }
 .piece-tab.active { background: #fff; color: var(--navy); z-index: 1; }
 .piece-tab-panels {
-  display: grid;
   background: #fff; border: 1px solid rgba(28,64,93,0.18);
   border-radius: 0 8px 8px 8px;
   padding: 12px 14px;
 }
-.piece-tab-panel { grid-area: 1 / 1; visibility: hidden; pointer-events: none; }
-.piece-tab-panel.active { visibility: visible; pointer-events: auto; }
+.piece-tab-panel { height: 0; overflow: hidden; }
+.piece-tab-panel.active { height: auto; }
 .metal-swatches { flex-wrap: wrap; gap: 8px; }
 
 /* Free-spectrum picker (Tradicionales/Mate — Metalizados stays a closed
@@ -659,6 +668,22 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     color: var(--blue); margin: 0;
   }
   #step-heading-mobile h2 { font-size: 18px; margin: 2px 0 0; color: var(--navy); line-height: 1.2; }
+
+  /* Original in-card stepper hidden on mobile — #stepper-mobile (below)
+     replaces it, flush against the bottom of the capsule's docked band
+     (see #canvas-container.docked's own top+height, mirrored in the
+     "top" here) instead of scrolling inside the wizard card. */
+  #stepper { display: none; }
+  #stepper-mobile {
+    display: flex;
+    position: fixed;
+    top: calc(56px + 38dvh); left: 14px; right: 14px;
+    margin: 0; padding: 0;
+    z-index: 4;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  }
+  #stepper-mobile.visible { opacity: 1; pointer-events: auto; }
+
   .quick-swatches { justify-content: center; flex-wrap: wrap; }
   .color-readout { width: 100%; text-align: center; margin-top: 2px; }
 
