@@ -139,7 +139,23 @@ export function initScene() {
     // 3/4 angled position instead, same yaw/pitch approach as the static
     // product renders (render_capsule.py) so it actually shows the capsule's
     // elongated shape.
-    const camDist = maxDim * 2.6;
+    //
+    // 2.6 alone was tuned against a desktop-width (landscape) aspect — a
+    // FIXED distance means the capsule's on-screen SIZE scales with how
+    // narrow the viewport is, since the same distance covers proportionally
+    // less physical width on a tall/narrow phone screen than on a wide
+    // desktop one. aspectPad compensates: at aspect >= 1 it's a no-op
+    // (matches the original desktop framing exactly), and it grows as the
+    // viewport gets narrower than square, pulling the camera back so the
+    // capsule's rendered width stays consistent instead of overflowing into
+    // the wizard text next to/behind it. Same ratio re-derived (from camDist
+    // and maxDim, rather than passed separately) by scroll-story.js's own
+    // dolly stages, so the whole scroll-driven zoom sequence stays
+    // proportionally consistent at every viewport width, not just this
+    // first frame.
+    const aspect = window.innerWidth / window.innerHeight;
+    const aspectPad = Math.max(1, 1 / aspect);
+    const camDist = maxDim * 2.6 * aspectPad;
     const yaw = THREE.MathUtils.degToRad(35);
     const pitch = THREE.MathUtils.degToRad(-20);
     camera.position.set(

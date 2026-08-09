@@ -75,6 +75,13 @@ export function initScrollStory(maxDim, camDist) {
   // single axis — the camera sits at an angled 3/4 position, so animating
   // camera.position.z alone would drift off-angle instead of zooming.
   const dollyState = { dist: camDist };
+  // Re-derives scene.js's aspectPad from the camDist it already computed
+  // (rather than a second parameter) — every stage below was tuned as a
+  // fixed maxDim multiple against a desktop aspect, same as camDist itself,
+  // so each one needs the same narrow-viewport correction to stay
+  // proportionally consistent through the whole zoom sequence instead of
+  // snapping back to "too big" the moment stage 2 kicks in.
+  const aspectPad = camDist / (maxDim * 2.6);
   function applyDolly() {
     camera.position.copy(camera.userData.baseDir).multiplyScalar(dollyState.dist);
     camera.lookAt(0, 0, 0);
@@ -84,7 +91,7 @@ export function initScrollStory(maxDim, camDist) {
   tl.to(state.rotationTarget, { y: Math.PI * 0.85, duration: 0.29, ease: 'power1.inOut' }, 0);
 
   // Stage 2 (0.29 -> 0.58): zoom in while the cap slides open
-  tl.to(dollyState, { dist: maxDim * 1.35, duration: 0.29, ease: 'power2.inOut', onUpdate: applyDolly }, 0.29);
+  tl.to(dollyState, { dist: maxDim * 1.35 * aspectPad, duration: 0.29, ease: 'power2.inOut', onUpdate: applyDolly }, 0.29);
   tl.to({ p: 0 }, {
     p: 1,
     duration: 0.29,
@@ -107,7 +114,7 @@ export function initScrollStory(maxDim, camDist) {
 
   // Stage 3 (0.58 -> 0.72): open, continued spin, ease out a touch
   tl.to(state.rotationTarget, { y: Math.PI * 1.35, duration: 0.14, ease: 'power1.out' }, 0.58);
-  tl.to(dollyState, { dist: maxDim * 1.9, duration: 0.14, ease: 'power2.inOut', onUpdate: applyDolly }, 0.58);
+  tl.to(dollyState, { dist: maxDim * 1.9 * aspectPad, duration: 0.14, ease: 'power2.inOut', onUpdate: applyDolly }, 0.58);
 
   // Stage 4 (0.72 -> 0.87): the cap slides back CLOSED, settling to a clean
   // angle + comfortable distance for the color picker
@@ -120,7 +127,7 @@ export function initScrollStory(maxDim, camDist) {
     },
   }, 0.72);
   tl.to(state.rotationTarget, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
-  tl.to(dollyState, { dist: maxDim * 2.3, duration: 0.15, ease: 'power2.inOut', onUpdate: applyDolly }, 0.72);
+  tl.to(dollyState, { dist: maxDim * 2.3 * aspectPad, duration: 0.15, ease: 'power2.inOut', onUpdate: applyDolly }, 0.72);
 
   // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in on the right;
   // the capsule (rendered by #canvas-container, shifted at the DOM level —

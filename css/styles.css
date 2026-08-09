@@ -563,6 +563,21 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     top: auto; bottom: 3%;
     transform: translateX(-50%);
     width: 94vw;
+    max-height: 78vh;
+    overflow-y: auto;
+  }
+  /* The capsule fills the whole #story behind this panel — bottom-anchoring
+     the panel while the capsule stays roughly centered means they overlap
+     around the stepper/heading on any step whose panel content is short
+     (1, 2, 5 all lack their own card background, unlike 3/4's acc-menu/
+     design-section). One card wrapping the whole step — header through
+     panel — keeps every step legible regardless of exactly where the
+     capsule ends up, instead of choreographing non-overlap between an
+     independently-positioned 3D object and a DOM element. */
+  .designer .inner {
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
+    border-radius: 16px; padding: 18px 16px;
+    box-shadow: 0 8px 24px rgba(28,64,93,0.1);
   }
   .designer h2 { font-size: 18px; }
   .quick-swatches { justify-content: center; flex-wrap: wrap; }
