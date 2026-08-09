@@ -676,9 +676,24 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 
   /* Left column, stacked below the heading instead of a separate
      top-right corner — .designer becomes a bottom-anchored banner on
-     mobile (see above), so bottom-right would sit right under/over it. */
-  .nav-controls { top: 200px; left: 14px; right: auto; bottom: auto; }
+     mobile (see above), so bottom-right would sit right under/over it.
+     Hidden until the wizard itself is active (toggled in
+     scroll-story.js's onUpdate, same pattern as #step-number/
+     #step-heading-mobile) — during the pre-wizard intro/story scroll,
+     swipe already drives that motion, and showing prev/next this early
+     read as wizard navigation before there was any wizard to navigate. */
+  .nav-controls {
+    top: 200px; left: 14px; right: auto; bottom: auto;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  }
+  .nav-controls.visible { opacity: 1; pointer-events: auto; }
   .nav-btn { width: 44px; height: 44px; font-size: 22px; }
+
+  /* Both take real vertical space in an already-tight left column /
+     wizard card and duplicate controls that exist elsewhere now
+     (nav-controls for forward/back, swipe for continuing). */
+  .scroll-more-hint { display: none; }
+  .step-back, .step-back.visible { display: none; }
 
   /* Map-style zoom control (see scene.js's adjustCapsuleZoom) — pinned
      near the TOP of the docked band rather than its bottom edge: the
@@ -690,7 +705,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      band exists, so it fades in/out with .docked via the sibling
      selector below rather than a separate JS-driven class. */
   .zoom-controls {
-    position: fixed; right: 10px; top: 170px;
+    position: fixed; right: 6px; top: 60px;
     z-index: 5; display: flex; flex-direction: column; gap: 6px;
     opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
   }
@@ -707,9 +722,29 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 
   .acc-menu { max-height: 38vh; }
   .acc-header { padding: 12px 14px; font-size: 12px; min-height: 44px; }
-  .acc-header.acc-sub { padding: 10px 14px 10px 22px; font-size: 11px; min-height: 40px; }
+  .acc-header.acc-sub { padding: 8px 14px 8px 20px; font-size: 10.5px; min-height: 34px; }
   .acc-item.open[data-finish] > .acc-body { padding: 0 14px 12px 14px; }
   .piece-tabs { justify-content: center; gap: 14px; }
+
+  /* Step 4's Logo/Texto sub-accordion content, sized down from the
+     desktop-width defaults above — at the docked band's ~60% top / 60vh
+     card width those were cramped enough to overlap (real-device
+     screenshot: labels, select and slider all colliding once "Cuerpo"
+     opened). Everything here is a straight scale-down, no layout change. */
+  .design-section { padding: 0 10px 8px 0; }
+  .logo-upload { gap: 6px; }
+  .logo-upload-btn { font-size: 10px; padding: 6px 10px; }
+  .logo-upload-name { font-size: 10px; }
+  .icon-btn { width: 34px; height: 34px; font-size: 14px; }
+  .text-style-row { margin: 2px 0 6px 0; gap: 6px; }
+  .font-select { font-size: 10.5px; padding: 4px 6px; min-width: 90px; }
+  .text-toolbar { margin: 2px 0 6px 0; gap: 6px; }
+  .font-size-slider-wrap { min-width: 100px; }
+  .font-size-readout { font-size: 9px; min-width: 26px; }
+  .transform-row { gap: 4px; margin: 4px 0 6px 0; }
+  .transform-label { font-size: 9px; min-width: 34px; }
+  .font-size-btn { font-size: 9px; padding: 4px 8px; min-height: 30px; }
+  .text-input { font-size: 11px; padding: 6px 8px; margin-bottom: 6px; }
 
   /* Touch targets undersized for a finger (fine with a mouse's pixel
      precision, not on a phone) — color swatches at 16-18px and icon
@@ -717,9 +752,8 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      guideline, with matching gap so adjacent targets don't crowd. */
   .swatch { width: 30px; height: 30px; }
   .quick-swatches { gap: 10px; }
-  .icon-btn { width: 40px; height: 40px; font-size: 16px; }
   .font-size-btn {
-    min-height: 44px; display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
   }
 
   /* Step 1/2 rows deliberately compressed BELOW the 44px touch guideline —

@@ -129,8 +129,10 @@ export function goToStep(newStep) {
 
   // The capsule keeps turning to greet each new step (a bit of motion, not
   // a side swap) — same fixed left/right layout throughout. Step 4 instead
-  // snaps to a fixed pose and stays there for the whole step.
-  if (state.isDesktopLayout && state.capsuleGroup) {
+  // snaps to a fixed pose and stays there for the whole step. Runs on
+  // mobile too now (used to be desktop-only) — the horizontal step-4 lock
+  // in particular should look the same everywhere, not just on desktop.
+  if (state.capsuleGroup) {
     gsap.killTweensOf(state.capsuleGroup.rotation);
     if (state.rotationLocked) {
       state.spinVelocityY = 0; // momentum isn't a tween — killTweensOf above doesn't touch it

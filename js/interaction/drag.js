@@ -6,9 +6,12 @@ import { DRAG_TILT_LIMIT, DRAG_SENSITIVITY, SPIN_MAX_VELOCITY } from '../constan
 // Free rotation by cursor drag (the same "grab and spin" feel as
 // visor.html's <model-viewer camera-controls>), layered on top of the
 // scroll-driven story/wizard rotation instead of replacing it. Mouse
-// only (pointerType check) — touch drags are left alone so they keep
-// doing their normal job of driving the pinned scroll story; adding
-// touch here would fight one-finger scrolling on the very same area.
+// always; touch only once the wizard is active (state.wizardScrollLocked)
+// — before that, touch on the canvas is still driving the pinned scroll
+// story (one-finger scroll/zoom/pan), and rotating the capsule there too
+// would fight that same gesture. Once the wizard locks scroll, the canvas
+// itself is excluded from scroll-advance.js's swipe-to-change-step
+// interception for exactly this reason (see isDragOwnedTarget there).
 // Scrolling again after a drag used to re-assert whatever the active GSAP
 // scrub tween wanted for rotation.y at that scroll position by setting it
 // directly — a hard snap from wherever the drag left it, since a scrub
@@ -37,7 +40,8 @@ export function initDragRotation() {
     // decal-drag.js takes over pointer handling on this same container
     // instead. isDragging never gets set here, so pointermove/up below
     // stay correctly inert for the whole gesture.
-    if (e.pointerType !== 'mouse' || !state.capsuleGroup || state.rotationLocked) return;
+    const touchOk = e.pointerType === 'touch' && state.wizardScrollLocked;
+    if ((e.pointerType !== 'mouse' && !touchOk) || !state.capsuleGroup || state.rotationLocked) return;
     state.isDragging = true;
     state.spinVelocityY = 0; // grabbing it again stops any momentum spin in progress
     dragStartX = e.clientX;

@@ -142,18 +142,26 @@ function manualStep(direction) {
   else window.scrollTo({ top: target, behavior: 'smooth' });
 }
 
-// Range sliders (Rotar/Tamaño, font size...) and Pickr's own gradient
-// square/hue strip (anything under .picker-mount) need to OWN their drag
-// gesture end to end — the global wheel/touchmove listeners below
+// Range sliders (Rotar/Tamaño, font size...), Pickr's own gradient
+// square/hue strip (anything under .picker-mount), and — once the wizard
+// is actually active — the capsule canvas itself all need to OWN their
+// drag gesture end to end. The global wheel/touchmove listeners below
 // otherwise treat any vertical drag on top of them as a step-advance/
-// retreat swipe, which both steals the input (a color/slider drag stops
-// having any visible effect past the very first pixel) and, worse,
-// changes the wizard step out from under whatever the user was actually
-// trying to adjust. A tap still works either way (touchstart+touchend
-// with no intervening move is never a "drag"), so this only needs to
-// suppress interception once an actual drag on one of these starts.
+// retreat swipe, which both steals the input (a color/slider drag, or a
+// spin-the-capsule drag via drag.js, stops having any visible effect past
+// the very first pixel) and, worse, changes the wizard step out from
+// under whatever the user was actually trying to do. A tap still works
+// either way (touchstart+touchend with no intervening move is never a
+// "drag"), so this only needs to suppress interception once an actual
+// drag on one of these starts. #canvas-container is scoped to
+// wizardScrollLocked specifically — pre-wizard, touch on the canvas is
+// still what drives the scroll-through-story cinematic, and excluding it
+// there would break that instead.
 function isDragOwnedTarget(el) {
-  return !!(el && el.closest && el.closest('input[type="range"], .picker-mount'));
+  if (!el || !el.closest) return false;
+  if (el.closest('input[type="range"], .picker-mount')) return true;
+  if (state.wizardScrollLocked && el.closest('#canvas-container')) return true;
+  return false;
 }
 
 export function initScrollAdvance() {
