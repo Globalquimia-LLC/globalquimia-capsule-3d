@@ -626,20 +626,37 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   .piece-tabs { justify-content: center; gap: 14px; }
 
   /* Touch targets undersized for a finger (fine with a mouse's pixel
-     precision, not on a phone) — option-list/size-list rows land around
-     28px tall at the desktop padding/font-size, well under the ~44px
-     minimum; color swatches at 16-18px are worse still. Bumped up with
-     matching gap so adjacent targets don't crowd each other either. */
-  .option-row, .size-row {
-    padding: 13px 8px; font-size: 14px; min-height: 44px;
-    display: flex; align-items: center;
-  }
+     precision, not on a phone) — color swatches at 16-18px and icon
+     buttons at 26px are the worst offenders. Bumped toward the ~44px
+     guideline, with matching gap so adjacent targets don't crowd. */
   .swatch { width: 30px; height: 30px; }
   .quick-swatches { gap: 10px; }
   .icon-btn { width: 40px; height: 40px; font-size: 16px; }
   .font-size-btn, .piece-toggle-btn {
     min-height: 44px; display: flex; align-items: center; justify-content: center;
   }
+
+  /* Step 1/2 rows deliberately compressed BELOW the 44px touch guideline —
+     project call, prioritizing "capsule stays visible + every size fits
+     without an inner scroll" over strict target size here. Full-row-width
+     hit area plus the divider between rows keeps mis-taps rare even at
+     this height. */
+  .option-row {
+    padding: 8px 6px; font-size: 13px; min-height: 34px;
+    display: flex; align-items: center;
+  }
+  .size-row {
+    padding: 5px 6px; font-size: 11.5px; min-height: 26px; gap: 8px;
+    display: flex; align-items: center;
+  }
+  .capsule-icon { height: 13px; }
+
+  /* Tapa/Cuerpo side by side needs more width than a phone has to stay
+     readable — each color-col becomes full-width instead, Tapa first
+     then Cuerpo below it (same source order, just stacked), so scrolling
+     down within the accordion reaches Cuerpo instead of both pickers
+     being squeezed to half width. */
+  .color-columns { grid-template-columns: 1fr; gap: 16px; }
 
   /* The side rail visually collided with the bottom-anchored text/designer
      on narrow screens — move it out of the way instead of overlapping. */
