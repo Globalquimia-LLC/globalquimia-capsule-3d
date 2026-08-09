@@ -110,10 +110,35 @@ function tryAdvanceOnScroll(deltaY) {
   return true;
 }
 
+// Button-driven equivalent of one solid wheel/swipe tick, for anyone with
+// no mouse/trackpad/touchscreen to drive the scroll-based navigation at
+// all (see the fixed prev/next buttons in scroll_full.html). direction is
+// +1 (forward/down) or -1 (back/up).
+function manualStep(direction) {
+  // tryAdvanceOnScroll already knows how to route this once the tunnel is
+  // mid-flight or the wizard is locked in (reverse/play the tunnel, step
+  // the wizard forward/back, nudge the menu on 1-2) — same as a real wheel
+  // tick. It returns false in exactly the cases a real wheel event would
+  // fall through to the browser's own native scroll instead (still in the
+  // free-scroll story, or retreating up out of step 1 back into it) — a
+  // button press has no such native default to fall back on, so that case
+  // gets an explicit scroll nudge below.
+  if (tryAdvanceOnScroll(direction * 300)) return;
+  const st = state.storyScrollTrigger;
+  let target = window.scrollY + direction * (window.innerHeight * 0.6);
+  if (st) target = Math.min(target, st.end);
+  target = Math.max(target, 0);
+  if (state.scrollNormalizer) state.scrollNormalizer.scrollY(target);
+  else window.scrollTo({ top: target, behavior: 'smooth' });
+}
+
 export function initScrollAdvance() {
   window.addEventListener('wheel', (e) => {
     if (tryAdvanceOnScroll(e.deltaY)) e.preventDefault();
   }, { passive: false });
+
+  document.getElementById('nav-prev-btn').addEventListener('click', () => manualStep(-1));
+  document.getElementById('nav-next-btn').addEventListener('click', () => manualStep(1));
 
   let lastTouchY = null;
   window.addEventListener('touchstart', (e) => {

@@ -1,6 +1,26 @@
 import { state } from '../state.js';
-import { PRICE_TABLE, FINISH_LABELS, WHATSAPP_NUMBER } from '../constants.js';
+import { PRICE_TABLE, FINISH_LABELS, WHATSAPP_NUMBER, PALETTE, METAL_PALETTE } from '../constants.js';
 import { playTunnelSequence } from '../interaction/tunnel.js';
+
+// Named colors only ever come from PALETTE (tradicionales/mate free-pick
+// quick swatches) or METAL_PALETTE (metalizados' closed set) — an exact hex
+// match means the user picked one of those named swatches rather than a
+// custom hue off the spectrum or a typed-in value. No emoji swatch here —
+// tried a nearest-color circle emoji first, but it renders as a broken
+// "tofu" glyph on systems without a full emoji font, which is worse than
+// just the hex, so plain text (name when there is one) is what's reliable.
+function colorNameFor(hexStr) {
+  const target = hexStr.toLowerCase();
+  const match = [...PALETTE, ...METAL_PALETTE].find(
+    (c) => '#' + c.hex.toString(16).padStart(6, '0') === target
+  );
+  return match ? match.name : null;
+}
+
+function describeColor(hexStr) {
+  const name = colorNameFor(hexStr);
+  return `${name ? name + ' ' : ''}${hexStr.toUpperCase()}`;
+}
 
 // ---------------------------------------------------------------------
 // 5. Cantidad y cotización — assembles every choice made in steps 1-4
@@ -29,8 +49,8 @@ export function renderQuoteSummary() {
   const lines = [
     `Tipo: ${selectedTipo}`,
     `Tamaño: ${selectedSize.code} (${selectedSize.length.toFixed(2)} mm)`,
-    `Tapa: ${FINISH_LABELS[appliedColor.cap.finish]} ${appliedColor.cap.hex.toUpperCase()}`,
-    `Cuerpo: ${FINISH_LABELS[appliedColor.body.finish]} ${appliedColor.body.hex.toUpperCase()}`,
+    `Tapa: ${FINISH_LABELS[appliedColor.cap.finish]} ${describeColor(appliedColor.cap.hex)}`,
+    `Cuerpo: ${FINISH_LABELS[appliedColor.body.finish]} ${describeColor(appliedColor.body.hex)}`,
   ];
   if (customization.cap.logoName) lines.push(`Logo tapa: ${customization.cap.logoName}`);
   if (customization.body.logoName) lines.push(`Logo cuerpo: ${customization.body.logoName}`);

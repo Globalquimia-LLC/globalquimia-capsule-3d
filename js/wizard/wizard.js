@@ -82,6 +82,11 @@ export function goToStep(newStep) {
   const newPanel = designerEl.querySelector(`.step-panel[data-step="${newStep}"]`);
 
   backBtn.classList.toggle('visible', newStep > 1);
+  // Step 5 is the end of the line for the generic prev/next control —
+  // "Solicitar cotización" is the only forward action from here, so the
+  // next button would just be dead weight (scroll-advance.js already
+  // doesn't let it do anything on step 5 either).
+  document.getElementById('nav-next-btn').classList.toggle('hidden', newStep === 5);
   updateStepper(newStep);
   updateRunningSummary();
 
