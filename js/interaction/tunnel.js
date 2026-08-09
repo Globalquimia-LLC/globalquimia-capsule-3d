@@ -105,11 +105,10 @@ export function playTunnelSequence(onComplete) {
       },
     }, 1.7)
     // 4. Logo at the end of the tunnel (overlay is fully black by the
-    // time the dolly above finishes), held on screen for 2s, then
-    // onComplete runs — the page navigates away to WhatsApp at that point,
-    // so no fade-out tween back to the wizard is needed here.
+    // time the dolly above finishes) — onComplete runs right after it
+    // fades in, navigating the page away to WhatsApp at that point, so no
+    // fade-out tween back to the wizard is needed here.
     .to(logo, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' })
-    .to({}, { duration: 2 })
     .call(() => {
       state.tunnelPlaying = false;
       if (onComplete) onComplete();
