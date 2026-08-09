@@ -1,22 +1,22 @@
 import { state } from '../state.js';
 import { goToStep } from '../wizard/wizard.js';
-import { playTunnelSequence } from './tunnel.js';
 
 // ---------------------------------------------------------------------
-// Scroll-to-continue — replaces "Continuar" buttons on steps 3/4, and
-// carries step 5 on into the closing tunnel. Once the main scroll story
-// is fully consumed (progress ~1, which is exactly when the wizard is
-// showing at all), further downward scroll/wheel/swipe would normally
-// just unpin #story and drop straight into .closing — intercepted here
-// instead and repurposed as "move to the next step" while on 3, 4 or 5.
+// Scroll-to-continue — replaces "Continuar" buttons on steps 3/4. Once
+// the main scroll story is fully consumed (progress ~1, which is exactly
+// when the wizard is showing at all), further downward scroll/wheel/swipe
+// would normally just unpin #story and scroll past it — intercepted here
+// instead and repurposed as "move to the next step" while on 3 or 4.
 // Steps 1-2 stay click-driven on purpose: picking a tipo/tamaño is an
-// actual decision, not a "continue when ready" beat.
+// actual decision, not a "continue when ready" beat. Step 5 is the end
+// of the line — scrolling down does nothing there; only the explicit
+// "Solicitar cotización" button starts the closing tunnel.
 //
 // Scrolling back up mirrors scrolling down: while the tunnel is
-// mid-flight it reverses (same eased path, backwards, via GSAP's own
-// .reverse() — that's what keeps it feeling like one continuous motion
-// instead of a jump-cut back to step 5), and once it's fully closed
-// again (or was never entered) an upward scroll retreats the wizard a
+// mid-flight (started via that button) it reverses (same eased path,
+// backwards, via GSAP's own .reverse() — that's what keeps it feeling
+// like one continuous motion instead of a jump-cut back to step 5), and
+// once it's fully closed again an upward scroll retreats the wizard a
 // step at a time — 5 -> 4 -> 3 -> 2 -> 1 — showing each one's own
 // content as it lands, same as clicking "Volver" repeatedly but
 // scroll-driven.
@@ -99,8 +99,11 @@ function tryAdvanceOnScroll(deltaY) {
   state.lastScrollAdvanceAt = now;
 
   if (deltaY > 0) {
+    // Step 5 is the end of the line — no scroll-triggered advance from
+    // here. "Solicitar cotización" (step-quote.js) is the only way to
+    // start the closing tunnel; the event is still swallowed below so it
+    // doesn't fall through to native page scroll.
     if (state.currentStep < 5) goToStep(state.currentStep + 1);
-    else playTunnelSequence();
   } else {
     goToStep(state.currentStep - 1);
   }

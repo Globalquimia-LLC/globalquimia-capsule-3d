@@ -1,7 +1,6 @@
 import { state } from '../state.js';
 import { PRICE_TABLE, FINISH_LABELS, WHATSAPP_NUMBER } from '../constants.js';
 import { playTunnelSequence } from '../interaction/tunnel.js';
-import { resetWizard } from './wizard.js';
 
 // ---------------------------------------------------------------------
 // 5. Cantidad y cotización — assembles every choice made in steps 1-4
@@ -47,23 +46,23 @@ export function renderQuoteSummary() {
   return lines.join('\n');
 }
 
-function openWhatsApp(summary) {
+function whatsAppUrl(summary) {
   const msg = `Hola, quiero cotizar cápsulas personalizadas:\n${summary}`;
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
 
 export function initStepQuote() {
   document.getElementById('quote-qty').addEventListener('input', renderQuoteSummary);
 
-  // "Solicitar cotización" opens WhatsApp in a new tab right away — no
-  // waiting on any animation for that — and also plays the tunnel (capsule
-  // flies open, camera dives through it, the Globalquimia logo appears at
-  // the end) as the visual payoff on the page itself; resetWizard runs once
-  // the tunnel finishes, landing back on a fresh step 1.
+  // "Solicitar cotización" plays the tunnel (capsule flies open, camera
+  // dives through it, the Globalquimia logo appears and holds) and only
+  // once that finishes does the page itself navigate to WhatsApp — no new
+  // tab/window at all, so there's nothing for a popup blocker to catch.
   document.getElementById('quote-whatsapp-btn').addEventListener('click', () => {
     const summary = renderQuoteSummary();
-    openWhatsApp(summary);
-    playTunnelSequence(resetWizard);
+    playTunnelSequence(() => {
+      window.location.href = whatsAppUrl(summary);
+    });
   });
 
   document.getElementById('quote-copy-btn').addEventListener('click', () => {

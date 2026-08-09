@@ -12,9 +12,8 @@ import { CAP_OPEN_DELTA } from '../constants.js';
 //   3. The camera pushes into that opening while a full-screen overlay
 //      darkens over it — together reading as "flying into the capsule".
 //   4. Once fully black, the Globalquimia logo fades in at the end of
-//      the tunnel, then onComplete runs (resetWizard, in practice) while
-//      the screen is still black, so the reset is hidden behind the
-//      overlay instead of visibly snapping the wizard back to step 1.
+//      the tunnel, holds for a beat, then onComplete runs — navigating
+//      the page to WhatsApp, in practice (see step-quote.js).
 // ---------------------------------------------------------------------
 export function playTunnelSequence(onComplete) {
   const { camera, capsuleGroup, capNode, capMaterial, capMeshObj, maxDimGlobal } = state;
@@ -27,8 +26,8 @@ export function playTunnelSequence(onComplete) {
   // "prevented" doesn't stop THAT engine from still nudging scrollY on
   // its own. Disabling it here freezes scroll completely (our own wheel
   // listener keeps receiving events regardless, so scroll-up-to-reverse
-  // still works); onComplete (resetWizard) re-enables it once the tunnel
-  // finishes.
+  // still works); moot once onComplete navigates the page away, but keeps
+  // scroll from drifting during the animation itself either way.
   if (state.scrollNormalizer) state.scrollNormalizer.disable();
   const overlay = document.getElementById('tunnel-overlay');
   const logo = document.getElementById('tunnel-logo');
@@ -106,12 +105,11 @@ export function playTunnelSequence(onComplete) {
       },
     }, 1.7)
     // 4. Logo at the end of the tunnel (overlay is fully black by the
-    // time the dolly above finishes), a short beat holding on it, then
-    // onComplete runs while still fully black — resetWizard (its actual
-    // caller) sets the overlay back to transparent/non-blocking itself as
-    // part of the reset, so no separate fade-out tween is needed here.
+    // time the dolly above finishes), held on screen for 3s, then
+    // onComplete runs — the page navigates away to WhatsApp at that point,
+    // so no fade-out tween back to the wizard is needed here.
     .to(logo, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' })
-    .to({}, { duration: 0.4 })
+    .to({}, { duration: 3 })
     .call(() => {
       state.tunnelPlaying = false;
       if (onComplete) onComplete();

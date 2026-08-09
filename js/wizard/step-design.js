@@ -446,40 +446,6 @@ export function updateDecalForTarget(target, type) {
   state.decalMeshes[target][type] = decalMesh;
 }
 
-// Full reset for "Volver a diseñar la cápsula" (wizard.js's resetWizard) —
-// disposes every decal and puts both pieces' customization back to their
-// initial defaults, then refreshes the panel UI (file input, text input,
-// sliders) to match. refreshLogoUI/refreshTextoUI are the same module-level
-// closures the section setup functions assign, safe to call directly here.
-export function resetDesignCustomization() {
-  ['cap', 'body'].forEach((target) => {
-    disposeDecal(target, 'logo');
-    disposeDecal(target, 'text');
-    const s = state.customization[target];
-    s.logoImg = null;
-    s.logoName = '';
-    s.logoLowRes = false;
-    s.text = '';
-    s.textColor = '#000000';
-    s.fontSizePx = DECAL_FONT_SIZE_RANGE.default;
-    s.fontFamily = FONT_FAMILIES[0].css;
-    s.fontWeight = '700';
-    s.placement = { logo: null, text: null };
-    s.logoRotationDeg = DECAL_ROTATION_RANGE.default;
-    s.logoScalePct = DECAL_SCALE_RANGE.default;
-    s.textRotationDeg = DECAL_ROTATION_RANGE.default;
-    s.textScalePct = DECAL_SCALE_RANGE.default;
-  });
-  state.activeDesignTarget = 'cap';
-  document.querySelectorAll('#design-piece-toggle .piece-toggle-btn').forEach((b) => {
-    b.classList.toggle('active', b.dataset.target === 'cap');
-  });
-  document.getElementById('logo-file-input').value = '';
-  document.getElementById('text-input').value = '';
-  refreshLogoUI();
-  refreshTextoUI();
-}
-
 export function initStepDesign() {
   setupDesignPieceToggle();
   setupLogoSection();
