@@ -35,6 +35,16 @@
 
 <section id="story">
   <div class="step-number side-left" id="step-number"><span class="of-total">Paso 1 de 5</span>1</div>
+  <!-- Mobile-only twin of .designer's own "Personalización" / heading —
+       a direct #story child (not nested inside .designer, which has its
+       own transform on mobile and would turn position:fixed into
+       something scoped to ITS box instead of the real viewport). Kept in
+       sync with the step heading from wizard.js's goToStep(); hidden
+       entirely outside the mobile breakpoint. -->
+  <div class="step-heading-mobile" id="step-heading-mobile">
+    <p class="eyebrow">Personalización</p>
+    <h2 id="designer-heading-mobile">Tipo de cápsula</h2>
+  </div>
   <div id="canvas-container"></div>
 
   <div class="story-text side-left" id="stage-1" data-stage="1">

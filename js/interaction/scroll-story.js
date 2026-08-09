@@ -44,6 +44,7 @@ export function initScrollStory(maxDim, camDist) {
         const wizardActive = self.progress > 0.93;
         designerEl.classList.toggle('active', wizardActive);
         document.getElementById('step-number').classList.toggle('visible', wizardActive);
+        document.getElementById('step-heading-mobile').classList.toggle('visible', wizardActive);
         // Mobile only: the capsule fills the whole #story otherwise, which
         // is what the intro/story cinematic zoom needs — but once the
         // wizard's own bottom-anchored card takes over most of the screen,

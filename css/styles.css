@@ -97,6 +97,13 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   margin-bottom: 0.05em;
 }
 
+/* Mobile-only twin of .designer's "Personalización" + heading — see the
+   HTML comment on #step-heading-mobile for why this can't just live
+   inside .designer itself. Hidden by default (desktop keeps the
+   original, in-card version instead); the mobile media query below is
+   what actually positions and reveals this. */
+#step-heading-mobile { display: none; }
+
 /* Text sits at the SIDES (never over the capsule, which stays centered) and
    scales up/down via GSAP as it enters/exits — the outer element only
    handles fixed side positioning, the inner .inner is what GSAP scales, so
@@ -603,7 +610,31 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     border-radius: 16px; padding: 18px 16px;
     box-shadow: 0 8px 24px rgba(28,64,93,0.1);
   }
-  .designer h2 { font-size: 18px; }
+  /* "Personalización" + the step's own heading move out of the card
+     entirely and into #step-heading-mobile (a #story sibling, not a
+     .designer descendant — .designer has its own `transform` on mobile,
+     which turns position:fixed on any descendant into something scoped
+     to .designer's OWN box instead of the real viewport; see that
+     element's definition below). Frees up space in the already-tight
+     60vh-capped card, and reads naturally as "step 1 — Tipo de cápsula"
+     right under the step number before ever reaching the card. */
+  .designer .eyebrow, #designer-heading { display: none; }
+  /* Chips recapping every choice made so far — useful headroom on
+     desktop, not on a screen already this tight on vertical space. */
+  .running-summary { display: none; }
+
+  #step-heading-mobile {
+    display: block;
+    position: fixed; top: 122px; left: 14px; right: auto;
+    z-index: 4; text-align: left;
+    opacity: 0; transition: opacity 0.35s ease;
+  }
+  #step-heading-mobile.visible { opacity: 1; }
+  #step-heading-mobile .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--blue); margin: 0;
+  }
+  #step-heading-mobile h2 { font-size: 18px; margin: 2px 0 0; color: var(--navy); }
   .quick-swatches { justify-content: center; flex-wrap: wrap; }
   .color-readout { width: 100%; text-align: center; margin-top: 2px; }
 

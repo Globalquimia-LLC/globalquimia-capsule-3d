@@ -142,8 +142,23 @@ function manualStep(direction) {
   else window.scrollTo({ top: target, behavior: 'smooth' });
 }
 
+// Range sliders (Rotar/Tamaño, font size...) and Pickr's own gradient
+// square/hue strip (anything under .picker-mount) need to OWN their drag
+// gesture end to end — the global wheel/touchmove listeners below
+// otherwise treat any vertical drag on top of them as a step-advance/
+// retreat swipe, which both steals the input (a color/slider drag stops
+// having any visible effect past the very first pixel) and, worse,
+// changes the wizard step out from under whatever the user was actually
+// trying to adjust. A tap still works either way (touchstart+touchend
+// with no intervening move is never a "drag"), so this only needs to
+// suppress interception once an actual drag on one of these starts.
+function isDragOwnedTarget(el) {
+  return !!(el && el.closest && el.closest('input[type="range"], .picker-mount'));
+}
+
 export function initScrollAdvance() {
   window.addEventListener('wheel', (e) => {
+    if (isDragOwnedTarget(e.target)) return;
     if (tryAdvanceOnScroll(e.deltaY)) e.preventDefault();
   }, { passive: false });
 
@@ -151,11 +166,14 @@ export function initScrollAdvance() {
   document.getElementById('nav-next-btn').addEventListener('click', () => manualStep(1));
 
   let lastTouchY = null;
+  let touchOwnedByControl = false;
   window.addEventListener('touchstart', (e) => {
     lastTouchY = e.touches[0].clientY;
+    touchOwnedByControl = isDragOwnedTarget(e.target);
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
     if (lastTouchY === null) return;
+    if (touchOwnedByControl) return; // let the slider/picker handle its own drag natively
     const dy = lastTouchY - e.touches[0].clientY; // finger moving up = scrolling down
     if (tryAdvanceOnScroll(dy)) e.preventDefault();
     lastTouchY = e.touches[0].clientY;

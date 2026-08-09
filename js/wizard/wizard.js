@@ -103,6 +103,11 @@ export function goToStep(newStep) {
   if (oldPanel) oldPanel.classList.remove('active');
   if (newPanel) newPanel.classList.add('active');
   heading.textContent = STEP_TITLES[newStep];
+  // Mobile's own fixed-position twin of `heading` (see the comment on
+  // #step-heading-mobile in scroll_full.html) — kept in sync here rather
+  // than duplicating goToStep's whole call site.
+  const mobileHeading = document.getElementById('designer-heading-mobile');
+  if (mobileHeading) mobileHeading.textContent = STEP_TITLES[newStep];
   instruction.textContent = STEP_INSTRUCTIONS[newStep];
   stepNumberEl.innerHTML = `<span class="of-total">Paso ${newStep} de 5</span>${newStep}`;
   if (newStep === 5) renderQuoteSummary();
