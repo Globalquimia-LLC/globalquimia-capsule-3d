@@ -150,4 +150,13 @@ export function goToStep(newStep) {
 
 export function initWizardShell() {
   document.getElementById('step-back').addEventListener('click', () => goToStep(state.currentStep - 1));
+  // Jump straight to a step by clicking its circle — matches both #stepper
+  // (desktop) and #stepper-mobile (mobile twin) since neither is scoped by
+  // id, same as updateStepper() above. Every step already renders a sane
+  // default the moment the capsule loads (see updateRunningSummary's own
+  // comment on this), so jumping ahead of wherever you've actually reached
+  // is as safe as jumping back.
+  document.querySelectorAll('.stepper-item').forEach((item) => {
+    item.addEventListener('click', () => goToStep(Number(item.dataset.step)));
+  });
 }

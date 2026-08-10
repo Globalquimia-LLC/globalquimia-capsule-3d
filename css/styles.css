@@ -185,7 +185,12 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    so it's clear up front how many steps there are and which one you're
    on, not just that "some step" is active. */
 .stepper { display: flex; align-items: flex-start; margin-bottom: 10px; }
-.stepper-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
+/* Clickable — jumps straight to that step (see initWizardShell in
+   wizard.js). Every step already has a sane default value the moment the
+   capsule loads (see updateRunningSummary's own comment on this), so
+   jumping ahead of wherever you've actually gotten to is safe, not just
+   jumping back. */
+.stepper-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; cursor: pointer; touch-action: manipulation; }
 .stepper-circle {
   width: 19px; height: 19px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -617,16 +622,22 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      which only applies the left-shift above the 760px breakpoint). */
   .designer, .designer.side-left, .designer.side-right {
     left: 50%; right: auto;
-    /* Top-anchored flush under #stepper-mobile (56px + 38dvh capsule band
+    /* Top-anchored flush under #stepper-mobile (56px + 28dvh capsule band
        + ~36px stepper row, no gap) instead of bottom:3% — bottom-anchoring
        left the card's actual top wherever its own content height happened
        to land, which on a short step (1/2) meant a dead gap between the
        stepper and the option list above an otherwise-empty lower card.
        Anchoring from the top puts every step's own options right under
-       the stepper on every step, not just the tall ones. */
+       the stepper on every step, not just the tall ones. 28dvh (was 38)
+       matches the shrunk band below — step 4's horizontally-locked pose
+       in particular left a big chunk of a 38dvh band as plain background
+       under a short, wide capsule silhouette; the camera's own framing
+       is already conservative (sized off the model's worst-case diagonal
+       extent, not whatever pose happens to be current), so a shorter
+       band still comfortably fits every step's silhouette. */
     bottom: auto;
-    top: calc(56px + 38vh + 36px);
-    top: calc(56px + 38dvh + 36px);
+    top: calc(56px + 28vh + 36px);
+    top: calc(56px + 28dvh + 36px);
     transform: translateX(-50%);
     width: 94vw;
     /* Capped to whatever's actually left below the card's new top (not a
@@ -634,8 +645,8 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
        so it can never run past the bottom edge — long content (3's color
        accordion, 4's logo+texto sections) scrolls inside the card instead
        of growing past the screen. */
-    max-height: calc(100vh - 56px - 38vh - 36px - 10px);
-    max-height: calc(100dvh - 56px - 38dvh - 36px - 10px);
+    max-height: calc(100vh - 56px - 28vh - 36px - 10px);
+    max-height: calc(100dvh - 56px - 28dvh - 36px - 10px);
     overflow-y: auto;
   }
   /* The capsule fills the whole #story behind this panel — bottom-anchoring
@@ -686,7 +697,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   #stepper-mobile {
     display: flex;
     position: fixed;
-    top: calc(56px + 38dvh); left: 14px; right: 14px;
+    top: calc(56px + 28dvh); left: 14px; right: 14px;
     margin: 0; padding: 0;
     z-index: 4;
     opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
@@ -726,7 +737,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   #canvas-container.docked {
     position: fixed;
     top: 56px; left: 40vw; right: 0; bottom: auto;
-    height: 38vh; height: 38dvh;
+    height: 28vh; height: 28dvh;
     z-index: 3;
   }
 
