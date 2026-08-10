@@ -167,6 +167,20 @@ function isDragOwnedTarget(el) {
   return false;
 }
 
+// Split out from isDragOwnedTarget above specifically for the touchmove
+// handler's preventDefault decision below — sliders and Pickr's own
+// gradient/hue strip need the OPPOSITE treatment from the canvas there.
+// A range input's touch-drag IS the browser's native default action for
+// that element (that's how its thumb tracks the finger at all); calling
+// preventDefault on its touchmove kills that native tracking and makes
+// it feel broken/sticky instead of just not-double-handled. The canvas
+// has no such native behavior of its own to lose — its rotation comes
+// entirely from drag.js's OWN pointer listeners, so suppressing the
+// browser's native scroll there costs it nothing.
+function isCanvasTarget(el) {
+  return !!(el && el.closest && state.wizardScrollLocked && el.closest('#canvas-container'));
+}
+
 export function initScrollAdvance() {
   window.addEventListener('wheel', (e) => {
     if (isDragOwnedTarget(e.target)) return;
@@ -178,30 +192,27 @@ export function initScrollAdvance() {
 
   let lastTouchY = null;
   let touchOwnedByControl = false;
+  let touchOwnedByCanvas = false;
   window.addEventListener('touchstart', (e) => {
     lastTouchY = e.touches[0].clientY;
     touchOwnedByControl = isDragOwnedTarget(e.target);
+    touchOwnedByCanvas = isCanvasTarget(e.target);
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
     if (lastTouchY === null) return;
-    if (touchOwnedByControl) {
-      // Owned by the slider/picker/capsule — but "owned" here only ever
-      // meant "don't reinterpret this as a step-advance swipe"; it still
-      // has to actually stop the BROWSER's native scroll too, or the
-      // native scroll and the owning control's own drag handling (e.g.
-      // drag.js's pointermove, which rotates the capsule on tilt/vertical
-      // movement the exact same way a scroll gesture would) both react to
-      // the same finger movement at once. Once wizardScrollLocked hands
-      // scroll fully back to native (see scroll-story.js), an unprevented
-      // vertical drag on the capsule silently scrolled the real page
-      // underneath the rotation, un-pinning #story mid-gesture and
-      // dropping back into the pre-wizard intro/story — this is what
-      // fixes that. Doesn't affect the owning control's OWN drag handling
-      // (pointer events, unrelated to this listener) — preventDefault only
-      // suppresses the browser's default action, not other listeners.
+    if (touchOwnedByCanvas) {
+      // The capsule's rotation comes entirely from drag.js's own pointer
+      // listeners, not from any native browser behavior — so unlike the
+      // slider/picker case below, there's nothing native to preserve here,
+      // only the native SCROLL to suppress. Left unprevented, a vertical
+      // drag on the capsule both rotated it (drag.js) AND scrolled the
+      // real page underneath at the same time (wizardScrollLocked hands
+      // scroll fully back to native — see scroll-story.js), un-pinning
+      // #story mid-gesture and dropping back into the pre-wizard intro.
       e.preventDefault();
       return;
     }
+    if (touchOwnedByControl) return; // slider/picker — let native touch-drag track the finger smoothly
     const dy = lastTouchY - e.touches[0].clientY; // finger moving up = scrolling down
     if (tryAdvanceOnScroll(dy)) e.preventDefault();
     lastTouchY = e.touches[0].clientY;
