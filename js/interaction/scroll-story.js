@@ -1,35 +1,7 @@
 import { state } from '../state.js';
 import { CAP_OPEN_DELTA, ROTATION_CHASE_WINDOW_MS } from '../constants.js';
 import { revealStepChildren } from '../wizard/wizard.js';
-import { reframeCapsuleCamera } from '../scene.js';
-
-// Desktop-only: how far to shift #canvas-container (xPercent, i.e. a
-// percentage of ITS OWN width — it's full-bleed via inset:0, so that's
-// the same as viewport width) so the capsule ends up centered in the gap
-// BETWEEN .step-number (left) and .designer (right) once the wizard
-// reveals, instead of a flat hand-tuned percentage that only happened to
-// work at whatever width it was last eyeballed against (too big a shift
-// let it overlap .step-number; too small a shift and it bled out from
-// under .designer's card instead — measured, that gap turned out
-// noticeably narrower than reproducing the two elements' own CSS
-// formulas by hand predicted, so this reads their REAL layout instead
-// via getBoundingClientRect(). Both elements are already positioned
-// correctly at this point (initScrollStory runs once the GLTF has
-// loaded, well after the page's own CSS has laid everything out) — only
-// their opacity is still 0, which doesn't affect layout geometry. Reads
-// #step-number specifically because this tween only ever plays once,
-// scrolling into the wizard for the first time (retreating back past
-// step 1 is blocked — see scroll-advance.js), so it's always showing
-// digit "1" — no need to guess a width for wider digits it'll never
-// actually show while this runs.
-function computeDesktopCapsuleShiftPercent() {
-  const vw = window.innerWidth;
-  const gap = 0.03 * vw;
-  const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + gap;
-  const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - gap;
-  const desiredCenter = (numberRightEdge + designerLeftEdge) / 2;
-  return ((desiredCenter - vw / 2) / vw) * 100;
-}
+import { reframeCapsuleCamera, reframeDesktopWizardCapsule, resetDesktopWizardCapsule } from '../scene.js';
 
 // The main scroll-driven narrative: capsule spin/zoom/open-close synced to
 // a pinned #story section, ending with the wizard fading in. Called once
@@ -94,6 +66,17 @@ export function initScrollStory(maxDim, camDist) {
           // explanation why.
           if (!wizardActive) state.mobileZoomFactor = 1;
           reframeCapsuleCamera();
+        }
+        // Desktop equivalent of the mobile docking above — narrows
+        // #canvas-container to the real gap between #step-number and
+        // #designer (measured fresh, not a scroll-scrubbed DOM shift tuned
+        // by hand) instead of leaving it full-bleed and hoping the capsule's
+        // own on-screen footprint happens to land clear of both. See
+        // reframeDesktopWizardCapsule in scene.js.
+        if (state.isDesktopLayout && wizardActive !== canvasContainer.classList.contains('wizard-centered')) {
+          canvasContainer.classList.toggle('wizard-centered', wizardActive);
+          if (wizardActive) reframeDesktopWizardCapsule();
+          else resetDesktopWizardCapsule();
         }
         if (!state.hasRevealedStep1 && wizardActive) {
           state.hasRevealedStep1 = true;
@@ -189,17 +172,13 @@ export function initScrollStory(maxDim, camDist) {
   tl.to(state.rotationTarget, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
   tl.to(dollyState, { dist: maxDim * 2.3 * aspectPad, duration: 0.15, ease: 'power2.inOut', onUpdate: applyDolly }, 0.72);
 
-  // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in on the right;
-  // the capsule (rendered by #canvas-container, shifted at the DOM level —
-  // not the 3D camera — so the move is purely horizontal, no perspective
-  // skew) slides left just enough to center it between the step number
-  // and the panel (see computeDesktopCapsuleShiftPercent above), not a
-  // fixed amount that risked landing on top of either one.
+  // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in on the right.
+  // The capsule no longer moves via a scroll-scrubbed DOM shift here on
+  // desktop — the onUpdate above narrows #canvas-container to the real
+  // gap between the step number and this panel the moment wizardActive
+  // flips true (see reframeDesktopWizardCapsule), which is more reliable
+  // than trying to time a matching tween to the same moment by hand.
   tl.fromTo(designerInner, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.1, overwrite: false }, 0.90);
-  if (state.isDesktopLayout) {
-    tl.to(canvasContainer, { xPercent: computeDesktopCapsuleShiftPercent(), duration: 0.1, ease: 'power1.inOut', overwrite: false }, 0.90);
-    designerEl.classList.add('side-right');
-  }
 
   // Text overlays keyed to the same timeline. Each grows FROM small while
   // fading in, holds at full size, then grows FURTHER while fading out —

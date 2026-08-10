@@ -64,6 +64,11 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
    everywhere except where the opaque capsule mesh actually paints over
    it, giving the "peeking out from behind" effect with no extra work. */
 #canvas-container { position: absolute; inset: 0; z-index: 2; cursor: grab; }
+/* Desktop only — set right before scene.js's reframeDesktopWizardCapsule
+   sets the actual left/right px values (see scroll-story.js's onUpdate),
+   so the narrowing itself eases in instead of snapping the instant the
+   wizard activates. */
+#canvas-container.wizard-centered { transition: left 0.35s ease, right 0.35s ease; }
 #canvas-container.dragging { cursor: grabbing; }
 /* Step 4 locks capsule rotation so logo/text placement stays predictable —
    the grab-to-spin cursor would be misleading there. decal-dragging (set by
