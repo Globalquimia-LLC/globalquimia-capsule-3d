@@ -237,15 +237,37 @@ export function initScene() {
   // itself already documents: the dolly timeline isn't driving
   // camera.position while docked, so a reposition here has nothing to fight.
   let resizeScheduled = false;
+  let lastKnownWidth = window.innerWidth;
   window.addEventListener('resize', () => {
     if (resizeScheduled) return;
     resizeScheduled = true;
     requestAnimationFrame(() => {
       resizeScheduled = false;
       if (container.classList.contains('docked')) {
+        lastKnownWidth = window.innerWidth;
         reframeCapsuleCamera();
         return;
       }
+      // Pre-wizard only from here down. The dolly's own per-stage camera
+      // distances (maxDim * X * aspectPad in scroll-story.js) are fixed
+      // numbers baked in once, computed from camera.aspect at
+      // initScrollStory()'s build time — they never recompute themselves
+      // as aspect changes later. A mobile browser's address bar showing/
+      // hiding mid-scroll (the single most common trigger for a resize
+      // event while actively scrolling — exactly when this got reported:
+      // "cuando paso rápido los pasos previos al punto 1") changes
+      // window.innerHeight without changing window.innerWidth; updating
+      // camera.aspect for that alone desyncs it from the distances the
+      // dolly is still actively driving toward, rendering the capsule at
+      // a visibly wrong (usually smaller) size for the rest of the
+      // pre-wizard scroll. Skipping resize events that don't actually
+      // change the WIDTH sidesteps the mismatch entirely — only a real
+      // width change (rotation, an actual window resize) still updates
+      // aspect here; once docked, reframeCapsuleCamera above already
+      // handles height-only changes correctly (aspect AND distance move
+      // together there, so there's nothing to desync).
+      if (window.innerWidth === lastKnownWidth) return;
+      lastKnownWidth = window.innerWidth;
       const rect = container.getBoundingClientRect();
       camera.aspect = (rect.width || window.innerWidth) / (rect.height || window.innerHeight);
       camera.updateProjectionMatrix();
