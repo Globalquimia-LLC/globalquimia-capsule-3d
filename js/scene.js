@@ -45,18 +45,7 @@ const MOBILE_EXTRA_PAD = 1.6;
 const DESKTOP_CAM_DIST_MULT = 2.6;
 const MOBILE_CAM_DIST_MULT = 1.54;
 function computeCamDist(maxDim, aspect) {
-  // MOBILE_EXTRA_PAD is keyed off "is this box portrait" (aspect < 1) as a
-  // proxy for "is this an actual phone in portrait" — a reasonable proxy
-  // pre-wizard (canvas-container is full-bleed, so its aspect IS the
-  // device's own aspect), but once the desktop wizard narrows
-  // canvas-container to the gap between the step number and the panel
-  // (see reframeDesktopWizardCapsule), that narrow box can itself end up
-  // taller than it is wide on perfectly normal desktop monitors — the
-  // proxy stops meaning what it's supposed to. Gating on isDesktopLayout
-  // directly avoids that false positive: desktop never gets the phone-
-  // portrait pullback, no matter what aspect ratio its own narrowed box
-  // happens to compute to.
-  const aspectPad = (state.isDesktopLayout || aspect >= 1) ? 1 : (1 / aspect) * MOBILE_EXTRA_PAD;
+  const aspectPad = aspect >= 1 ? 1 : (1 / aspect) * MOBILE_EXTRA_PAD;
   const baseMult = state.isDesktopLayout ? DESKTOP_CAM_DIST_MULT : MOBILE_CAM_DIST_MULT;
   return maxDim * baseMult * aspectPad;
 }
@@ -253,7 +242,7 @@ export function initScene() {
     resizeScheduled = true;
     requestAnimationFrame(() => {
       resizeScheduled = false;
-      if (container.classList.contains('docked') || container.classList.contains('wizard-centered')) {
+      if (container.classList.contains('docked')) {
         reframeCapsuleCamera();
         return;
       }
@@ -289,44 +278,6 @@ export function reframeCapsuleCamera() {
   const camDist = computeCamDist(maxDimGlobal, camera.aspect) / (state.mobileZoomFactor || 1);
   camera.position.copy(camera.userData.baseDir).multiplyScalar(camDist);
   camera.lookAt(0, 0, 0);
-}
-
-// Desktop equivalent of docking #canvas-container to a real box instead
-// of shifting a full-bleed one by a guessed percentage (see mobile's own
-// .docked treatment above) — two earlier attempts at a scroll-scrubbed
-// xPercent shift (a hand-reproduced CSS formula, then a getBoundingClientRect
-// snapshot taken once at page load) both drifted from #step-number's and
-// #designer's REAL current positions closely enough to still overlap one
-// or the other. Measuring fresh and constraining the box itself — the
-// same technique already proven for mobile's docked band — removes that
-// whole class of drift instead of tuning it again: #canvas-container's
-// left/right are set to butt right up against whatever those two
-// elements' real edges are AT THIS MOMENT, so the camera (via
-// reframeCapsuleCamera, called right after) frames itself entirely
-// inside that gap regardless of exactly how wide it turns out to be.
-export function reframeDesktopWizardCapsule() {
-  const { container } = state;
-  if (!container) return;
-  const gap = 0.03 * window.innerWidth;
-  const numberRect = document.getElementById('step-number').getBoundingClientRect();
-  const designerRect = document.getElementById('designer').getBoundingClientRect();
-  container.style.left = `${numberRect.right + gap}px`;
-  container.style.right = `${window.innerWidth - designerRect.left + gap}px`;
-  reframeCapsuleCamera();
-}
-
-// Reverses reframeDesktopWizardCapsule — back to the full-bleed inset:0
-// box the pre-wizard story dolly needs. In normal use the wizard can't
-// actually be exited once entered (see scroll-advance.js blocking every
-// retreat path past step 1), so this mainly exists as a defensive reset
-// for anything outside that normal flow (bfcache restore, etc.) rather
-// than something that fires on a typical visit.
-export function resetDesktopWizardCapsule() {
-  const { container } = state;
-  if (!container) return;
-  container.style.left = '';
-  container.style.right = '';
-  reframeCapsuleCamera();
 }
 
 const ZOOM_MIN = 0.6;
