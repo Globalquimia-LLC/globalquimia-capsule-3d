@@ -105,11 +105,14 @@ export function initScrollStory(maxDim, camDist) {
   // so each one needs the same narrow-viewport correction to stay
   // proportionally consistent through the whole zoom sequence instead of
   // snapping back to "too big" the moment stage 2 kicks in. The 2.6 here is
-  // deliberately the OLD computeCamDist base multiplier, not the current
-  // one (now 2.0, see scene.js) — that mismatch is what makes every dolly
-  // stage below inherit the same ~30%-bigger sizing as the initial pose
-  // instead of only that first frame getting bigger and every later stage
-  // snapping back to the old scale the moment scroll starts.
+  // deliberately always scene.js's DESKTOP_CAM_DIST_MULT, never the mobile
+  // one (2.0) — dividing by the desktop constant regardless of which one
+  // actually produced camDist means this ratio comes out to exactly 1 on
+  // desktop (a true no-op, matching the original framing) and to
+  // aspectPad(aspect) scaled by mobile's own size boost on mobile, so
+  // every dolly stage below inherits that same ~30%-bigger sizing
+  // end-to-end instead of only the initial pose getting bigger and every
+  // later stage snapping back to desktop scale the moment scroll starts.
   const aspectPad = camDist / (maxDim * 2.6);
   function applyDolly() {
     camera.position.copy(camera.userData.baseDir).multiplyScalar(dollyState.dist);
