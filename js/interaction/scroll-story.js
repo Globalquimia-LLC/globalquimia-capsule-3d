@@ -3,6 +3,29 @@ import { CAP_OPEN_DELTA, ROTATION_CHASE_WINDOW_MS } from '../constants.js';
 import { revealStepChildren } from '../wizard/wizard.js';
 import { reframeCapsuleCamera } from '../scene.js';
 
+// Desktop-only: how far to shift #canvas-container (xPercent, i.e. a
+// percentage of ITS OWN width — it's full-bleed via inset:0, so that's
+// the same as viewport width) so the capsule ends up centered in the gap
+// BETWEEN .step-number (left) and .designer (right) once the wizard
+// reveals, instead of a flat hand-tuned percentage that only happened to
+// work at whatever width it was last eyeballed against (a big monitor
+// left tons of empty space in the gap; a smaller one let the capsule
+// overlap the step number outright). Mirrors those two elements' own CSS
+// formulas — .step-number's clamp(160px, 24vw, 340px) font-size (0.62 is
+// a bold sans digit's typical glyph-width-to-font-size ratio, taken as a
+// deliberately generous upper bound since a "1" is narrower than a "4"
+// or "5" but this only runs once per step and can't know which digit is
+// current) and .designer's right:6% + width:min(560px, 48vw) — plus a
+// 3vw breathing-room gap on each side of the resulting safe zone.
+function computeDesktopCapsuleShiftPercent() {
+  const vw = window.innerWidth;
+  const gap = 0.03 * vw;
+  const numberRightEdge = 0.01 * vw + Math.min(340, Math.max(160, 0.24 * vw)) * 0.62 + gap;
+  const designerLeftEdge = vw - 0.06 * vw - Math.min(560, 0.48 * vw) - gap;
+  const desiredCenter = (numberRightEdge + designerLeftEdge) / 2;
+  return ((desiredCenter - vw / 2) / vw) * 100;
+}
+
 // The main scroll-driven narrative: capsule spin/zoom/open-close synced to
 // a pinned #story section, ending with the wizard fading in. Called once
 // from scene.js's GLTF-load callback (needs maxDim/camDist from the
@@ -164,10 +187,12 @@ export function initScrollStory(maxDim, camDist) {
   // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in on the right;
   // the capsule (rendered by #canvas-container, shifted at the DOM level —
   // not the 3D camera — so the move is purely horizontal, no perspective
-  // skew) slides left to make room for it.
+  // skew) slides left just enough to center it between the step number
+  // and the panel (see computeDesktopCapsuleShiftPercent above), not a
+  // fixed amount that risked landing on top of either one.
   tl.fromTo(designerInner, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.1, overwrite: false }, 0.90);
   if (state.isDesktopLayout) {
-    tl.to(canvasContainer, { xPercent: -26, duration: 0.1, ease: 'power1.inOut', overwrite: false }, 0.90);
+    tl.to(canvasContainer, { xPercent: computeDesktopCapsuleShiftPercent(), duration: 0.1, ease: 'power1.inOut', overwrite: false }, 0.90);
     designerEl.classList.add('side-right');
   }
 
