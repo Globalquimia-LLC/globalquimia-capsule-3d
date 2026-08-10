@@ -659,7 +659,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      independently-positioned 3D object and a DOM element. */
   .designer .inner {
     background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
-    border-radius: 16px; padding: 18px 16px;
+    border-radius: 16px; padding: 12px 10px;
     box-shadow: 0 8px 24px rgba(28,64,93,0.1);
   }
   /* "Personalización" + the step's own heading move out of the card
@@ -790,13 +790,30 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   }
   .zoom-btn:active { background: #fff; transform: scale(0.94); }
 
-  .acc-menu { max-height: 38vh; }
-  .acc-header { padding: 12px 14px; font-size: 12px; min-height: 44px; }
+  /* The OUTER card (.designer) already caps its own height and scrolls
+     (see its max-height formula above) — capping .acc-menu to a second,
+     independent 38vh on top of that nested a nested scroll region inside
+     a card that actually had more room to give it, which is what read as
+     "cropped" (a small scrollable pane visually cut off mid-content, with
+     unused card space around it) rather than a natural single scroll
+     area using the full card. */
+  .acc-menu { max-height: none; overflow-y: visible; }
+  .acc-header { padding: 10px 14px; font-size: 12px; min-height: 40px; }
   .acc-header.acc-sub { padding: 7px 12px 7px 18px; font-size: 10px; min-height: 32px; }
-  .acc-item.open[data-finish] > .acc-body { padding: 0 14px 12px 14px; }
+  .acc-item.open[data-finish] > .acc-body { padding: 0 10px 10px 10px; }
   .piece-tab { font-size: 10px; padding: 4px 10px; }
   .piece-tab-panels { padding: 6px 8px; }
   .acc-menu > .piece-tabgroup { padding: 6px; }
+  /* Pickr's own gradient square/hue slider — a fixed 108px (desktop
+     value) is a big flat chunk of a phone's much shorter available
+     height; shrunk without losing usability (still comfortably
+     draggable). */
+  .picker-mount .pcr-app .pcr-selection .pcr-color-palette,
+  .picker-mount .pcr-app .pcr-selection .pcr-color-chooser,
+  .picker-mount .pcr-app .pcr-selection .pcr-color-opacity {
+    height: 80px;
+  }
+  .color-readout { font-size: 9px; margin-top: 3px; }
 
   /* Step 4's Logo/Texto sub-accordion content, sized down from the
      desktop-width defaults above — at the docked band's ~60% top / 60vh
@@ -822,8 +839,8 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      precision, not on a phone) — color swatches at 16-18px and icon
      buttons at 26px are the worst offenders. Bumped toward the ~44px
      guideline, with matching gap so adjacent targets don't crowd. */
-  .swatch { width: 30px; height: 30px; }
-  .quick-swatches { gap: 10px; }
+  .swatch { width: 28px; height: 28px; }
+  .quick-swatches { gap: 8px; }
   .font-size-btn {
     display: flex; align-items: center; justify-content: center;
   }
