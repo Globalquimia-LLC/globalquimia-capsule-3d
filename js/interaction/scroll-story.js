@@ -24,9 +24,17 @@ import { reframeCapsuleCamera } from '../scene.js';
 // actually show while this runs.
 function computeDesktopCapsuleShiftPercent() {
   const vw = window.innerWidth;
-  const gap = 0.03 * vw;
-  const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + gap;
-  const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - gap;
+  // Asymmetric on purpose: .step-number is a translucent watermark BEHIND
+  // the capsule (z-index:1 vs the canvas's 2) — some overlap there is the
+  // original intended "peeking out from behind" look, not a bug, so a
+  // small gap is enough. .designer's option list is real, opaque,
+  // clickable content — measured live, a 3vw gap still weighted the
+  // midpoint too far right and let the capsule's own rendered width bleed
+  // into it, so this side gets a much wider margin.
+  const numberGap = 0.03 * vw;
+  const designerGap = 0.11 * vw;
+  const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + numberGap;
+  const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - designerGap;
   const desiredCenter = (numberRightEdge + designerLeftEdge) / 2;
   return ((desiredCenter - vw / 2) / vw) * 100;
 }
