@@ -218,15 +218,34 @@ export function initScene() {
   // Debounced (rAF-coalesced) so a continuous window-resize drag doesn't
   // thrash the renderer/projection matrix on every single mousemove tick —
   // only the last size in a burst actually gets applied. Deliberately
-  // does NOT touch camera.position — that stays under the scroll-driven
-  // dolly timeline's exclusive control (applyDolly in scroll-story.js);
-  // only aspect/size follow the container here, same as always.
+  // does NOT touch camera.position while the pre-wizard dolly could still
+  // be mid-flight — that stays under its exclusive control (applyDolly in
+  // scroll-story.js); only aspect/size follow the container in that case.
+  //
+  // Once docked (mobile, wizard active — any step), it's the opposite:
+  // full reframeCapsuleCamera() every time, position included. Mobile
+  // Safari/Chrome fire a real 'resize' event when the address bar shows/
+  // hides mid-interaction (dragging a slider, rotating the capsule —
+  // basically any touch scroll gesture inside the page, even one that
+  // doesn't visibly scroll anything) — camera.aspect changing without
+  // camera.position following it left the capsule framed for the OLD
+  // aspect's distance, rendering visibly smaller (or larger) until
+  // something else called reframeCapsuleCamera() again, which is exactly
+  // what tapping the zoom +/- button did (see adjustCapsuleZoom) — that
+  // was never really "fixing a zoom", just incidentally re-syncing
+  // position to aspect. Safe here for the same reason reframeCapsuleCamera
+  // itself already documents: the dolly timeline isn't driving
+  // camera.position while docked, so a reposition here has nothing to fight.
   let resizeScheduled = false;
   window.addEventListener('resize', () => {
     if (resizeScheduled) return;
     resizeScheduled = true;
     requestAnimationFrame(() => {
       resizeScheduled = false;
+      if (container.classList.contains('docked')) {
+        reframeCapsuleCamera();
+        return;
+      }
       const rect = container.getBoundingClientRect();
       camera.aspect = (rect.width || window.innerWidth) / (rect.height || window.innerHeight);
       camera.updateProjectionMatrix();
