@@ -8,20 +8,25 @@ import { reframeCapsuleCamera } from '../scene.js';
 // the same as viewport width) so the capsule ends up centered in the gap
 // BETWEEN .step-number (left) and .designer (right) once the wizard
 // reveals, instead of a flat hand-tuned percentage that only happened to
-// work at whatever width it was last eyeballed against (a big monitor
-// left tons of empty space in the gap; a smaller one let the capsule
-// overlap the step number outright). Mirrors those two elements' own CSS
-// formulas — .step-number's clamp(160px, 24vw, 340px) font-size (0.62 is
-// a bold sans digit's typical glyph-width-to-font-size ratio, taken as a
-// deliberately generous upper bound since a "1" is narrower than a "4"
-// or "5" but this only runs once per step and can't know which digit is
-// current) and .designer's right:6% + width:min(560px, 48vw) — plus a
-// 3vw breathing-room gap on each side of the resulting safe zone.
+// work at whatever width it was last eyeballed against (too big a shift
+// let it overlap .step-number; too small a shift and it bled out from
+// under .designer's card instead — measured, that gap turned out
+// noticeably narrower than reproducing the two elements' own CSS
+// formulas by hand predicted, so this reads their REAL layout instead
+// via getBoundingClientRect(). Both elements are already positioned
+// correctly at this point (initScrollStory runs once the GLTF has
+// loaded, well after the page's own CSS has laid everything out) — only
+// their opacity is still 0, which doesn't affect layout geometry. Reads
+// #step-number specifically because this tween only ever plays once,
+// scrolling into the wizard for the first time (retreating back past
+// step 1 is blocked — see scroll-advance.js), so it's always showing
+// digit "1" — no need to guess a width for wider digits it'll never
+// actually show while this runs.
 function computeDesktopCapsuleShiftPercent() {
   const vw = window.innerWidth;
   const gap = 0.03 * vw;
-  const numberRightEdge = 0.01 * vw + Math.min(340, Math.max(160, 0.24 * vw)) * 0.62 + gap;
-  const designerLeftEdge = vw - 0.06 * vw - Math.min(560, 0.48 * vw) - gap;
+  const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + gap;
+  const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - gap;
   const desiredCenter = (numberRightEdge + designerLeftEdge) / 2;
   return ((desiredCenter - vw / 2) / vw) * 100;
 }
