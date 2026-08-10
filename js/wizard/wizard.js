@@ -85,8 +85,13 @@ export function goToStep(newStep) {
   // Step 5 is the end of the line for the generic prev/next control —
   // "Solicitar cotización" is the only forward action from here, so the
   // next button would just be dead weight (scroll-advance.js already
-  // doesn't let it do anything on step 5 either).
+  // doesn't let it do anything on step 5 either). Step 1 is the start of
+  // the line the other way — there's no going back to the pre-wizard
+  // intro/story once the wizard is up (scroll-advance.js's
+  // tryAdvanceOnScroll swallows that retreat too), so the prev button
+  // would be equally dead weight there.
   document.getElementById('nav-next-btn').classList.toggle('hidden', newStep === 5);
+  document.getElementById('nav-prev-btn').classList.toggle('hidden', newStep === 1);
   updateStepper(newStep);
   updateRunningSummary();
 

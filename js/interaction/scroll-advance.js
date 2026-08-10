@@ -19,7 +19,9 @@ import { goToStep } from '../wizard/wizard.js';
 // once it's fully closed again an upward scroll retreats the wizard a
 // step at a time — 5 -> 4 -> 3 -> 2 -> 1 — showing each one's own
 // content as it lands, same as clicking "Volver" repeatedly but
-// scroll-driven.
+// scroll-driven. Step 1 is a hard floor, not a step like the others:
+// once the wizard has been entered, there's no scroll/button path back
+// out to the pre-wizard intro/story — see the deltaY < 0 branch below.
 // ---------------------------------------------------------------------
 function nudgeStepMenu() {
   const now = performance.now();
@@ -89,7 +91,11 @@ function tryAdvanceOnScroll(deltaY) {
     nudgeStepMenu();
     return true;
   }
-  if (deltaY < 0 && state.currentStep <= 1) return false; // nothing to retreat to before step 1
+  // Step 1 is the floor, not a step to retreat past — once the wizard is
+  // up, there's no way back to the pre-wizard intro/story. Swallow (not
+  // "return false") so the event doesn't fall through to native scroll,
+  // which used to unpin #story and reveal the earlier stages again.
+  if (deltaY < 0 && state.currentStep <= 1) return true;
 
   // A hard swipe/wheel burst can dispatch many events in a row — without
   // a cooldown that would blow through 2-3 steps on one gesture instead
@@ -117,12 +123,11 @@ function tryAdvanceOnScroll(deltaY) {
 function manualStep(direction) {
   // tryAdvanceOnScroll already knows how to route this once the tunnel is
   // mid-flight or the wizard is locked in (reverse/play the tunnel, step
-  // the wizard forward/back, nudge the menu on 1-2) — same as a real wheel
-  // tick. It returns false in exactly the cases a real wheel event would
-  // fall through to the browser's own native scroll instead (still in the
-  // free-scroll story, or retreating up out of step 1 back into it) — a
-  // button press has no such native default to fall back on, so that case
-  // gets an explicit scroll nudge below.
+  // the wizard forward/back, nudge the menu on 1-2, swallow retreats past
+  // step 1) — same as a real wheel tick. It returns false only in the
+  // still-in-the-free-scroll-story case (nothing wizard-related to route
+  // yet) — a button press has no native scroll to fall back on there, so
+  // that case gets an explicit scroll nudge below.
   if (tryAdvanceOnScroll(direction * 300)) return;
   const st = state.storyScrollTrigger;
   let target = window.scrollY + direction * (window.innerHeight * 0.6);
@@ -130,14 +135,12 @@ function manualStep(direction) {
   target = Math.max(target, 0);
   // scrollNormalizer.scrollY() only actually moves anything while the
   // normalizer itself is the one driving scroll — this fallback is only
-  // ever reached in the two states where it's the ENABLED one (free-scroll
-  // story, pre-wizard) or the one it's explicitly DISABLED in (retreating
-  // back out of step 1, scroll-story.js hands scroll fully back to native
-  // once the wizard locks it). Calling the normalizer's own setter while
-  // it's disabled is a silent no-op — window.scrollY never actually
-  // changes, so retreating out of the wizard on mobile (no wheel event to
-  // fall through to native scroll on, unlike a real trackpad/wheel tick)
-  // would get stuck permanently docked (see #canvas-container.docked).
+  // ever reached pre-wizard (free-scroll story), the one state where it's
+  // still enabled. Calling the normalizer's own setter while it's disabled
+  // (wizard active) would be a silent no-op anyway, but that path is now
+  // moot: tryAdvanceOnScroll already swallows every wizard-active call
+  // above, including step 1's retreat attempt, so execution never reaches
+  // here once the wizard has been entered.
   if (state.scrollNormalizer && !state.wizardScrollLocked) state.scrollNormalizer.scrollY(target);
   else window.scrollTo({ top: target, behavior: 'smooth' });
 }
