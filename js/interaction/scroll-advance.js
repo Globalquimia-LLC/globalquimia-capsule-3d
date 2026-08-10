@@ -145,45 +145,43 @@ function manualStep(direction) {
   else window.scrollTo({ top: target, behavior: 'smooth' });
 }
 
-// Range sliders (Rotar/Tamaño, font size...), Pickr's own gradient
-// square/hue strip (anything under .picker-mount), and — once the wizard
-// is actually active — the capsule canvas itself all need to OWN their
-// drag gesture end to end. The global wheel/touchmove listeners below
+// Range sliders (Rotar/Tamaño, font size...) and Pickr's own gradient
+// square/hue strip (anything under .picker-mount) need to OWN their drag
+// gesture end to end. The global wheel/touchmove listeners below
 // otherwise treat any vertical drag on top of them as a step-advance/
-// retreat swipe, which both steals the input (a color/slider drag, or a
-// spin-the-capsule drag via drag.js, stops having any visible effect past
-// the very first pixel) and, worse, changes the wizard step out from
-// under whatever the user was actually trying to do. A tap still works
-// either way (touchstart+touchend with no intervening move is never a
-// "drag"), so this only needs to suppress interception once an actual
-// drag on one of these starts. #canvas-container is scoped to
-// wizardScrollLocked specifically — pre-wizard, touch on the canvas is
-// still what drives the scroll-through-story cinematic, and excluding it
-// there would break that instead.
-function isDragOwnedTarget(el) {
-  if (!el || !el.closest) return false;
-  if (el.closest('input[type="range"], .picker-mount')) return true;
-  if (state.wizardScrollLocked && el.closest('#canvas-container')) return true;
-  return false;
+// retreat swipe, which steals the input (a color/slider drag stops
+// having any visible effect past the very first pixel) and, worse,
+// changes the wizard step out from under whatever the user was actually
+// trying to do. A tap still works either way (touchstart+touchend with
+// no intervening move is never a "drag"), so this only needs to suppress
+// interception once an actual drag on one of these starts.
+function isRangeOrPickerTarget(el) {
+  return !!(el && el.closest && el.closest('input[type="range"], .picker-mount'));
 }
 
-// Split out from isDragOwnedTarget above specifically for the touchmove
-// handler's preventDefault decision below — sliders and Pickr's own
-// gradient/hue strip need the OPPOSITE treatment from the canvas there.
-// A range input's touch-drag IS the browser's native default action for
-// that element (that's how its thumb tracks the finger at all); calling
-// preventDefault on its touchmove kills that native tracking and makes
-// it feel broken/sticky instead of just not-double-handled. The canvas
-// has no such native behavior of its own to lose — its rotation comes
-// entirely from drag.js's OWN pointer listeners, so suppressing the
-// browser's native scroll there costs it nothing.
+// The capsule canvas — touch-only, and only once the wizard is active
+// (mouse-drag rotation runs through pointerdown/pointermove in drag.js,
+// entirely separate from wheel/touchstart, so it never needed this).
+// Deliberately NOT folded into the wheel listener below: wheel has no
+// canvas-owned behavior to protect (nothing rotates the capsule on
+// wheel), so excluding it there — as an earlier version of this file did,
+// reusing the same combined check for both — meant scrolling the wheel
+// while the cursor happened to be sitting over the capsule (very
+// plausible on desktop; the capsule sits right in the middle of the
+// step's own content) silently did nothing AND still leaked into native
+// scroll un-prevented, un-pinning #story and breaking the "retreat one
+// step at a time" behavior instead of landing on the previous step.
+// #canvas-container is scoped to wizardScrollLocked specifically —
+// pre-wizard, touch on the canvas is still what drives the
+// scroll-through-story cinematic, and excluding it there would break
+// that instead.
 function isCanvasTarget(el) {
   return !!(el && el.closest && state.wizardScrollLocked && el.closest('#canvas-container'));
 }
 
 export function initScrollAdvance() {
   window.addEventListener('wheel', (e) => {
-    if (isDragOwnedTarget(e.target)) return;
+    if (isRangeOrPickerTarget(e.target)) return;
     if (tryAdvanceOnScroll(e.deltaY)) e.preventDefault();
   }, { passive: false });
 
@@ -195,8 +193,8 @@ export function initScrollAdvance() {
   let touchOwnedByCanvas = false;
   window.addEventListener('touchstart', (e) => {
     lastTouchY = e.touches[0].clientY;
-    touchOwnedByControl = isDragOwnedTarget(e.target);
     touchOwnedByCanvas = isCanvasTarget(e.target);
+    touchOwnedByControl = touchOwnedByCanvas || isRangeOrPickerTarget(e.target);
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
     if (lastTouchY === null) return;
