@@ -33,15 +33,17 @@ const PITCH = THREE.MathUtils.degToRad(-20);
 // no-op, matching the original desktop framing exactly.
 const MOBILE_EXTRA_PAD = 1.6;
 // Base camera-distance multiplier, split by device rather than a single
-// shared constant — the "capsule should read ~30% bigger" ask only ever
+// shared constant — the "capsule should read bigger" ask only ever
 // applied to mobile; desktop was meant to stay exactly as originally
 // tuned. DESKTOP_CAM_DIST_MULT is that original 2.6 untouched.
-// MOBILE_CAM_DIST_MULT is 2.6 / 1.3 — distance close enough to read as
-// ~30% bigger — and applies everywhere mobile renders the capsule (the
-// pre-wizard intro/story dolly AND the docked wizard band via
-// reframeCapsuleCamera), not just the initial pose.
+// MOBILE_CAM_DIST_MULT has been pulled in twice now, each time ~30%
+// closer than before (2.6 -> 2.0 -> 1.54): applies everywhere mobile
+// renders the capsule — the pre-wizard intro/story dolly AND the docked
+// wizard band via reframeCapsuleCamera (same multiplier on every one of
+// steps 1-5, since neither reframeCapsuleCamera nor this function is
+// step-aware) — not just the initial pose.
 const DESKTOP_CAM_DIST_MULT = 2.6;
-const MOBILE_CAM_DIST_MULT = 2.0;
+const MOBILE_CAM_DIST_MULT = 1.54;
 function computeCamDist(maxDim, aspect) {
   const aspectPad = aspect >= 1 ? 1 : (1 / aspect) * MOBILE_EXTRA_PAD;
   const baseMult = state.isDesktopLayout ? DESKTOP_CAM_DIST_MULT : MOBILE_CAM_DIST_MULT;
