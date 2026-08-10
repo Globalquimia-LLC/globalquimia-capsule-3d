@@ -28,15 +28,25 @@ function computeDesktopCapsuleShiftPercent() {
   // the capsule (z-index:1 vs the canvas's 2) — some overlap there is the
   // original intended "peeking out from behind" look, not a bug, so a
   // small gap is enough. .designer's option list is real, opaque,
-  // clickable content — measured live, a 3vw gap still weighted the
-  // midpoint too far right and let the capsule's own rendered width bleed
-  // into it, so this side gets a much wider margin.
+  // clickable content, so this side gets a wider margin.
   const numberGap = 0.03 * vw;
   const designerGap = 0.11 * vw;
   const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + numberGap;
   const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - designerGap;
   const desiredCenter = (numberRightEdge + designerLeftEdge) / 2;
-  return ((desiredCenter - vw / 2) / vw) * 100;
+  // desiredCenter targets where the capsule's GEOMETRIC origin (0,0,0,
+  // what camera.lookAt actually centers) lands — but the capsule is an
+  // elongated shape held at a fixed 3/4 yaw/pitch, so its VISIBLE bulk
+  // sits off-center from that origin by a consistent amount (same
+  // rotation every time step 1 is reached, since it's driven by a fixed
+  // point on the scroll timeline, not left wherever the user stopped
+  // scrolling). Confirmed against a real screenshot: geometric centering
+  // alone still visibly favored the panel side, with a wide unused gap
+  // left over near the number — this constant correction pulls the
+  // whole thing further toward the number to compensate, calibrated
+  // against that screenshot rather than derived analytically.
+  const VISUAL_CENTER_CORRECTION = 0.06 * vw;
+  return ((desiredCenter - VISUAL_CENTER_CORRECTION - vw / 2) / vw) * 100;
 }
 
 // The main scroll-driven narrative: capsule spin/zoom/open-close synced to
