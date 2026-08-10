@@ -184,7 +184,24 @@ export function initScrollAdvance() {
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
     if (lastTouchY === null) return;
-    if (touchOwnedByControl) return; // let the slider/picker handle its own drag natively
+    if (touchOwnedByControl) {
+      // Owned by the slider/picker/capsule — but "owned" here only ever
+      // meant "don't reinterpret this as a step-advance swipe"; it still
+      // has to actually stop the BROWSER's native scroll too, or the
+      // native scroll and the owning control's own drag handling (e.g.
+      // drag.js's pointermove, which rotates the capsule on tilt/vertical
+      // movement the exact same way a scroll gesture would) both react to
+      // the same finger movement at once. Once wizardScrollLocked hands
+      // scroll fully back to native (see scroll-story.js), an unprevented
+      // vertical drag on the capsule silently scrolled the real page
+      // underneath the rotation, un-pinning #story mid-gesture and
+      // dropping back into the pre-wizard intro/story — this is what
+      // fixes that. Doesn't affect the owning control's OWN drag handling
+      // (pointer events, unrelated to this listener) — preventDefault only
+      // suppresses the browser's default action, not other listeners.
+      e.preventDefault();
+      return;
+    }
     const dy = lastTouchY - e.touches[0].clientY; // finger moving up = scrolling down
     if (tryAdvanceOnScroll(dy)) e.preventDefault();
     lastTouchY = e.touches[0].clientY;
