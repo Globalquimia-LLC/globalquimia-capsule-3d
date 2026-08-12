@@ -1,6 +1,6 @@
 // The hero entrance — the only static section left that doesn't touch the
-// capsule or wizard (the closing tunnel now hands off straight to
-// WhatsApp, navigating away from the page — there's no separate closing
+// capsule or wizard (the closing tunnel now hands off to the cotizador +
+// Chatwoot without ever navigating away — there's no separate closing
 // section left to reveal here).
 export function initIntro() {
   // Hero entrance: plays once immediately on load (no ScrollTrigger — the

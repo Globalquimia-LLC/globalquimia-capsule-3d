@@ -12,8 +12,9 @@ import { CAP_OPEN_DELTA } from '../constants.js';
 //   3. The camera pushes into that opening while a full-screen overlay
 //      darkens over it — together reading as "flying into the capsule".
 //   4. Once fully black, the Globalquimia logo fades in at the end of
-//      the tunnel, holds for a beat, then onComplete runs — navigating
-//      the page to WhatsApp, in practice (see step-quote.js).
+//      the tunnel, holds for a beat, then onComplete runs — filing the
+//      quote and opening Chatwoot, in practice (see step-quote.js), which
+//      then reverses this same timeline to bring the wizard back.
 // ---------------------------------------------------------------------
 export function playTunnelSequence(onComplete) {
   const { camera, capsuleGroup, capNode, capMaterial, capMeshObj, maxDimGlobal } = state;
@@ -106,8 +107,10 @@ export function playTunnelSequence(onComplete) {
     }, 1.7)
     // 4. Logo at the end of the tunnel (overlay is fully black by the
     // time the dolly above finishes) — onComplete runs right after it
-    // fades in, navigating the page away to WhatsApp at that point, so no
-    // fade-out tween back to the wizard is needed here.
+    // fades in. step-quote.js calls .reverse() on this same timeline a
+    // moment later, which plays every beat above backwards for free
+    // (same 0->1 progress values driving everything) to bring the wizard
+    // back into view once Chatwoot is open.
     .to(logo, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' })
     .call(() => {
       state.tunnelPlaying = false;

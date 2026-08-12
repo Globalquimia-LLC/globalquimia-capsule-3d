@@ -295,14 +295,22 @@
 
     <div class="step-panel" data-step="5">
       <div class="quote-summary">
+        <label class="quote-field-label" for="quote-name">Tu nombre</label>
+        <input type="text" class="quote-field-input" id="quote-name" placeholder="Nombre completo" autocomplete="name" />
+        <p class="quote-field-error" id="quote-name-error" hidden>Ingresá tu nombre para continuar.</p>
+
+        <label class="quote-field-label" for="quote-contact">Correo o teléfono (opcional)</label>
+        <input type="text" class="quote-field-input" id="quote-contact" placeholder="tu@correo.com" autocomplete="email" />
+
         <label class="quote-qty-label" for="quote-qty">Cantidad de unidades</label>
         <input type="number" class="quote-qty-input" id="quote-qty" min="1" step="1" value="1000" />
         <p class="quote-note">La cantidad mínima de pedido varía según el producto — se confirma en la respuesta de la cotización.</p>
         <p class="quote-estimate" id="quote-estimate"></p>
       </div>
       <div class="quote-actions">
-        <button class="continue-btn" id="quote-whatsapp-btn" type="button">Solicitar cotización</button>
+        <button class="continue-btn" id="quote-submit-btn" type="button">Solicitar cotización</button>
         <button class="quote-copy-btn" id="quote-copy-btn" type="button">Copiar resumen</button>
+        <p class="quote-field-error" id="quote-submit-error" hidden></p>
       </div>
     </div>
 

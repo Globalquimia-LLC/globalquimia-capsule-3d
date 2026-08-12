@@ -179,7 +179,21 @@ export const DECAL_MIN_LOGO_PX = 300;
 // (quote.js) starts returning a real number with no other change.
 // ---------------------------------------------------------------------
 export const PRICE_TABLE = null;
-export const WHATSAPP_NUMBER = '573217408144';
+
+// Cotizador (Vendedor) — director-globalquimia-llc, ver GEP-400 en el repo
+// `gep`. La solicitud entra directo a este endpoint (POST /quotes/generate,
+// mismo backend que el resto del cotizador) en vez de armar un link de
+// WhatsApp; ver initStepQuote en wizard/step-quote.js.
+//
+// DIRECTOR_API_KEY es un secreto compartido de bajo valor, no una
+// protección real: al llamarse desde el navegador queda visible en el
+// código fuente de cualquiera igual (con o sin este repo siendo público) —
+// junto al rate limit del backend (5 pedidos/min por IP), solo filtra bots
+// y curiosos, no un atacante decidido. Ver el comentario equivalente en
+// director-globalquimia-llc/src/server.ts.
+export const DIRECTOR_API_URL = 'https://director-globalquimia-llc-production.up.railway.app/quotes/generate';
+export const DIRECTOR_API_KEY = 'a35f45c0740d61408fac17161db793d9fa848c886d00925b4da0c88f17484361';
+export const DIRECTOR_EMPRESA = 'globalquimia-llc';
 
 // ---------------------------------------------------------------------
 // Wizard step copy.
