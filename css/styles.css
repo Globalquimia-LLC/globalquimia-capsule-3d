@@ -20,6 +20,12 @@ header {
 }
 header img { height: 28px; display: block; }
 header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-transform: uppercase; }
+.header-left { display: flex; align-items: center; gap: 18px; }
+.header-back {
+  font-size: 12px; font-weight: 700; color: var(--navy); text-decoration: none;
+  opacity: 0.75; transition: opacity 0.15s ease;
+}
+.header-back:hover { opacity: 1; }
 
 .intro {
   position: relative;

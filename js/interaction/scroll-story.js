@@ -207,7 +207,7 @@ export function initScrollStory(maxDim, camDist) {
   tl.to(state.rotationTarget, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
   tl.to(dollyState, { dist: maxDim * 2.3 * aspectPad, duration: 0.15, ease: 'power2.inOut', onUpdate: applyDolly }, 0.72);
 
-  // Stage 5 (0.90 -> 1.0): "Diseña tu cápsula" panel fades in on the right;
+  // Stage 5 (0.90 -> 1.0): the designer panel fades in on the right;
   // the capsule (rendered by #canvas-container, shifted at the DOM level —
   // not the 3D camera — so the move is purely horizontal, no perspective
   // skew) slides left just enough to center it between the step number

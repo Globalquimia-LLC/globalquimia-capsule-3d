@@ -22,9 +22,9 @@ import { updateRunningSummary } from './wizard.js';
 // offset is pinned for that whole span — see scroll-story.js/tunnel.js).
 //
 // One shared control block (Logo + Texto grabado) drives whichever piece
-// is active — previously each section had its own independent Tapa/Cuerpo
+// is active — previously each section had its own independent Cap/Body
 // copy, so switching piece in one didn't affect the other and it was easy
-// to edit the wrong piece without noticing. Now presented as a Tapa/Cuerpo
+// to edit the wrong piece without noticing. Now presented as a Cap/Body
 // tab switcher (see .piece-tabgroup in styles.css and initPieceTabs() in
 // accordion.js, which owns the generic "swap which panel looks active"
 // behavior) — this only needs to move #design-controls-shared into
@@ -99,7 +99,7 @@ function setupLogoSection() {
   );
 
   refreshLogoUI = () => {
-    fileNameEl.textContent = state.customization[state.activeDesignTarget].logoName || 'Ningún archivo seleccionado';
+    fileNameEl.textContent = state.customization[state.activeDesignTarget].logoName || 'No file selected';
     errorEl.hidden = true;
     warningEl.hidden = !state.customization[state.activeDesignTarget].logoImg
       || !state.customization[state.activeDesignTarget].logoLowRes;
@@ -110,7 +110,7 @@ function setupLogoSection() {
     const file = fileInput.files[0];
     if (!file) return;
     if (file.type !== 'image/png') {
-      errorEl.textContent = 'El logo debe ser un archivo PNG (con transparencia).';
+      errorEl.textContent = 'The logo must be a PNG file (with transparency).';
       errorEl.hidden = false;
       warningEl.hidden = true;
       fileInput.value = '';

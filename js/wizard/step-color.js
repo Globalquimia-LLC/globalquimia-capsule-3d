@@ -58,7 +58,7 @@ function buildSwatchGroup(container, finishKey, target, material, palette) {
 // a finish+piece's .picker-mount — a bigger, richer embedded selector:
 // palette + hue slider, plus the brand palette as Pickr's own native
 // swatch row (not a separate custom one). Only one finish+piece's mount
-// is visible at a time (Tapa/Cuerpo tabs), so this only ever builds the
+// is visible at a time (Cap/Body tabs), so this only ever builds the
 // picker actually being shown.
 function createColorPicker(target, finishKey, material, initialHex) {
   if (typeof Pickr === 'undefined') {
@@ -109,7 +109,7 @@ function createColorPicker(target, finishKey, material, initialHex) {
   // inline:true only changes how the popup is POSITIONED (in-flow vs a
   // floating overlay) — it does NOT make it visible on its own, and it
   // still runs its normal "click outside closes it" popup logic (any
-  // click on the Tapa/Cuerpo tabs counts as "outside" and hides it).
+  // click on the Cap/Body tabs counts as "outside" and hides it).
   // Since visibility here is actually controlled by .picker-mount's own
   // CSS display (the tab switcher), force it to ignore Pickr's own
   // close attempts entirely — it should never really "close".

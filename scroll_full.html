@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Globalquimia — Cápsulas</title>
+<title>Globalquimia — Capsules</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <link rel="stylesheet" href="vendor/pickr-classic.min.css" />
@@ -21,29 +21,32 @@
 <body>
 
 <header>
-  <img src="assets/logo-color.png" alt="Globalquimia" />
-  <span>Línea de cápsulas</span>
+  <div class="header-left">
+    <img src="assets/logo-color.png" alt="Globalquimia" />
+    <a class="header-back" id="header-back-link" href="https://globalquimia.us/">‹ Back</a>
+  </div>
+  <span>Capsule line</span>
 </header>
 
 <section class="intro">
   <div class="intro-pattern" id="intro-pattern"></div>
-  <p class="eyebrow intro-item" style="color:var(--blue); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; font-size:12px;">Insumos farmacéuticos</p>
-  <h1 class="intro-item">Acompañamiento integral para procesos farmacéuticos</h1>
-  <p class="intro-item">Diseñamos soluciones integrales para laboratorios farmacéuticos y relacionados, acompañando su proyecto desde las etapas iniciales hasta materializar sus ideas de negocio.</p>
-  <span class="hint intro-item">Scrolleá para explorar la cápsula</span>
+  <p class="eyebrow intro-item" style="color:var(--blue); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; font-size:12px;">Pharmaceutical supplies</p>
+  <h1 class="intro-item">Comprehensive support for pharmaceutical processes</h1>
+  <p class="intro-item">We design comprehensive solutions for pharmaceutical and related laboratories, supporting your project from the earliest stages through to bringing your business ideas to life.</p>
+  <span class="hint intro-item">Scroll to explore the capsule</span>
 </section>
 
 <section id="story">
-  <div class="step-number side-left" id="step-number"><span class="of-total">Paso 1 de 5</span>1</div>
-  <!-- Mobile-only twin of .designer's own "Personalización" / heading —
+  <div class="step-number side-left" id="step-number"><span class="of-total">Step 1 of 5</span>1</div>
+  <!-- Mobile-only twin of .designer's own "Customization" / heading —
        a direct #story child (not nested inside .designer, which has its
        own transform on mobile and would turn position:fixed into
        something scoped to ITS box instead of the real viewport). Kept in
        sync with the step heading from wizard.js's goToStep(); hidden
        entirely outside the mobile breakpoint. -->
   <div class="step-heading-mobile" id="step-heading-mobile">
-    <p class="eyebrow">Personalización</p>
-    <h2 id="designer-heading-mobile">Tipo de cápsula</h2>
+    <p class="eyebrow">Customization</p>
+    <h2 id="designer-heading-mobile">Capsule Type</h2>
   </div>
   <!-- Mobile-only twin of #stepper (below) — same reasoning as
        #step-heading-mobile above: a direct #story child so position:fixed
@@ -53,74 +56,74 @@
        extra JS — it's just a second set of elements matching the same
        selectors. -->
   <div class="stepper" id="stepper-mobile">
-    <div class="stepper-item active" data-step="1"><span class="stepper-circle">1</span><span class="stepper-label">Tipo</span></div>
+    <div class="stepper-item active" data-step="1"><span class="stepper-circle">1</span><span class="stepper-label">Type</span></div>
     <div class="stepper-line"></div>
-    <div class="stepper-item" data-step="2"><span class="stepper-circle">2</span><span class="stepper-label">Tamaño</span></div>
+    <div class="stepper-item" data-step="2"><span class="stepper-circle">2</span><span class="stepper-label">Size</span></div>
     <div class="stepper-line"></div>
     <div class="stepper-item" data-step="3"><span class="stepper-circle">3</span><span class="stepper-label">Color</span></div>
     <div class="stepper-line"></div>
-    <div class="stepper-item" data-step="4"><span class="stepper-circle">4</span><span class="stepper-label">Diseño</span></div>
+    <div class="stepper-item" data-step="4"><span class="stepper-circle">4</span><span class="stepper-label">Design</span></div>
     <div class="stepper-line"></div>
-    <div class="stepper-item" data-step="5"><span class="stepper-circle">5</span><span class="stepper-label">Cotizar</span></div>
+    <div class="stepper-item" data-step="5"><span class="stepper-circle">5</span><span class="stepper-label">Quote</span></div>
   </div>
   <div id="canvas-container"></div>
   <!-- Mobile-only, overlaid on the docked capsule band's own corner —
        see scene.js's adjustCapsuleZoom/initCapsuleZoomControls. -->
   <div class="zoom-controls" id="zoom-controls">
-    <button class="zoom-btn" id="zoom-in-btn" type="button" aria-label="Acercar">+</button>
-    <button class="zoom-btn" id="zoom-out-btn" type="button" aria-label="Alejar">−</button>
+    <button class="zoom-btn" id="zoom-in-btn" type="button" aria-label="Zoom in">+</button>
+    <button class="zoom-btn" id="zoom-out-btn" type="button" aria-label="Zoom out">−</button>
   </div>
 
   <div class="story-text side-left" id="stage-1" data-stage="1">
     <div class="inner">
-      <p class="eyebrow">Cápsulas duras de gelatina vacías</p>
-      <h2>Formas farmacéuticas sólidas diseñadas para la dosificación oral precisa</h2>
+      <p class="eyebrow">Empty hard gelatin capsules</p>
+      <h2>Solid dosage forms engineered for precise oral dosing</h2>
     </div>
   </div>
 
   <div class="story-text side-right" id="stage-2" data-stage="2">
     <div class="inner">
-      <p class="eyebrow">Diseño de dos piezas</p>
-      <h2>Dos partes cilíndricas que encajan perfectamente para contener polvos</h2>
-      <p>Cápsulas vacías para formulaciones estándar, con opción de recubrimiento entérico posterior.</p>
+      <p class="eyebrow">Two-piece design</p>
+      <h2>Two cylindrical pieces that fit together perfectly to hold powders</h2>
+      <p>Empty capsules for standard formulations, with the option of later enteric coating.</p>
     </div>
   </div>
 
   <div class="story-text side-left" id="stage-3" data-stage="3">
     <div class="inner">
-      <p class="eyebrow">Todo lo que necesita, en un solo proveedor</p>
-      <h2>FDA, DMF, ISO 9001:2015, KOSHER, HALAL, BSE/TSE free certificadas</h2>
-      <p>Asesoría técnica especializada para seleccionar la cápsula ideal para tu formulación.</p>
+      <p class="eyebrow">Everything you need, from a single supplier</p>
+      <h2>FDA, DMF, ISO 9001:2015, KOSHER, HALAL, BSE/TSE-free certified</h2>
+      <p>Specialized technical guidance to help you select the ideal capsule for your formulation.</p>
     </div>
   </div>
 
   <div class="designer side-right" id="designer">
    <div class="inner">
-    <button class="step-back" id="step-back" type="button">‹ Volver</button>
+    <button class="step-back" id="step-back" type="button">‹ Back</button>
     <div class="stepper" id="stepper">
-      <div class="stepper-item active" data-step="1"><span class="stepper-circle">1</span><span class="stepper-label">Tipo</span></div>
+      <div class="stepper-item active" data-step="1"><span class="stepper-circle">1</span><span class="stepper-label">Type</span></div>
       <div class="stepper-line"></div>
-      <div class="stepper-item" data-step="2"><span class="stepper-circle">2</span><span class="stepper-label">Tamaño</span></div>
+      <div class="stepper-item" data-step="2"><span class="stepper-circle">2</span><span class="stepper-label">Size</span></div>
       <div class="stepper-line"></div>
       <div class="stepper-item" data-step="3"><span class="stepper-circle">3</span><span class="stepper-label">Color</span></div>
       <div class="stepper-line"></div>
-      <div class="stepper-item" data-step="4"><span class="stepper-circle">4</span><span class="stepper-label">Diseño</span></div>
+      <div class="stepper-item" data-step="4"><span class="stepper-circle">4</span><span class="stepper-label">Design</span></div>
       <div class="stepper-line"></div>
-      <div class="stepper-item" data-step="5"><span class="stepper-circle">5</span><span class="stepper-label">Cotizar</span></div>
+      <div class="stepper-item" data-step="5"><span class="stepper-circle">5</span><span class="stepper-label">Quote</span></div>
     </div>
-    <p class="eyebrow">Personalización</p>
-    <h2 id="designer-heading">Tipo de cápsula</h2>
-    <p class="step-instruction" id="step-instruction">Elegí el tipo de cápsula para tu producto.</p>
+    <p class="eyebrow">Customization</p>
+    <h2 id="designer-heading">Capsule Type</h2>
+    <p class="step-instruction" id="step-instruction">Choose the capsule type for your product.</p>
     <div class="running-summary" id="running-summary"></div>
 
     <div class="step-panel active" data-step="1">
       <div class="option-list" id="tipo-list"></div>
-      <div class="pick-hint">Elegí una opción para continuar</div>
+      <div class="pick-hint">Choose an option to continue</div>
     </div>
 
     <div class="step-panel" data-step="2">
       <div class="size-list" id="size-list"></div>
-      <div class="pick-hint">Elegí una opción para continuar</div>
+      <div class="pick-hint">Choose an option to continue</div>
     </div>
 
     <div class="step-panel" data-step="3">
@@ -128,14 +131,14 @@
 
         <div class="acc-item" data-finish="tradicionales">
           <button class="acc-header" type="button">
-            <span class="finish-header"><span class="finish-swatch finish-swatch-tradicionales"></span>Tradicionales</span>
+            <span class="finish-header"><span class="finish-swatch finish-swatch-tradicionales"></span>Traditional</span>
             <span class="acc-chevron">▲</span>
           </button>
           <div class="acc-body">
             <div class="piece-tabgroup" data-finish="tradicionales">
               <div class="piece-tabs">
-                <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
-                <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
+                <button type="button" class="piece-tab active" data-target="cap">Cap</button>
+                <button type="button" class="piece-tab" data-target="body">Body</button>
               </div>
               <div class="piece-tab-panels">
                 <div class="piece-tab-panel active" data-target="cap">
@@ -153,14 +156,14 @@
 
         <div class="acc-item" data-finish="mate">
           <button class="acc-header" type="button">
-            <span class="finish-header"><span class="finish-swatch finish-swatch-mate"></span>Mate</span>
+            <span class="finish-header"><span class="finish-swatch finish-swatch-mate"></span>Matte</span>
             <span class="acc-chevron">▲</span>
           </button>
           <div class="acc-body">
             <div class="piece-tabgroup" data-finish="mate">
               <div class="piece-tabs">
-                <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
-                <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
+                <button type="button" class="piece-tab active" data-target="cap">Cap</button>
+                <button type="button" class="piece-tab" data-target="body">Body</button>
               </div>
               <div class="piece-tab-panels">
                 <div class="piece-tab-panel active" data-target="cap">
@@ -178,18 +181,18 @@
 
         <div class="acc-item" data-finish="metalizados">
           <button class="acc-header" type="button">
-            <span class="finish-header"><span class="finish-swatch finish-swatch-metalizados"></span>Metalizados</span>
+            <span class="finish-header"><span class="finish-swatch finish-swatch-metalizados"></span>Metallic</span>
             <span class="acc-chevron">▲</span>
           </button>
           <div class="acc-body">
             <div class="color-columns" data-finish="metalizados">
               <div class="color-col">
-                <span class="color-col-label">Tapa</span>
+                <span class="color-col-label">Cap</span>
                 <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="cap"></div>
                 <span class="color-readout" id="readout-metalizados-cap" data-finish="metalizados" data-target="cap"></span>
               </div>
               <div class="color-col">
-                <span class="color-col-label">Cuerpo</span>
+                <span class="color-col-label">Body</span>
                 <div class="quick-swatches metal-swatches" data-finish="metalizados" data-target="body"></div>
                 <span class="color-readout" id="readout-metalizados-body" data-finish="metalizados" data-target="body"></span>
               </div>
@@ -198,15 +201,15 @@
         </div>
 
       </div>
-      <div class="scroll-more-hint">Seguí bajando</div>
+      <div class="scroll-more-hint">Keep scrolling</div>
     </div>
 
     <div class="step-panel" data-step="4">
       <div class="acc-menu">
         <div class="piece-tabgroup" id="design-piece-tabs">
           <div class="piece-tabs">
-            <button type="button" class="piece-tab active" data-target="cap">Tapa</button>
-            <button type="button" class="piece-tab" data-target="body">Cuerpo</button>
+            <button type="button" class="piece-tab active" data-target="cap">Cap</button>
+            <button type="button" class="piece-tab" data-target="body">Body</button>
           </div>
           <div class="piece-tab-panels">
             <div class="piece-tab-panel active" data-target="cap">
@@ -219,21 +222,21 @@
                 <div class="acc-body">
                   <div class="design-section">
                     <div class="logo-upload">
-                      <label class="logo-upload-btn" for="logo-file-input">Subir logo</label>
+                      <label class="logo-upload-btn" for="logo-file-input">Upload logo</label>
                       <input type="file" id="logo-file-input" accept="image/png" hidden />
-                      <span class="logo-upload-name" id="logo-file-name">Ningún archivo seleccionado</span>
-                      <button type="button" class="icon-btn" id="logo-clear-btn" title="Quitar logo" aria-label="Quitar logo">🗑</button>
+                      <span class="logo-upload-name" id="logo-file-name">No file selected</span>
+                      <button type="button" class="icon-btn" id="logo-clear-btn" title="Remove logo" aria-label="Remove logo">🗑</button>
                     </div>
                     <span class="logo-error" id="logo-error" hidden></span>
-                    <span class="logo-quality-warning" id="logo-quality-warning" hidden>Resolución baja: el logo puede verse borroso al proyectarlo.</span>
+                    <span class="logo-quality-warning" id="logo-quality-warning" hidden>Low resolution: the logo may look blurry once projected.</span>
                     <div class="transform-row">
                       <div class="transform-control">
-                        <span class="transform-label">Rotar</span>
+                        <span class="transform-label">Rotate</span>
                         <input type="range" id="logo-rotation-slider" class="font-size-slider" />
                         <span class="font-size-readout" id="logo-rotation-readout"></span>
                       </div>
                       <div class="transform-control">
-                        <span class="transform-label">Tamaño</span>
+                        <span class="transform-label">Size</span>
                         <input type="range" id="logo-scale-slider" class="font-size-slider" />
                         <span class="font-size-readout" id="logo-scale-readout"></span>
                       </div>
@@ -244,16 +247,16 @@
 
               <div class="acc-item" data-subsection="texto">
                 <button class="acc-header acc-sub" type="button">
-                  <span>Texto grabado</span>
+                  <span>Engraved text</span>
                   <span class="acc-chevron">▲</span>
                 </button>
                 <div class="acc-body">
                   <div class="design-section">
-                    <input type="text" class="text-input" id="text-input" placeholder="Digite texto aquí" maxlength="24" />
+                    <input type="text" class="text-input" id="text-input" placeholder="Type your text here" maxlength="24" />
                     <div class="text-style-row">
                       <select id="font-family-select" class="font-select"></select>
                       <div class="font-size-btns" id="font-weight-btns">
-                        <button type="button" class="font-size-btn active" data-weight="700">Negrita</button>
+                        <button type="button" class="font-size-btn active" data-weight="700">Bold</button>
                         <button type="button" class="font-size-btn" data-weight="400">Normal</button>
                       </div>
                     </div>
@@ -263,18 +266,18 @@
                         <span class="font-size-readout" id="font-size-readout"></span>
                       </div>
                       <div class="text-toolbar-actions">
-                        <button type="button" class="icon-btn" id="text-reset-btn" title="Restablecer" aria-label="Restablecer">⟲</button>
-                        <button type="button" class="icon-btn" id="text-clear-btn" title="Borrar texto" aria-label="Borrar texto">🗑</button>
+                        <button type="button" class="icon-btn" id="text-reset-btn" title="Reset" aria-label="Reset">⟲</button>
+                        <button type="button" class="icon-btn" id="text-clear-btn" title="Clear text" aria-label="Clear text">🗑</button>
                       </div>
                     </div>
                     <div class="transform-row">
                       <div class="transform-control">
-                        <span class="transform-label">Rotar</span>
+                        <span class="transform-label">Rotate</span>
                         <input type="range" id="text-rotation-slider" class="font-size-slider" />
                         <span class="font-size-readout" id="text-rotation-readout"></span>
                       </div>
                       <div class="transform-control">
-                        <span class="transform-label">Tamaño</span>
+                        <span class="transform-label">Size</span>
                         <input type="range" id="text-scale-slider" class="font-size-slider" />
                         <span class="font-size-readout" id="text-scale-readout"></span>
                       </div>
@@ -290,26 +293,26 @@
         </div>
       </div>
 
-      <div class="scroll-more-hint">Seguí bajando</div>
+      <div class="scroll-more-hint">Keep scrolling</div>
     </div>
 
     <div class="step-panel" data-step="5">
       <div class="quote-summary">
-        <label class="quote-field-label" for="quote-name">Tu nombre</label>
-        <input type="text" class="quote-field-input" id="quote-name" placeholder="Nombre completo" autocomplete="name" />
-        <p class="quote-field-error" id="quote-name-error" hidden>Ingresá tu nombre para continuar.</p>
+        <label class="quote-field-label" for="quote-name">Your name</label>
+        <input type="text" class="quote-field-input" id="quote-name" placeholder="Full name" autocomplete="name" />
+        <p class="quote-field-error" id="quote-name-error" hidden>Enter your name to continue.</p>
 
-        <label class="quote-field-label" for="quote-contact">Correo o teléfono (opcional)</label>
-        <input type="text" class="quote-field-input" id="quote-contact" placeholder="tu@correo.com" autocomplete="email" />
+        <label class="quote-field-label" for="quote-contact">Email or phone (optional)</label>
+        <input type="text" class="quote-field-input" id="quote-contact" placeholder="you@email.com" autocomplete="email" />
 
-        <label class="quote-qty-label" for="quote-qty">Cantidad de unidades</label>
+        <label class="quote-qty-label" for="quote-qty">Quantity of units</label>
         <input type="number" class="quote-qty-input" id="quote-qty" min="1" step="1" value="1000" />
-        <p class="quote-note">La cantidad mínima de pedido varía según el producto — se confirma en la respuesta de la cotización.</p>
+        <p class="quote-note">Minimum order quantity varies by product — confirmed in the quote response.</p>
         <p class="quote-estimate" id="quote-estimate"></p>
       </div>
       <div class="quote-actions">
-        <button class="continue-btn" id="quote-submit-btn" type="button">Solicitar cotización</button>
-        <button class="quote-copy-btn" id="quote-copy-btn" type="button">Copiar resumen</button>
+        <button class="continue-btn" id="quote-submit-btn" type="button">Request a quote</button>
+        <button class="quote-copy-btn" id="quote-copy-btn" type="button">Copy summary</button>
         <p class="quote-field-error" id="quote-submit-error" hidden></p>
       </div>
     </div>
@@ -325,8 +328,8 @@
 <div class="progress-rail"><div class="progress-fill" id="progress-fill"></div></div>
 
 <div class="nav-controls" id="nav-controls">
-  <button class="nav-btn" id="nav-prev-btn" type="button" aria-label="Retroceder">‹</button>
-  <button class="nav-btn" id="nav-next-btn" type="button" aria-label="Avanzar">›</button>
+  <button class="nav-btn" id="nav-prev-btn" type="button" aria-label="Back">‹</button>
+  <button class="nav-btn" id="nav-next-btn" type="button" aria-label="Forward">›</button>
 </div>
 
 <script type="module" src="js/main.js"></script>

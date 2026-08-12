@@ -23,7 +23,7 @@ function describeColor(hexStr) {
 }
 
 // ---------------------------------------------------------------------
-// 5. Cantidad y cotización — assembles every choice made in steps 1-4
+// 5. Quantity & quote — assembles every choice made in steps 1-4
 // plus a quantity into a structured request. Deliberately does NOT
 // compute a live price: Globalquimia has no published price list yet
 // (marketing-plan.md §10.1) — showing a made-up number would be worse
@@ -38,7 +38,7 @@ function computeEstimate(sizeCode, tipoLabel, qty) {
 }
 
 // Builds the plain-text summary sent as the cotizador's `notes` field and
-// used by "copiar resumen", and refreshes the price estimate note. There's
+// used by "copy summary", and refreshes the price estimate note. There's
 // no on-screen list anymore — the summary only ever leaves the page as
 // cotizador/clipboard text.
 export function renderQuoteSummary() {
@@ -47,29 +47,30 @@ export function renderQuoteSummary() {
   const { selectedTipo, selectedSize, appliedColor, customization } = state;
 
   const lines = [
-    `Tipo: ${selectedTipo}`,
-    `Tamaño: ${selectedSize.code} (${selectedSize.length.toFixed(2)} mm)`,
-    `Tapa: ${FINISH_LABELS[appliedColor.cap.finish]} ${describeColor(appliedColor.cap.hex)}`,
-    `Cuerpo: ${FINISH_LABELS[appliedColor.body.finish]} ${describeColor(appliedColor.body.hex)}`,
+    `Type: ${selectedTipo}`,
+    `Size: ${selectedSize.code} (${selectedSize.length.toFixed(2)} mm)`,
+    `Cap: ${FINISH_LABELS[appliedColor.cap.finish]} ${describeColor(appliedColor.cap.hex)}`,
+    `Body: ${FINISH_LABELS[appliedColor.body.finish]} ${describeColor(appliedColor.body.hex)}`,
   ];
-  if (customization.cap.logoName) lines.push(`Logo tapa: ${customization.cap.logoName}`);
-  if (customization.body.logoName) lines.push(`Logo cuerpo: ${customization.body.logoName}`);
-  if (customization.cap.text) lines.push(`Texto tapa: "${customization.cap.text}"`);
-  if (customization.body.text) lines.push(`Texto cuerpo: "${customization.body.text}"`);
-  lines.push(`Cantidad: ${qty.toLocaleString('es-CO')} unidades`);
+  if (customization.cap.logoName) lines.push(`Cap logo: ${customization.cap.logoName}`);
+  if (customization.body.logoName) lines.push(`Body logo: ${customization.body.logoName}`);
+  if (customization.cap.text) lines.push(`Cap text: "${customization.cap.text}"`);
+  if (customization.body.text) lines.push(`Body text: "${customization.body.text}"`);
+  lines.push(`Quantity: ${qty.toLocaleString('en-US')} units`);
 
   const estimate = computeEstimate(selectedSize.code, selectedTipo, qty);
   document.getElementById('quote-estimate').textContent = estimate
-    ? `Estimado: $${estimate.toFixed(2)} USD`
-    : 'Precio sujeto a cotización — un asesor responde con el valor exacto.';
+    ? `Estimated: $${estimate.toFixed(2)} USD`
+    : 'Price subject to quotation — an advisor will follow up with the exact value.';
 
   return lines.join('\n');
 }
 
-// Entra directo al cotizador (POST /quotes/generate, director-globalquimia-llc
-// — ver GEP-400) en vez de armar un link de WhatsApp. La cola de aprobación
-// del cotizador queda con el registro; el chat abierto por openChatwoot()
-// abajo es el canal donde un agente humano realmente atiende al cliente.
+// Goes straight into the cotizador (POST /quotes/generate,
+// director-globalquimia-llc — see GEP-400) instead of building a WhatsApp
+// link. The cotizador's approval queue keeps the record; the chat opened
+// by openChatwoot() below is the channel where a human agent actually
+// helps the customer.
 async function submitQuote(clientName, clientContact, summary, qty) {
   const response = await fetch(DIRECTOR_API_URL, {
     method: 'POST',
@@ -86,20 +87,20 @@ async function submitQuote(clientName, clientContact, summary, qty) {
   return response.json();
 }
 
-// Abre el widget de Chatwoot ya cargado por la página que embebe este
-// diseñador — nunca se inyecta un script acá, para no crear una segunda
-// instancia del widget peleando con la real. setConversationCustomAttributes
-// le da al agente el resumen del diseño y el id de la cotización ya
-// encolada, así arranca la charla con contexto en vez de pedirlo de cero.
+// Opens the Chatwoot widget already loaded by the page embedding this
+// designer — never injected here, so a second widget instance never fights
+// the real one. setConversationCustomAttributes hands the agent the design
+// summary and the id of the quote already queued, so the chat starts with
+// context instead of asking for it from scratch.
 function openChatwoot(summary, quoteId) {
   if (!window.$chatwoot) {
-    console.warn('Capsula3D: window.$chatwoot no está disponible en esta página — no se pudo abrir el chat.');
+    console.warn('Capsula3D: window.$chatwoot is not available on this page — could not open chat.');
     return;
   }
   if (quoteId != null) {
     window.$chatwoot.setConversationCustomAttributes({
       capsula3d_quote_id: String(quoteId),
-      capsula3d_resumen: summary,
+      capsula3d_summary: summary,
     });
   }
   window.$chatwoot.toggle('open');
@@ -117,12 +118,12 @@ export function initStepQuote() {
     }
   });
 
-  // "Solicitar cotización" plays the tunnel (capsule flies open, camera
-  // dives through it, the Globalquimia logo appears and holds), files the
-  // quote with the cotizador while the tunnel plays, then opens Chatwoot
-  // and reverses the tunnel back out — the black overlay would otherwise
-  // sit on top of the just-opened chat panel with pointer-events:auto,
-  // making it unclickable.
+  // "Request a quote" plays the tunnel (capsule flies open, camera dives
+  // through it, the Globalquimia logo appears and holds), files the quote
+  // with the cotizador while the tunnel plays, then opens Chatwoot and
+  // reverses the tunnel back out — the black overlay would otherwise sit
+  // on top of the just-opened chat panel with pointer-events:auto, making
+  // it unclickable.
   const submitBtn = document.getElementById('quote-submit-btn');
   const submitError = document.getElementById('quote-submit-error');
   submitBtn.addEventListener('click', async () => {
@@ -141,23 +142,23 @@ export function initStepQuote() {
 
     submitError.hidden = true;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Enviando...';
+    submitBtn.textContent = 'Sending...';
 
     let quote = null;
     try {
       quote = await submitQuote(name, contact, summary, qty);
     } catch (err) {
-      console.error('Capsula3D: fallo al enviar la cotización al cotizador', err);
+      console.error('Capsula3D: failed to submit the quote to the cotizador', err);
     }
 
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Solicitar cotización';
+    submitBtn.textContent = 'Request a quote';
 
-    // El chat igual se abre si el cotizador falló — el cliente no debería
-    // quedar trabado por un error de backend, solo pierde el registro
-    // automático en la cola (el agente lo toma a mano desde el chat).
+    // The chat still opens even if the cotizador call failed — the
+    // customer shouldn't get stuck over a backend error, they just lose
+    // the automatic queue record (the agent picks it up by hand from chat).
     if (!quote) {
-      submitError.textContent = 'No pudimos registrar tu cotización automáticamente, pero podés seguir por el chat.';
+      submitError.textContent = "We couldn't register your quote automatically, but you can continue through chat.";
       submitError.hidden = false;
     }
 
@@ -174,7 +175,7 @@ export function initStepQuote() {
     const btn = document.getElementById('quote-copy-btn');
     const original = btn.textContent;
     navigator.clipboard.writeText(summary).then(() => {
-      btn.textContent = 'Copiado ✓';
+      btn.textContent = 'Copied ✓';
       setTimeout(() => { btn.textContent = original; }, 1500);
     });
   });

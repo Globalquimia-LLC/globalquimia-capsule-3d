@@ -3,7 +3,7 @@ import { TIPO_OPTIONS, DEFAULT_TIPO_INDEX } from '../constants.js';
 import { goToStep } from './wizard.js';
 
 // ---------------------------------------------------------------------
-// 1. Tipo de cápsula — selection-only, doesn't affect the 3D model.
+// 1. Capsule type — selection-only, doesn't affect the 3D model.
 // ---------------------------------------------------------------------
 export function initStepTipo() {
   state.selectedTipo = TIPO_OPTIONS[DEFAULT_TIPO_INDEX];

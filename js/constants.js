@@ -26,19 +26,19 @@ export const ROTATION_CHASE_WINDOW_MS = 500;
 export const ROTATION_CHASE_LERP = 0.14;
 
 // ---------------------------------------------------------------------
-// 1. Tipo de cápsula — selection-only, doesn't affect the 3D model.
+// 1. Capsule type — selection-only, doesn't affect the 3D model.
 // ---------------------------------------------------------------------
 export const TIPO_OPTIONS = [
-  'Cápsulas de gelatina',
-  'Cápsulas vegetal - K-CAPS',
-  'Cápsulas ácido resistente - AR-CAPS',
-  'Cápsulas saborizadas',
-  'Cápsulas de relleno líquido - LQ-CAPS',
+  'Gelatin capsules',
+  'Vegetable capsules - K-CAPS',
+  'Acid-resistant capsules - AR-CAPS',
+  'Flavored capsules',
+  'Liquid-fill capsules - LQ-CAPS',
 ];
 export const DEFAULT_TIPO_INDEX = 2;
 
 // ---------------------------------------------------------------------
-// 2. Tamaño — real published capsule sizes (Torpac/ACG technical charts,
+// 2. Size — real published capsule sizes (Torpac/ACG technical charts,
 // same source used for the 3D model's own "0" geometry); wall thickness
 // is near-constant across sizes for a given capsule type, hence the fixed
 // 0.30mm shown for all.
@@ -63,71 +63,71 @@ export const SIZE_REFERENCE_LENGTH = 21.60;
 // own native `swatches` row (not a separate custom row alongside it).
 // ---------------------------------------------------------------------
 export const PALETTE = [
-  { name: 'Azul Globalquimia', hex: 0x006f9e },
-  { name: 'Cian',              hex: 0x1dbadf },
-  { name: 'Amarillo',          hex: 0xfdc400 },
-  { name: 'Verde',             hex: 0x95c11f },
+  { name: 'Globalquimia Blue', hex: 0x006f9e },
+  { name: 'Cyan',              hex: 0x1dbadf },
+  { name: 'Yellow',            hex: 0xfdc400 },
+  { name: 'Green',             hex: 0x95c11f },
   { name: 'Navy',              hex: 0x1c405d },
-  { name: 'Blanco',            hex: 0xf8f8f8 },
-  { name: 'Negro',             hex: 0x2b2b2b },
-  { name: 'Gris',              hex: 0x9aa7ad },
-  { name: 'Rojo',              hex: 0xd63b3b },
-  { name: 'Naranja',           hex: 0xf28c28 },
-  { name: 'Rosa',              hex: 0xe36ca0 },
-  { name: 'Morado',            hex: 0x7d5ba6 },
-  { name: 'Turquesa',          hex: 0x2ec4b6 },
+  { name: 'White',             hex: 0xf8f8f8 },
+  { name: 'Black',             hex: 0x2b2b2b },
+  { name: 'Gray',              hex: 0x9aa7ad },
+  { name: 'Red',               hex: 0xd63b3b },
+  { name: 'Orange',            hex: 0xf28c28 },
+  { name: 'Pink',              hex: 0xe36ca0 },
+  { name: 'Purple',            hex: 0x7d5ba6 },
+  { name: 'Turquoise',         hex: 0x2ec4b6 },
   { name: 'Beige',             hex: 0xe4d5b7 },
 ];
 
 // Fixed metallic finish set (not the full spectrum — a closed palette, per
 // the reference swatch grid).
 export const METAL_PALETTE = [
-  { name: 'Marfil',        hex: 0xe8e1cf },
-  { name: 'Morado oscuro', hex: 0x3b1f5c },
-  { name: 'Negro',         hex: 0x1a1a1a },
-  { name: 'Azul',          hex: 0x1e3a8a },
-  { name: 'Café',          hex: 0x5c3a21 },
-  { name: 'Beige',         hex: 0xf0e4c8 },
-  { name: 'Oro',           hex: 0xc9a227 },
-  { name: 'Rosa palo',     hex: 0xe8b8c8 },
-  { name: 'Gris',          hex: 0x9a9a9a },
-  { name: 'Verde',         hex: 0x1e7b34 },
-  { name: 'Naranja',       hex: 0xe8752b },
-  { name: 'Rosa',          hex: 0xf06fa0 },
-  { name: 'Púrpura',       hex: 0x7b2fbe },
-  { name: 'Rojo',          hex: 0xd81e2c },
-  { name: 'Vinotinto',     hex: 0x7a1620 },
-  { name: 'Amarillo',      hex: 0xf0c419 },
-  { name: 'Plata',         hex: 0xe4e4e4 },
-  { name: 'Gris plateado', hex: 0xa8a8a8 },
-  { name: 'Bronce',        hex: 0xb8860b },
+  { name: 'Ivory',        hex: 0xe8e1cf },
+  { name: 'Dark Purple',  hex: 0x3b1f5c },
+  { name: 'Black',        hex: 0x1a1a1a },
+  { name: 'Blue',         hex: 0x1e3a8a },
+  { name: 'Brown',        hex: 0x5c3a21 },
+  { name: 'Beige',        hex: 0xf0e4c8 },
+  { name: 'Gold',         hex: 0xc9a227 },
+  { name: 'Dusty Rose',   hex: 0xe8b8c8 },
+  { name: 'Gray',         hex: 0x9a9a9a },
+  { name: 'Green',        hex: 0x1e7b34 },
+  { name: 'Orange',       hex: 0xe8752b },
+  { name: 'Pink',         hex: 0xf06fa0 },
+  { name: 'Purple',       hex: 0x7b2fbe },
+  { name: 'Red',          hex: 0xd81e2c },
+  { name: 'Burgundy',     hex: 0x7a1620 },
+  { name: 'Yellow',       hex: 0xf0c419 },
+  { name: 'Silver',       hex: 0xe4e4e4 },
+  { name: 'Silver Gray',  hex: 0xa8a8a8 },
+  { name: 'Bronze',       hex: 0xb8860b },
 ];
 
-// Material response per finish — Tradicionales keeps the original
-// semi-gloss look, Mate flattens the highlight, Metalizados pushes
-// metalness up so the same lighting rig reads as a metallic coat.
+// Material response per finish — Traditional keeps the original semi-gloss
+// look, Matte flattens the highlight, Metallic pushes metalness up so the
+// same lighting rig reads as a metallic coat.
 export const FINISH_PROPS = {
   tradicionales: { roughness: 0.35, metalness: 0.05 },
   mate:          { roughness: 0.9,  metalness: 0.02 },
   metalizados:   { roughness: 0.25, metalness: 0.85 },
 };
-export const FINISH_LABELS = { tradicionales: 'Tradicional', mate: 'Mate', metalizados: 'Metalizado' };
+export const FINISH_LABELS = { tradicionales: 'Traditional', mate: 'Matte', metalizados: 'Metallic' };
 
 // ---------------------------------------------------------------------
-// 4. Logo y Texto.
+// 4. Logo & Text.
 // ---------------------------------------------------------------------
 export const TEXT_COLOR_PALETTE = [
-  { name: 'Blanco',      hex: 0xffffff },
-  { name: 'Negro',       hex: 0x000000 },
-  { name: 'Gris oscuro', hex: 0x2b2b2b },
-  { name: 'Gris',        hex: 0x6b7280 },
-  { name: 'Vinotinto',   hex: 0x7a1f2b },
-  { name: 'Azul',        hex: 0x1c3f8f },
-  { name: 'Celeste',     hex: 0x1f7fbf },
-  { name: 'Café',        hex: 0x5c4020 },
-  { name: 'Verde oliva', hex: 0x4a6b1f },
-  { name: 'Verde',       hex: 0x1f5c34 },
-  { name: 'Dorado',      hex: 0xe8b923 },
+  { name: 'White',      hex: 0xffffff },
+  { name: 'Black',      hex: 0x000000 },
+  { name: 'Dark Gray',  hex: 0x2b2b2b },
+  { name: 'Gray',       hex: 0x6b7280 },
+  { name: 'Burgundy',   hex: 0x7a1f2b },
+  { name: 'Blue',       hex: 0x1c3f8f },
+  { name: 'Light Blue', hex: 0x1f7fbf },
+  { name: 'Brown',      hex: 0x5c4020 },
+  { name: 'Olive Green', hex: 0x4a6b1f },
+  { name: 'Green',      hex: 0x1f5c34 },
+  { name: 'Gold',       hex: 0xe8b923 },
 ];
 export const DECAL_CANVAS = { w: 512, h: 256 };
 // Continuous slider instead of a fixed small/medium/large set — min/max/step
@@ -164,14 +164,14 @@ export const FONT_FAMILIES = [
 ];
 export const FONT_WEIGHTS = [
   { name: 'Normal', value: '400' },
-  { name: 'Negrita', value: '700' },
+  { name: 'Bold', value: '700' },
 ];
 // Soft-warning threshold (px, shorter image dimension) for logo upload
 // resolution — below this the projected decal is likely to look blurry.
 export const DECAL_MIN_LOGO_PX = 300;
 
 // ---------------------------------------------------------------------
-// 5. Cantidad y cotización — deliberately does NOT compute a live price:
+// 5. Quantity & quote — deliberately does NOT compute a live price:
 // Globalquimia has no published price list yet (marketing-plan.md §10.1)
 // — showing a made-up number would be worse than showing none. This is
 // the hook for when real costs exist: fill it in
@@ -180,16 +180,17 @@ export const DECAL_MIN_LOGO_PX = 300;
 // ---------------------------------------------------------------------
 export const PRICE_TABLE = null;
 
-// Cotizador (Vendedor) — director-globalquimia-llc, ver GEP-400 en el repo
-// `gep`. La solicitud entra directo a este endpoint (POST /quotes/generate,
-// mismo backend que el resto del cotizador) en vez de armar un link de
-// WhatsApp; ver initStepQuote en wizard/step-quote.js.
+// Cotizador (Vendedor) — director-globalquimia-llc, see GEP-400 in the
+// `gep` repo. The request goes straight into that endpoint
+// (POST /quotes/generate, same backend as the rest of the cotizador)
+// instead of building a WhatsApp link; see initStepQuote in
+// wizard/step-quote.js.
 //
-// DIRECTOR_API_KEY es un secreto compartido de bajo valor, no una
-// protección real: al llamarse desde el navegador queda visible en el
-// código fuente de cualquiera igual (con o sin este repo siendo público) —
-// junto al rate limit del backend (5 pedidos/min por IP), solo filtra bots
-// y curiosos, no un atacante decidido. Ver el comentario equivalente en
+// DIRECTOR_API_KEY is a low-value shared secret, not real protection:
+// called from the browser, it's visible in anyone's page source either
+// way, public repo or not — together with the backend's rate limit
+// (5 requests/min per IP), it only filters out bots/curious visitors,
+// not a determined attacker. Same reasoning documented in
 // director-globalquimia-llc/src/server.ts.
 export const DIRECTOR_API_URL = 'https://director-globalquimia-llc-production.up.railway.app/quotes/generate';
 export const DIRECTOR_API_KEY = 'a35f45c0740d61408fac17161db793d9fa848c886d00925b4da0c88f17484361';
@@ -198,11 +199,11 @@ export const DIRECTOR_EMPRESA = 'globalquimia-llc';
 // ---------------------------------------------------------------------
 // Wizard step copy.
 // ---------------------------------------------------------------------
-export const STEP_TITLES = { 1: 'Tipo de cápsula', 2: 'Tamaño', 3: 'Color', 4: 'Logo y Texto', 5: 'Cantidad y cotización' };
+export const STEP_TITLES = { 1: 'Capsule Type', 2: 'Size', 3: 'Color', 4: 'Logo & Text', 5: 'Quantity & Quote' };
 export const STEP_INSTRUCTIONS = {
-  1: 'Elegí el tipo de cápsula para tu producto.',
-  2: 'Elegí el tamaño — la cápsula escala en vivo a la proporción real.',
-  3: 'Elegí acabado y color para la tapa y el cuerpo.',
-  4: 'Agregá tu logo o un texto grabado y arrastralo sobre la cápsula para ubicarlo donde quieras.',
-  5: 'Revisá tu selección, ajustá la cantidad y pedí la cotización.',
+  1: 'Choose the capsule type for your product.',
+  2: 'Choose a size — the capsule scales live to its real proportion.',
+  3: 'Choose a finish and color for the cap and body.',
+  4: 'Add your logo or engraved text and drag it onto the capsule to place it wherever you like.',
+  5: 'Review your selection, adjust the quantity, and request your quote.',
 };

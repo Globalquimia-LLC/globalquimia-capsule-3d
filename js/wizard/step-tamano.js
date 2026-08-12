@@ -3,7 +3,7 @@ import { SIZE_OPTIONS, SIZE_WALL_MM, SIZE_REFERENCE_LENGTH } from '../constants.
 import { goToStep } from './wizard.js';
 
 // ---------------------------------------------------------------------
-// 2. Tamaño — selection-only. Dimensions are real published capsule
+// 2. Size — selection-only. Dimensions are real published capsule
 // sizes (Torpac/ACG technical charts, same source used for the 3D
 // model's own "0" geometry); wall thickness is near-constant across
 // sizes for a given capsule type, hence the fixed 0.30mm shown for all.

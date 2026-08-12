@@ -28,7 +28,7 @@ export function updateStepper(step) {
 }
 
 // Short accumulated-choice chips for steps already CONFIRMED (passed on
-// the way forward) — tipo/tamaño/color all start out pre-filled with a
+// the way forward) — type/size/color all start out pre-filled with a
 // sane default (see initStepTipo/initStepTamano) so the 3D capsule always
 // has something to render, but a default nobody actually picked yet isn't
 // a "choice" worth summarizing. Gating each chip behind currentStep means
@@ -40,21 +40,21 @@ export function updateRunningSummary() {
   const { currentStep, selectedTipo, selectedSize, appliedColor, customization } = state;
   const chips = [];
   if (currentStep > 1) chips.push(selectedTipo.replace(/\s*-\s*[A-Z-]+$/, ''));
-  if (currentStep > 2) chips.push(`Tamaño ${selectedSize.code}`);
+  if (currentStep > 2) chips.push(`Size ${selectedSize.code}`);
   if (currentStep > 3) {
-    chips.push(`${FINISH_LABELS[appliedColor.cap.finish]} tapa ${appliedColor.cap.hex.toUpperCase()}`);
-    chips.push(`${FINISH_LABELS[appliedColor.body.finish]} cuerpo ${appliedColor.body.hex.toUpperCase()}`);
+    chips.push(`${FINISH_LABELS[appliedColor.cap.finish]} cap ${appliedColor.cap.hex.toUpperCase()}`);
+    chips.push(`${FINISH_LABELS[appliedColor.body.finish]} body ${appliedColor.body.hex.toUpperCase()}`);
   }
   if (currentStep > 4) {
-    if (customization.cap.logoName || customization.body.logoName) chips.push('Con logo');
-    if (customization.cap.text || customization.body.text) chips.push('Con texto grabado');
+    if (customization.cap.logoName || customization.body.logoName) chips.push('With logo');
+    if (customization.cap.text || customization.body.text) chips.push('With engraved text');
   }
   el.innerHTML = chips.map((c) => `<span class="chip">${c}</span>`).join('');
 }
 
 // Staggers a step panel's own top-level items in as it becomes visible —
-// list rows for Tipo/Tamaño, the finish/logo-texto cards for Color and
-// Logo y Texto. Called once for step 1 (when the designer itself first
+// list rows for Type/Size, the finish/logo-text cards for Color and
+// Logo & Text. Called once for step 1 (when the designer itself first
 // activates on scroll, from scroll-story.js) and every time goToStep
 // reveals a panel — never at build time, since an animation started while
 // display:none finishes invisibly and the step would just appear with no
@@ -83,7 +83,7 @@ export function goToStep(newStep) {
 
   backBtn.classList.toggle('visible', newStep > 1);
   // Step 5 is the end of the line for the generic prev/next control —
-  // "Solicitar cotización" is the only forward action from here, so the
+  // "Request a quote" is the only forward action from here, so the
   // next button would just be dead weight (scroll-advance.js already
   // doesn't let it do anything on step 5 either). Step 1 is the start of
   // the line the other way — there's no going back to the pre-wizard
@@ -114,7 +114,7 @@ export function goToStep(newStep) {
   const mobileHeading = document.getElementById('designer-heading-mobile');
   if (mobileHeading) mobileHeading.textContent = STEP_TITLES[newStep];
   instruction.textContent = STEP_INSTRUCTIONS[newStep];
-  stepNumberEl.innerHTML = `<span class="of-total">Paso ${newStep} de 5</span>${newStep}`;
+  stepNumberEl.innerHTML = `<span class="of-total">Step ${newStep} of 5</span>${newStep}`;
   if (newStep === 5) renderQuoteSummary();
   revealStepChildren(newPanel);
 

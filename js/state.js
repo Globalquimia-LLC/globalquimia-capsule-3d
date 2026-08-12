@@ -28,10 +28,10 @@ export const state = {
   currentStep: 1,
   hasRevealedStep1: false,
 
-  // Step 1 — Tipo.
+  // Step 1 — Type.
   selectedTipo: null,
 
-  // Step 2 — Tamaño.
+  // Step 2 — Size.
   selectedSize: null,
 
   // Step 3 — Color. Last color+finish actually applied to each piece's

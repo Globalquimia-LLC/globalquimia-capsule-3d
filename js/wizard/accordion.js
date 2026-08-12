@@ -39,7 +39,7 @@ export function initAccordion() {
   });
 }
 
-// Tapa/Cuerpo piece switcher — a flat tab-bar (see .piece-tabgroup in
+// Cap/Body piece switcher — a flat tab-bar (see .piece-tabgroup in
 // styles.css) instead of an accordion: no open/close choreography, just
 // swap which .piece-tab-panel carries the 'active' class. Generic across
 // every .piece-tabgroup on the page (step 3's Tradicionales/Mate groups,

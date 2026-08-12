@@ -17,6 +17,20 @@ import { state } from './state.js';
 
 window.__stateDebug = state; // hook for automated testing
 
+// Header "‹ Back" — a real <a href="https://globalquimia.us/"> by default
+// (works with zero JS, and for anyone who opened this page directly). When
+// the visitor actually arrived via a same-site link (the common case: the
+// "Request a quote" button on a capsule product page), history.back()
+// returns them to that exact page instead of always landing on the home
+// page.
+const backLink = document.getElementById('header-back-link');
+if (backLink && document.referrer && new URL(document.referrer).hostname === window.location.hostname) {
+  backLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    history.back();
+  });
+}
+
 gsap.registerPlugin(ScrollTrigger);
 
 initIntro();
