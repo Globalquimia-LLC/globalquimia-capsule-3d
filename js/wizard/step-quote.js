@@ -119,14 +119,18 @@ export function initStepQuote() {
   });
 
   // "Request a quote" plays the tunnel (capsule flies open, camera dives
-  // through it, the Globalquimia logo appears and holds), files the quote
-  // with the cotizador while the tunnel plays, then opens Chatwoot and
-  // reverses the tunnel back out — the black overlay would otherwise sit
+  // through it, the Globalquimia logo appears and holds) at the same time
+  // as the cotizador request — not one after the other. The backend call
+  // (which generates the draft through Claude) and the ~5s cinematic
+  // tunnel both take a few seconds on their own; running them in parallel
+  // means the customer waits for whichever one is slower instead of both
+  // piling up back to back. Once the tunnel completes, Chatwoot opens and
+  // the tunnel reverses back out — the black overlay would otherwise sit
   // on top of the just-opened chat panel with pointer-events:auto, making
   // it unclickable.
   const submitBtn = document.getElementById('quote-submit-btn');
   const submitError = document.getElementById('quote-submit-error');
-  submitBtn.addEventListener('click', async () => {
+  submitBtn.addEventListener('click', () => {
     const name = nameInput.value.trim();
     if (!name) {
       nameInput.classList.add('invalid');
@@ -142,31 +146,30 @@ export function initStepQuote() {
 
     submitError.hidden = true;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Sending...';
 
-    let quote = null;
-    try {
-      quote = await submitQuote(name, contact, summary, qty);
-    } catch (err) {
+    const quotePromise = submitQuote(name, contact, summary, qty).catch((err) => {
       console.error('Capsula3D: failed to submit the quote to the cotizador', err);
-    }
-
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Request a quote';
-
-    // The chat still opens even if the cotizador call failed — the
-    // customer shouldn't get stuck over a backend error, they just lose
-    // the automatic queue record (the agent picks it up by hand from chat).
-    if (!quote) {
-      submitError.textContent = "We couldn't register your quote automatically, but you can continue through chat.";
-      submitError.hidden = false;
-    }
+      return null;
+    });
 
     playTunnelSequence(() => {
-      openChatwoot(summary, quote && quote.id);
-      setTimeout(() => {
-        if (state.tunnelTimeline) state.tunnelTimeline.reverse();
-      }, 600);
+      quotePromise.then((quote) => {
+        submitBtn.disabled = false;
+
+        // The chat still opens even if the cotizador call failed — the
+        // customer shouldn't get stuck over a backend error, they just
+        // lose the automatic queue record (the agent picks it up by hand
+        // from chat).
+        if (!quote) {
+          submitError.textContent = "We couldn't register your quote automatically, but you can continue through chat.";
+          submitError.hidden = false;
+        }
+
+        openChatwoot(summary, quote && quote.id);
+        setTimeout(() => {
+          if (state.tunnelTimeline) state.tunnelTimeline.reverse();
+        }, 600);
+      });
     });
   });
 
