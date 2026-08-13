@@ -71,10 +71,18 @@ export function renderQuoteSummary() {
 // link. The cotizador's approval queue keeps the record; the chat opened
 // by openChatwoot() below is the channel where a human agent actually
 // helps the customer.
+//
+// keepalive lets this request finish even if the page navigates away
+// before it resolves (see the click handler below, which doesn't wait
+// past the tunnel animation) — without it, the browser would abort an
+// in-flight fetch on navigation and the quote might never actually reach
+// the backend. The payload here is a few hundred bytes at most, well
+// under the keepalive request-body limit.
 async function submitQuote(clientName, clientContact, summary, qty) {
   const response = await fetch(DIRECTOR_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': DIRECTOR_API_KEY },
+    keepalive: true,
     body: JSON.stringify({
       empresa: DIRECTOR_EMPRESA,
       clientName,
@@ -122,12 +130,18 @@ export function initStepQuote() {
   // means the customer waits for whichever one is slower instead of both
   // piling up back to back.
   //
-  // On success, the tunnel's ending IS the handoff: instead of reversing
-  // back into the wizard, the page navigates to globalquimia.us with a
-  // sessionStorage flag set — the homepage's own Chatwoot-ready listener
-  // (added directly on the WordPress site, not here) opens the chat there.
-  // On failure there's nothing to hand off, so the tunnel reverses and the
-  // customer can just try again.
+  // The handoff to globalquimia.us happens as soon as the tunnel itself
+  // finishes — it does NOT also wait for the backend past that point.
+  // Claude's draft generation can occasionally run a bit long, and there's
+  // nothing left on screen to watch once the tunnel's held on the logo, so
+  // making the customer sit through extra silent seconds there is worse
+  // than just handing off: the request (keepalive: true, see submitQuote)
+  // keeps running and still reaches the cotizador even after navigation.
+  // The one case that's worth stopping for is a request that has ALREADY
+  // failed by the time the tunnel completes (quoteSettled below) — a
+  // genuine, known failure, not just "still working" — since then there's
+  // truly nothing to hand off and retrying immediately is more useful
+  // than a chat with no quote behind it.
   const submitBtn = document.getElementById('quote-submit-btn');
   const submitError = document.getElementById('quote-submit-error');
   submitBtn.addEventListener('click', () => {
@@ -147,31 +161,36 @@ export function initStepQuote() {
     submitError.hidden = true;
     submitBtn.disabled = true;
 
-    const quotePromise = submitQuote(name, contact, summary, qty).catch((err) => {
-      console.error('Capsula3D: failed to submit the quote to the cotizador', err);
-      return null;
-    });
+    let quoteSettled = null; // stays null while the request is still in flight
+    const quotePromise = submitQuote(name, contact, summary, qty)
+      .then((quote) => { quoteSettled = quote; return quote; })
+      .catch((err) => {
+        console.error('Capsula3D: failed to submit the quote to the cotizador', err);
+        quoteSettled = false;
+        return null;
+      });
 
     playTunnelSequence(() => {
-      quotePromise.then((quote) => {
+      if (quoteSettled === false) {
         submitBtn.disabled = false;
+        submitError.textContent = "We couldn't register your quote automatically — please try again.";
+        submitError.hidden = false;
+        if (state.tunnelTimeline) state.tunnelTimeline.reverse();
+        return;
+      }
 
-        if (!quote) {
-          submitError.textContent = "We couldn't register your quote automatically — please try again.";
-          submitError.hidden = false;
-          if (state.tunnelTimeline) state.tunnelTimeline.reverse();
-          return;
-        }
-
-        tagChatwootConversation(summary, quote.id);
-        try {
-          sessionStorage.setItem('capsula3d_open_chat', '1');
-        } catch (err) {
-          // Private browsing etc. — chat just won't auto-open on arrival,
-          // not worth blocking the handoff over.
-        }
-        window.location.href = 'https://globalquimia.us/';
+      // Either it already succeeded, or it's still pending — tag the chat
+      // once/if it resolves, but the handoff itself doesn't wait on it.
+      quotePromise.then((quote) => {
+        if (quote) tagChatwootConversation(summary, quote.id);
       });
+      try {
+        sessionStorage.setItem('capsula3d_open_chat', '1');
+      } catch (err) {
+        // Private browsing etc. — chat just won't auto-open on arrival,
+        // not worth blocking the handoff over.
+      }
+      window.location.href = 'https://globalquimia.us/';
     });
   });
 
