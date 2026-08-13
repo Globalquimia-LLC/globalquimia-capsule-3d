@@ -87,23 +87,19 @@ async function submitQuote(clientName, clientContact, summary, qty) {
   return response.json();
 }
 
-// Opens the Chatwoot widget already loaded by the page embedding this
-// designer — never injected here, so a second widget instance never fights
-// the real one. setConversationCustomAttributes hands the agent the design
-// summary and the id of the quote already queued, so the chat starts with
+// Tags the Chatwoot conversation with the design summary and the id of
+// the quote already queued, so whoever opens the chat next — here or on
+// globalquimia.us, same widget token/account either way — starts with
 // context instead of asking for it from scratch.
-function openChatwoot(summary, quoteId) {
+function tagChatwootConversation(summary, quoteId) {
   if (!window.$chatwoot) {
-    console.warn('Capsula3D: window.$chatwoot is not available on this page — could not open chat.');
+    console.warn('Capsula3D: window.$chatwoot is not available on this page — could not tag the conversation.');
     return;
   }
-  if (quoteId != null) {
-    window.$chatwoot.setConversationCustomAttributes({
-      capsula3d_quote_id: String(quoteId),
-      capsula3d_summary: summary,
-    });
-  }
-  window.$chatwoot.toggle('open');
+  window.$chatwoot.setConversationCustomAttributes({
+    capsula3d_quote_id: String(quoteId),
+    capsula3d_summary: summary,
+  });
 }
 
 export function initStepQuote() {
@@ -124,10 +120,14 @@ export function initStepQuote() {
   // (which generates the draft through Claude) and the ~5s cinematic
   // tunnel both take a few seconds on their own; running them in parallel
   // means the customer waits for whichever one is slower instead of both
-  // piling up back to back. Once the tunnel completes, Chatwoot opens and
-  // the tunnel reverses back out — the black overlay would otherwise sit
-  // on top of the just-opened chat panel with pointer-events:auto, making
-  // it unclickable.
+  // piling up back to back.
+  //
+  // On success, the tunnel's ending IS the handoff: instead of reversing
+  // back into the wizard, the page navigates to globalquimia.us with a
+  // sessionStorage flag set — the homepage's own Chatwoot-ready listener
+  // (added directly on the WordPress site, not here) opens the chat there.
+  // On failure there's nothing to hand off, so the tunnel reverses and the
+  // customer can just try again.
   const submitBtn = document.getElementById('quote-submit-btn');
   const submitError = document.getElementById('quote-submit-error');
   submitBtn.addEventListener('click', () => {
@@ -156,19 +156,21 @@ export function initStepQuote() {
       quotePromise.then((quote) => {
         submitBtn.disabled = false;
 
-        // The chat still opens even if the cotizador call failed — the
-        // customer shouldn't get stuck over a backend error, they just
-        // lose the automatic queue record (the agent picks it up by hand
-        // from chat).
         if (!quote) {
-          submitError.textContent = "We couldn't register your quote automatically, but you can continue through chat.";
+          submitError.textContent = "We couldn't register your quote automatically — please try again.";
           submitError.hidden = false;
+          if (state.tunnelTimeline) state.tunnelTimeline.reverse();
+          return;
         }
 
-        openChatwoot(summary, quote && quote.id);
-        setTimeout(() => {
-          if (state.tunnelTimeline) state.tunnelTimeline.reverse();
-        }, 600);
+        tagChatwootConversation(summary, quote.id);
+        try {
+          sessionStorage.setItem('capsula3d_open_chat', '1');
+        } catch (err) {
+          // Private browsing etc. — chat just won't auto-open on arrival,
+          // not worth blocking the handoff over.
+        }
+        window.location.href = 'https://globalquimia.us/';
       });
     });
   });
