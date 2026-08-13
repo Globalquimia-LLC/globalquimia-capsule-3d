@@ -17,6 +17,32 @@
 }
 </script>
 <link rel="stylesheet" href="css/styles.css" />
+<script>
+  (function(d,t) {
+    var BASE_URL = "https://chatwoot-production-6697.up.railway.app";
+    var host = window.location.hostname;
+
+    // Same LLC Website-chat install as globalquimia.us itself (copied from
+    // its live page source) — kept guarded by hostname for the same reason
+    // it's guarded there: this static page has no WordPress plugin to skip
+    // it on globalquimia.com.co if these files were ever mirrored there.
+    if (host.indexOf('globalquimia.us') === -1) {
+      return;
+    }
+
+    var token = 'eaFeDmfc7CTUmMepSoebDq8S';
+    var g = d.createElement(t), s = d.getElementsByTagName(t)[0];
+    g.src = BASE_URL + "/packs/js/sdk.js";
+    g.async = true;
+    s.parentNode.insertBefore(g, s);
+    g.onload = function() {
+      window.chatwootSDK.run({
+        websiteToken: token,
+        baseUrl: BASE_URL
+      });
+    };
+  })(document, "script");
+</script>
 </head>
 <body>
 
