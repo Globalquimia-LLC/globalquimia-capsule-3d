@@ -839,20 +839,30 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     display: flex; align-items: center; justify-content: center;
   }
 
-  /* Step 1/2 rows deliberately compressed BELOW the 44px touch guideline —
-     project call, prioritizing "capsule stays visible + every size fits
-     without an inner scroll" over strict target size here. Full-row-width
-     hit area plus the divider between rows keeps mis-taps rare even at
-     this height. */
+  /* Real 44px touch targets (was 34px/26px, well under guideline) and
+     16px-ish body text (was 13px/11.5px, under the mobile-readability
+     minimum) — the previous compressed sizing traded accessibility for
+     "every row fits with no inner scroll", but .designer already scrolls
+     internally on the taller steps (3/4/5, see .acc-menu/.quote-summary
+     above), so steps 1/2 scrolling on the shortest phones when needed is
+     consistent with the rest of the wizard, not a regression. A visible
+     gap between rows (not just the hairline border) keeps adjacent taps
+     from landing on the wrong option. */
+  .option-list { gap: 6px; }
   .option-row {
-    padding: 8px 6px; font-size: 13px; min-height: 34px;
+    padding: 12px 10px; font-size: 15px; min-height: 44px;
     display: flex; align-items: center;
+    border-bottom: none; border-radius: 8px;
+    background: rgba(255,255,255,0.5);
   }
+  .size-list { gap: 6px; }
   .size-row {
-    padding: 5px 6px; font-size: 11.5px; min-height: 26px; gap: 8px;
+    padding: 8px 10px; font-size: 14px; min-height: 44px; gap: 10px;
     display: flex; align-items: center;
+    border-bottom: none; border-radius: 8px;
+    background: rgba(255,255,255,0.5);
   }
-  .capsule-icon { height: 13px; }
+  .capsule-icon { height: 16px; }
 
   /* Same reasoning as .acc-menu above: .quote-summary's own card look is
      redundant once .designer .inner already provides the single outer
