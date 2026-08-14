@@ -792,7 +792,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     max-height: none; overflow-y: visible;
     background: none; backdrop-filter: none; border-radius: 0; box-shadow: none;
   }
-  .acc-header { padding: 10px 14px; font-size: 12px; min-height: 40px; }
+  .acc-header { padding: 10px 14px; font-size: 15px; min-height: 44px; }
   .acc-header.acc-sub { padding: 7px 12px 7px 18px; font-size: 10px; min-height: 32px; }
   .acc-item.open[data-finish] > .acc-body { padding: 0 10px 10px 10px; }
   .piece-tab { font-size: 10px; padding: 4px 10px; }
@@ -857,7 +857,7 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   }
   .size-list { gap: 6px; }
   .size-row {
-    padding: 8px 10px; font-size: 14px; min-height: 44px; gap: 10px;
+    padding: 8px 10px; font-size: 15px; min-height: 44px; gap: 10px;
     display: flex; align-items: center;
     border-bottom: none; border-radius: 8px;
     background: rgba(255,255,255,0.5);
@@ -869,6 +869,11 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      card on mobile, and was the other half of why steps 3/4/5 looked
      inconsistent against 1/2's flat single-card look. */
   .quote-summary { background: none; backdrop-filter: none; border-radius: 0; box-shadow: none; padding: 0; }
+  /* Same 15px as .option-row/.size-row/.acc-header — step 5's actual
+     "content" is what gets typed here, so it gets the same treatment as
+     every other step's primary text instead of the smaller desktop-tuned
+     12px. min-height keeps it a real 44px touch target too. */
+  .quote-qty-input, .quote-field-input { font-size: 15px; min-height: 44px; box-sizing: border-box; }
 
   /* Tapa/Cuerpo side by side needs more width than a phone has to stay
      readable — each color-col becomes full-width instead, Tapa first
