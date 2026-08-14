@@ -1,53 +1,100 @@
+import * as THREE from 'three';
 import { state } from '../state.js';
 import { CAP_OPEN_DELTA, ROTATION_CHASE_WINDOW_MS } from '../constants.js';
 import { revealStepChildren } from '../wizard/wizard.js';
 import { reframeCapsuleCamera } from '../scene.js';
 
-// Desktop-only: how far to shift #canvas-container (xPercent, i.e. a
-// percentage of ITS OWN width — it's full-bleed via inset:0, so that's
-// the same as viewport width) so the capsule ends up centered in the gap
-// BETWEEN .step-number (left) and .designer (right) once the wizard
-// reveals, instead of a flat hand-tuned percentage that only happened to
-// work at whatever width it was last eyeballed against (too big a shift
-// let it overlap .step-number; too small a shift and it bled out from
-// under .designer's card instead — measured, that gap turned out
-// noticeably narrower than reproducing the two elements' own CSS
-// formulas by hand predicted, so this reads their REAL layout instead
-// via getBoundingClientRect(). Both elements are already positioned
-// correctly at this point (initScrollStory runs once the GLTF has
-// loaded, well after the page's own CSS has laid everything out) — only
-// their opacity is still 0, which doesn't affect layout geometry. Reads
-// #step-number specifically because this tween only ever plays once,
-// scrolling into the wizard for the first time (retreating back past
-// step 1 is blocked — see scroll-advance.js), so it's always showing
-// digit "1" — no need to guess a width for wider digits it'll never
-// actually show while this runs.
-function computeDesktopCapsuleShiftPercent() {
-  const vw = window.innerWidth;
+// Reused across calls purely to avoid allocating 8 new Vector3s every time
+// this runs — computeDesktopCapsuleShiftPercent overwrites their contents
+// each call, nothing here holds state between calls.
+const BOX_CORNERS = Array.from({ length: 8 }, () => new THREE.Vector3());
+
+// Desktop-only: how far to shift #canvas-container (xPercent) so the
+// capsule ends up centered in the real gap BETWEEN .step-number (left)
+// and .designer (right). Earlier versions of this estimated the capsule's
+// on-screen position from its geometric origin plus a hand-tuned "visual
+// bulk" correction constant — that worked for whichever single pose it
+// was screenshotted against, then quietly drifted on every other pose
+// (rotating normally on steps 1-3 vs. step 4's distinct locked angle) and
+// every other screen width, since none of that was ever really measured.
+//
+// This instead projects the capsule's actual current Box3 (its real
+// world-space bounding box, whatever rotation/zoom it's in right now)
+// through the live camera to get its REAL on-screen left/right edges in
+// pixels, and solves for the exact shift that centers THAT between the
+// two DOM elements' real edges — no estimation, no per-pose constants to
+// re-tune. Self-correcting by construction: it always measures the
+// capsule's current actual screen position (via #canvas-container's own
+// getBoundingClientRect, which already reflects whatever shift is
+// currently applied) rather than assuming where a previous call left it.
+export function computeDesktopCapsuleShiftPercent() {
+  const { camera, capsuleGroup } = state;
+  const container = document.getElementById('canvas-container');
+  const rect = container.getBoundingClientRect();
+  if (!camera || !capsuleGroup || !rect.width) return 0;
+
+  const box = new THREE.Box3().setFromObject(capsuleGroup);
+  let i = 0;
+  for (const x of [box.min.x, box.max.x]) {
+    for (const y of [box.min.y, box.max.y]) {
+      for (const z of [box.min.z, box.max.z]) {
+        BOX_CORNERS[i++].set(x, y, z).project(camera);
+      }
+    }
+  }
+  let minScreenX = Infinity;
+  let maxScreenX = -Infinity;
+  for (const corner of BOX_CORNERS) {
+    const screenX = (corner.x * 0.5 + 0.5) * rect.width;
+    minScreenX = Math.min(minScreenX, screenX);
+    maxScreenX = Math.max(maxScreenX, screenX);
+  }
+  const capsuleCenterPx = rect.left + (minScreenX + maxScreenX) / 2;
+
   // Asymmetric on purpose: .step-number is a translucent watermark BEHIND
   // the capsule (z-index:1 vs the canvas's 2) — some overlap there is the
   // original intended "peeking out from behind" look, not a bug, so a
-  // small gap is enough. .designer's option list is real, opaque,
-  // clickable content, so this side gets a wider margin.
-  const numberGap = 0.03 * vw;
-  const designerGap = 0.11 * vw;
-  const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + numberGap;
-  const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - designerGap;
-  const desiredCenter = (numberRightEdge + designerLeftEdge) / 2;
-  // desiredCenter targets where the capsule's GEOMETRIC origin (0,0,0,
-  // what camera.lookAt actually centers) lands — but the capsule is an
-  // elongated shape held at a fixed 3/4 yaw/pitch, so its VISIBLE bulk
-  // sits off-center from that origin by a consistent amount (same
-  // rotation every time step 1 is reached, since it's driven by a fixed
-  // point on the scroll timeline, not left wherever the user stopped
-  // scrolling). Confirmed against a real screenshot: geometric centering
-  // alone still visibly favored the panel side, with a wide unused gap
-  // left over near the number — this constant correction pulls the
-  // whole thing further toward the number to compensate, calibrated
-  // against that screenshot rather than derived analytically.
-  const VISUAL_CENTER_CORRECTION = 0.06 * vw;
-  return ((desiredCenter - VISUAL_CENTER_CORRECTION - vw / 2) / vw) * 100;
+  // small gap is enough. .designer's option list/color panel/etc. is
+  // real, opaque, clickable content, so this side gets a wider margin.
+  const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + 24;
+  const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - 40;
+  const desiredCenterPx = (numberRightEdge + designerLeftEdge) / 2;
+
+  const currentXPercent = gsap.getProperty(container, 'xPercent') || 0;
+  const deltaPx = desiredCenterPx - capsuleCenterPx;
+  return currentXPercent + (deltaPx / rect.width) * 100;
 }
+
+// Re-centers #canvas-container between the step number and the designer
+// panel using CURRENT layout — called again on every step change and on
+// window resize (see wizard.js's goToStep and the listener below), not
+// just once when the wizard first opens. A shift computed once for step
+// 1's own layout and then left alone doesn't track a wider window or a
+// step whose panel content genuinely reflows the designer's real
+// boundaries, which is what let the capsule drift under the color/design
+// panels on some screen sizes. Desktop only — mobile stacks the capsule
+// above the panel instead, nothing to re-center there.
+export function reapplyDesktopCapsuleShift() {
+  if (!state.isDesktopLayout) return;
+  const designerEl = document.getElementById('designer');
+  if (!designerEl || !designerEl.classList.contains('active')) return;
+  gsap.to('#canvas-container', {
+    xPercent: computeDesktopCapsuleShiftPercent(),
+    duration: 0.4,
+    ease: 'power2.out',
+    overwrite: 'auto',
+  });
+}
+
+let resizeShiftScheduled = false;
+window.addEventListener('resize', () => {
+  if (resizeShiftScheduled) return;
+  resizeShiftScheduled = true;
+  requestAnimationFrame(() => {
+    resizeShiftScheduled = false;
+    reapplyDesktopCapsuleShift();
+  });
+});
 
 // The main scroll-driven narrative: capsule spin/zoom/open-close synced to
 // a pinned #story section, ending with the wizard fading in. Called once
@@ -116,6 +163,7 @@ export function initScrollStory(maxDim, camDist) {
         if (!state.hasRevealedStep1 && wizardActive) {
           state.hasRevealedStep1 = true;
           revealStepChildren(document.querySelector('.step-panel[data-step="1"]'));
+          reapplyDesktopCapsuleShift();
         }
 
         // Once the wizard is showing, normalizeScroll's own scroll engine
@@ -207,33 +255,52 @@ export function initScrollStory(maxDim, camDist) {
   tl.to(state.rotationTarget, { y: Math.PI * 1.5, duration: 0.15, ease: 'power1.inOut' }, 0.72);
   tl.to(dollyState, { dist: maxDim * 2.3 * aspectPad, duration: 0.15, ease: 'power2.inOut', onUpdate: applyDolly }, 0.72);
 
-  // Stage 5 (0.90 -> 1.0): the designer panel fades in on the right;
-  // the capsule (rendered by #canvas-container, shifted at the DOM level —
+  // Stage 5 (0.90 -> 1.0): the designer panel fades in on the right; the
+  // capsule (rendered by #canvas-container, shifted at the DOM level —
   // not the 3D camera — so the move is purely horizontal, no perspective
   // skew) slides left just enough to center it between the step number
-  // and the panel (see computeDesktopCapsuleShiftPercent above), not a
-  // fixed amount that risked landing on top of either one.
+  // and the panel. That shift is NOT baked in here as a static value on
+  // this scrubbed timeline — a number computed once when the timeline was
+  // built (and replayed by the scrub every time progress crosses back
+  // over 0.90) fought reapplyDesktopCapsuleShift()'s own step-by-step,
+  // resize-aware version below, the two visibly wrestling over
+  // #canvas-container's xPercent. Left entirely to reapplyDesktopCapsuleShift
+  // (called from the wizardActive block in onUpdate below, and again on
+  // every step change / resize).
   tl.fromTo(designerInner, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.1, overwrite: false }, 0.90);
   if (state.isDesktopLayout) {
-    tl.to(canvasContainer, { xPercent: computeDesktopCapsuleShiftPercent(), duration: 0.1, ease: 'power1.inOut', overwrite: false }, 0.90);
     designerEl.classList.add('side-right');
   }
 
   // Text overlays keyed to the same timeline. Each grows FROM small while
   // fading in, holds at full size, then grows FURTHER while fading out —
-  // size is tied to scroll position throughout, not just opacity.
+  // size is tied to scroll position throughout, not just opacity. Stage 0
+  // (the former standalone intro hero, now living beside the capsule from
+  // the very first frame) and stage 1 share camera-Stage 1's own rotation
+  // (0 -> 0.29 above) rather than getting a dedicated motion stage of its
+  // own — just two text beats riding the same "closed, slow spin" pose.
   const zones = {
-    1: [0.02, 0.24],
+    0: [0.00, 0.11],
+    1: [0.13, 0.24],
     2: [0.32, 0.52],
     3: [0.60, 0.69],
   };
   Object.entries(zones).forEach(([stage, [inAt, outAt]]) => {
     const el = document.querySelector('#stage-' + stage + ' .inner');
-    tl.fromTo(el,
-      { opacity: 0, scale: 0.62 },
-      { opacity: 1, scale: 1, duration: 0.06, ease: 'power2.out', overwrite: false },
-      inAt
-    );
+    if (stage === '0') {
+      // Visible from the very first frame, no scroll needed — this is the
+      // one stage a first-time visitor sees without having scrolled at
+      // all yet, so there's no "fade in" beat to scrub toward; it's just
+      // already there, and fades out like every other stage once scrolled
+      // past its zone.
+      gsap.set(el, { opacity: 1, scale: 1 });
+    } else {
+      tl.fromTo(el,
+        { opacity: 0, scale: 0.62 },
+        { opacity: 1, scale: 1, duration: 0.06, ease: 'power2.out', overwrite: false },
+        inAt
+      );
+    }
     tl.to(el,
       { opacity: 0, scale: 1.4, duration: 0.06, ease: 'power2.in', overwrite: false },
       outAt

@@ -20,7 +20,7 @@ function capsuleIconSVG(lengthMm, maxLengthMm) {
 }
 
 export function initStepTamano() {
-  state.selectedSize = SIZE_OPTIONS.find((s) => s.code === '0');
+  state.selectedSize = SIZE_OPTIONS[0];
 
   const list = document.getElementById('size-list');
   const maxLen = Math.max(...SIZE_OPTIONS.map((s) => s.length));
@@ -34,7 +34,7 @@ export function initStepTamano() {
   SIZE_OPTIONS.forEach((opt) => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'size-row' + (opt.code === '0' ? ' selected' : '');
+    btn.className = 'size-row' + (opt === SIZE_OPTIONS[0] ? ' selected' : '');
     btn.innerHTML = capsuleIconSVG(opt.length, maxLen) + `<span>${labelFor(opt)}</span>`;
     btn.addEventListener('click', () => {
       list.querySelectorAll('.size-row').forEach((row) => row.classList.toggle('selected', row === btn));

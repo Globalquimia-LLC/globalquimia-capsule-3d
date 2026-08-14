@@ -25,6 +25,15 @@ export const SPIN_MIN_VELOCITY = 0.0002; // below this it's imperceptible; stop 
 export const ROTATION_CHASE_WINDOW_MS = 500;
 export const ROTATION_CHASE_LERP = 0.14;
 
+// Ambient idle spin — keeps the capsule visibly alive (never a frozen
+// still frame) whenever nothing else (drag momentum, active scroll chase,
+// the tunnel) is driving its rotation, including before any scrolling at
+// all. Scales up with #story's own scroll progress (0 at the very top, 1
+// once the wizard takes over) so it reads as barely-there at first and
+// noticeably livelier by the time the story's later stages are showing.
+export const IDLE_SPIN_BASE = 0.0025; // radians/frame at scroll progress 0
+export const IDLE_SPIN_MAX = 0.009; // radians/frame at scroll progress 1
+
 // ---------------------------------------------------------------------
 // 1. Capsule type — selection-only, doesn't affect the 3D model.
 // ---------------------------------------------------------------------
@@ -35,7 +44,7 @@ export const TIPO_OPTIONS = [
   'Flavored capsules',
   'Liquid-fill capsules - LQ-CAPS',
 ];
-export const DEFAULT_TIPO_INDEX = 2;
+export const DEFAULT_TIPO_INDEX = 0;
 
 // ---------------------------------------------------------------------
 // 2. Size — real published capsule sizes (Torpac/ACG technical charts,

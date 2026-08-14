@@ -2,7 +2,6 @@
 // loaded as a plain <script type="module"> from scroll_full.html, so this
 // file (and everything it imports) has to keep working served as-is by a
 // static file server, same as before the split.
-import { initIntro } from './intro.js';
 import { initScene, initCapsuleZoomControls } from './scene.js';
 import { initDragRotation } from './interaction/drag.js';
 import { initDecalDrag } from './interaction/decal-drag.js';
@@ -32,8 +31,6 @@ if (backLink && document.referrer && new URL(document.referrer).hostname === win
 }
 
 gsap.registerPlugin(ScrollTrigger);
-
-initIntro();
 
 // initScene() sets up state.container (among other things) as its first
 // step — initDragRotation() needs that to already exist, so it has to run

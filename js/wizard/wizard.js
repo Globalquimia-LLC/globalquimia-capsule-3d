@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { STEP_TITLES, STEP_INSTRUCTIONS, FINISH_LABELS } from '../constants.js';
 import { renderQuoteSummary } from './step-quote.js';
+import { reapplyDesktopCapsuleShift } from '../interaction/scroll-story.js';
 
 // The pose the capsule locks to for step 4: long axis horizontal AND
 // perpendicular to the viewer (lying flat across the screen, full side
@@ -146,6 +147,13 @@ export function goToStep(newStep) {
       gsap.to(state.capsuleGroup.rotation, { y: state.capsuleGroup.rotation.y + Math.PI * 0.6, duration: 0.95, ease: 'power3.inOut' });
     }
   }
+
+  // Each step's panel can have different real content (a short option list
+  // vs. the color accordion vs. the quote form), so the gap it leaves next
+  // to the capsule isn't identical step to step even though .designer's
+  // own CSS width doesn't change — recentering here keeps the capsule
+  // from drifting under whichever panel is currently widest/tallest.
+  reapplyDesktopCapsuleShift();
 }
 
 export function initWizardShell() {

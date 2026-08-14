@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { state } from './state.js';
-import { SPIN_FRICTION, SPIN_MIN_VELOCITY, ROTATION_CHASE_LERP } from './constants.js';
+import { SPIN_FRICTION, SPIN_MIN_VELOCITY, ROTATION_CHASE_LERP, IDLE_SPIN_BASE, IDLE_SPIN_MAX, SIZE_REFERENCE_LENGTH } from './constants.js';
 import { buildAllColorControls } from './wizard/step-color.js';
 import { initScrollStory } from './interaction/scroll-story.js';
 import { goToStep } from './wizard/wizard.js';
@@ -148,6 +148,18 @@ export function initScene() {
     scene.add(state.capsuleGroup);
     window.__debugCapsuleGroup = state.capsuleGroup; // hook for automated testing
 
+    // The GLB is modeled AT size "0" (SIZE_REFERENCE_LENGTH) — scale=1
+    // only happens to look right if that's also the default selected
+    // size. initStepTamano() (main.js) already ran and set
+    // state.selectedSize by the time this async GLTF callback fires, so
+    // whatever the actual default is, the rendered capsule starts out
+    // matching it instead of always rendering as size "0" regardless of
+    // which row the size list shows as selected.
+    if (state.selectedSize) {
+      const ratio = state.selectedSize.length / SIZE_REFERENCE_LENGTH;
+      state.capsuleGroup.scale.setScalar(ratio);
+    }
+
     buildAllColorControls();
 
     const maxDim = Math.max(size.x, size.y, size.z);
@@ -210,6 +222,12 @@ export function initScene() {
       // of snapping, so resuming scroll after a manual drag glides back
       // into sync.
       state.capsuleGroup.rotation.y += (state.rotationTarget.y - state.capsuleGroup.rotation.y) * ROTATION_CHASE_LERP;
+    } else if (!state.isDragging && !state.rotationLocked && !state.tunnelPlaying && state.capsuleGroup) {
+      // Nothing else is driving rotation right now (no momentum, no active
+      // scroll chase, not mid-tunnel) — keep it visibly turning instead of
+      // sitting frozen, faster the further into the story scroll gets.
+      const progress = state.storyScrollTrigger ? state.storyScrollTrigger.progress : 0;
+      state.capsuleGroup.rotation.y += IDLE_SPIN_BASE + (IDLE_SPIN_MAX - IDLE_SPIN_BASE) * progress;
     }
     renderer.render(scene, camera);
   }

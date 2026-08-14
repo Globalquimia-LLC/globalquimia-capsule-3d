@@ -27,34 +27,12 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 }
 .header-back:hover { opacity: 1; }
 
-.intro {
-  position: relative;
-  height: 90vh;
-  height: 90dvh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; padding: 0 24px;
-  overflow: hidden;
-}
-/* Brand hex pattern (MANUAL DE MARCA assets), kept very faint and
-   desaturated so it reads as texture/depth rather than a loud graphic —
-   scrolled at a different rate than the content via ScrollTrigger below
-   for a subtle parallax layer. */
-.intro-pattern {
-  position: absolute; inset: -15% -15%;
-  background-image: url('../assets/patron-hex.png');
-  background-repeat: repeat;
-  background-size: 320px auto;
-  opacity: 0.05;
-  filter: grayscale(1);
-  pointer-events: none;
-  z-index: 0;
-}
-.intro > * { position: relative; z-index: 1; }
-.intro-item { opacity: 0; transform: translateY(26px); }
-.intro h1 { font-size: clamp(28px, 5vw, 48px); margin: 0 0 14px 0; max-width: 720px; line-height: 1.15; }
-.intro p { font-size: 15px; color: #5b6b74; max-width: 480px; margin: 0 0 26px 0; }
-.intro .hint { font-size: 12px; color: #9aa7ad; letter-spacing: 0.5px; }
-.intro .hint::after { content: "↓"; display: block; margin-top: 8px; animation: bob 1.6s ease-in-out infinite; }
+/* Stage 0's own scroll-to-begin cue — same idea as the old standalone
+   intro's hint, now living inside .story-text (see #stage-0 in
+   scroll_full.html) since the capsule is visible from the very first
+   frame instead of a separate pre-story hero section. */
+.story-text .hint { display: block; margin-top: 10px; font-size: 12px; color: #9aa7ad; letter-spacing: 0.5px; }
+.story-text .hint::after { content: "↓"; display: block; margin-top: 8px; animation: bob 1.6s ease-in-out infinite; }
 @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
 
 /* dvh accounts for the mobile browser chrome (address bar) showing/hiding
@@ -604,10 +582,6 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
   #canvas-container { transform: translateY(-20%); }
   #canvas-container.docked { transform: none; }
 
-  .intro { height: 88vh; padding: 0 20px; }
-  .intro h1 { font-size: clamp(24px, 7vw, 32px); }
-  .intro p { font-size: 13px; max-width: 340px; }
-
   /* Side text doesn't work on a narrow screen (no room next to the
      capsule) — becomes a centered bottom banner instead, same as the
      designer panel. GSAP still only touches .inner's scale/opacity, so no
@@ -806,7 +780,18 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
      "cropped" (a small scrollable pane visually cut off mid-content, with
      unused card space around it) rather than a natural single scroll
      area using the full card. */
-  .acc-menu { max-height: none; overflow-y: visible; }
+  /* .acc-menu carries its own card look (background/radius/shadow/no
+     padding of its own — see the desktop rule above) because on desktop
+     it's the ONLY card on screen. On mobile, .designer .inner (above)
+     already wraps the whole step in one card — stacking THIS card inside
+     THAT one is what made steps 3/4 read as visually different from 1/2/5
+     (a second rounded/shadowed box nested inside the first, instead of
+     the same flat single card every other step gets). Flattened here so
+     every step's real outer padding comes from .designer .inner alone. */
+  .acc-menu {
+    max-height: none; overflow-y: visible;
+    background: none; backdrop-filter: none; border-radius: 0; box-shadow: none;
+  }
   .acc-header { padding: 10px 14px; font-size: 12px; min-height: 40px; }
   .acc-header.acc-sub { padding: 7px 12px 7px 18px; font-size: 10px; min-height: 32px; }
   .acc-item.open[data-finish] > .acc-body { padding: 0 10px 10px 10px; }
@@ -868,6 +853,12 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     display: flex; align-items: center;
   }
   .capsule-icon { height: 13px; }
+
+  /* Same reasoning as .acc-menu above: .quote-summary's own card look is
+     redundant once .designer .inner already provides the single outer
+     card on mobile, and was the other half of why steps 3/4/5 looked
+     inconsistent against 1/2's flat single-card look. */
+  .quote-summary { background: none; backdrop-filter: none; border-radius: 0; box-shadow: none; padding: 0; }
 
   /* Tapa/Cuerpo side by side needs more width than a phone has to stay
      readable — each color-col becomes full-width instead, Tapa first
