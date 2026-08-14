@@ -163,7 +163,16 @@ export function initScrollStory(maxDim, camDist) {
         if (!state.hasRevealedStep1 && wizardActive) {
           state.hasRevealedStep1 = true;
           revealStepChildren(document.querySelector('.step-panel[data-step="1"]'));
-          reapplyDesktopCapsuleShift();
+          // Not measured immediately: self.progress (driving wizardActive)
+          // is the RAW scroll position, but the capsule's own rotation/
+          // dolly are riding this same timeline's scrub:1 smoothing — up
+          // to a real second of lag behind wherever progress just jumped
+          // to. Measuring the capsule's Box3 before that catches up reads
+          // a mid-transition pose (still zoomed in from the story, not yet
+          // settled into step 1's), which is exactly what produced a
+          // wildly wrong shift the one time this ran on a fast/bursty
+          // scroll. Outlasts the smoothing window on purpose.
+          setTimeout(reapplyDesktopCapsuleShift, 1100);
         }
 
         // Once the wizard is showing, normalizeScroll's own scroll engine
