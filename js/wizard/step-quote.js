@@ -106,17 +106,19 @@ async function submitQuote(clientName, companyName, email, phone, summary, qty) 
   return response.json();
 }
 
-// Tags the Chatwoot conversation with the design summary and the id of
-// the quote already queued, so whoever opens the chat next — here or on
-// globalquimia.us, same widget token/account either way — starts with
-// context instead of asking for it from scratch.
+// Tags the Chatwoot conversation with the design summary and (if it's
+// already known — see the call site) the id of the quote, so whoever opens
+// the chat next — here or on globalquimia.us, same widget token/account
+// either way — starts with context instead of asking for it from scratch.
+// quoteId is optional on purpose (see call site: it's only there if the
+// backend already answered by the time we tag).
 function tagChatwootConversation(summary, quoteId) {
   if (!window.$chatwoot) {
     console.warn('Capsula3D: window.$chatwoot is not available on this page — could not tag the conversation.');
     return;
   }
   window.$chatwoot.setConversationCustomAttributes({
-    capsula3d_quote_id: String(quoteId),
+    ...(quoteId ? { capsula3d_quote_id: String(quoteId) } : {}),
     capsula3d_summary: summary,
   });
 }
@@ -223,12 +225,11 @@ export function initStepQuote() {
     submitBtn.disabled = true;
 
     let quoteSettled = null; // stays null while the request is still in flight
-    const quotePromise = submitQuote(name, company, email, phone, summary, qty)
-      .then((quote) => { quoteSettled = quote; return quote; })
+    submitQuote(name, company, email, phone, summary, qty)
+      .then((quote) => { quoteSettled = quote; })
       .catch((err) => {
         console.error('Capsula3D: failed to submit the quote to the cotizador', err);
         quoteSettled = false;
-        return null;
       });
 
     playTunnelSequence(() => {
@@ -240,11 +241,20 @@ export function initStepQuote() {
         return;
       }
 
-      // Either it already succeeded, or it's still pending — tag the chat
-      // once/if it resolves, but the handoff itself doesn't wait on it.
-      quotePromise.then((quote) => {
-        if (quote) tagChatwootConversation(summary, quote.id);
-      });
+      // Tag NOW, synchronously, right before navigating — the previous
+      // approach tagged inside the quote request's .then(), which almost
+      // never got the chance to run: quote generation regularly takes
+      // longer than the ~5s tunnel (confirmed against Railway logs: 7+s is
+      // common, Claude drafts the quote), so by the time it resolved the
+      // page had already navigated away — confirmed live 2026-08-15
+      // against a real conversation: custom_attributes came back empty, so
+      // the bot had no idea what the customer had just designed and just
+      // gave a generic greeting instead of continuing the conversation.
+      // summary doesn't need the quote to finish (known synchronously
+      // above); only the quote id is best-effort — included if the
+      // request already resolved by now, omitted otherwise (see
+      // tagChatwootConversation).
+      tagChatwootConversation(summary, quoteSettled ? quoteSettled.id : undefined);
       try {
         sessionStorage.setItem('capsula3d_open_chat', '1');
       } catch (err) {
