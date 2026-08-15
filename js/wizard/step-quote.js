@@ -94,6 +94,10 @@ async function submitQuote(clientName, companyName, email, phone, summary, qty) 
       // Company de Twenty por dominio de correo en vez de solo por el
       // texto libre de companyName, ver director-globalquimia/src/adapters/crm/twenty-crm-client.ts.
       clientEmail: email,
+      // Teléfono limpio aparte de clientContact, mismo motivo que
+      // clientEmail arriba — el backend lo usa para crear/vincular el
+      // Person en Twenty (ver director-globalquimia/src/adapters/crm/twenty-crm-client.ts).
+      clientPhone: phone,
       notes: summary,
       items: [{ product: state.selectedTipo, quantity: qty }],
     }),
