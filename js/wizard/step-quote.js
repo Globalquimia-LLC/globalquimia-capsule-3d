@@ -78,7 +78,8 @@ export function renderQuoteSummary() {
 // in-flight fetch on navigation and the quote might never actually reach
 // the backend. The payload here is a few hundred bytes at most, well
 // under the keepalive request-body limit.
-async function submitQuote(clientName, companyName, clientContact, summary, qty) {
+async function submitQuote(clientName, companyName, email, phone, summary, qty) {
+  const clientContact = `${email} / ${phone}`;
   const response = await fetch(DIRECTOR_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': DIRECTOR_API_KEY },
@@ -87,7 +88,12 @@ async function submitQuote(clientName, companyName, clientContact, summary, qty)
       empresa: DIRECTOR_EMPRESA,
       clientName,
       companyName,
-      ...(clientContact ? { clientContact } : {}),
+      clientContact,
+      // Email limpio aparte de clientContact (que combina email + teléfono
+      // en un solo string, ver arriba) — el backend lo usa para agrupar la
+      // Company de Twenty por dominio de correo en vez de solo por el
+      // texto libre de companyName, ver director-globalquimia/src/adapters/crm/twenty-crm-client.ts.
+      clientEmail: email,
       notes: summary,
       items: [{ product: state.selectedTipo, quantity: qty }],
     }),
@@ -205,10 +211,6 @@ export function initStepQuote() {
       return;
     }
 
-    // The cotizador backend still stores a single clientContact string
-    // (see director-globalquimia/src/db/schema.ts) — combine both here
-    // instead of changing that schema just to carry two form fields.
-    const contact = `${email} / ${phone}`;
     const qtyInput = document.getElementById('quote-qty');
     const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
     const summary = renderQuoteSummary();
@@ -217,7 +219,7 @@ export function initStepQuote() {
     submitBtn.disabled = true;
 
     let quoteSettled = null; // stays null while the request is still in flight
-    const quotePromise = submitQuote(name, company, contact, summary, qty)
+    const quotePromise = submitQuote(name, company, email, phone, summary, qty)
       .then((quote) => { quoteSettled = quote; return quote; })
       .catch((err) => {
         console.error('Capsula3D: failed to submit the quote to the cotizador', err);
