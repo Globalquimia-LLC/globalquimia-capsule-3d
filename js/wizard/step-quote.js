@@ -78,7 +78,7 @@ export function renderQuoteSummary() {
 // in-flight fetch on navigation and the quote might never actually reach
 // the backend. The payload here is a few hundred bytes at most, well
 // under the keepalive request-body limit.
-async function submitQuote(clientName, clientContact, summary, qty) {
+async function submitQuote(clientName, companyName, clientContact, summary, qty) {
   const response = await fetch(DIRECTOR_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': DIRECTOR_API_KEY },
@@ -86,6 +86,7 @@ async function submitQuote(clientName, clientContact, summary, qty) {
     body: JSON.stringify({
       empresa: DIRECTOR_EMPRESA,
       clientName,
+      companyName,
       ...(clientContact ? { clientContact } : {}),
       notes: summary,
       items: [{ product: state.selectedTipo, quantity: qty }],
@@ -122,6 +123,33 @@ export function initStepQuote() {
     }
   });
 
+  const companyInput = document.getElementById('quote-company');
+  const companyError = document.getElementById('quote-company-error');
+  companyInput.addEventListener('input', () => {
+    if (companyInput.value.trim()) {
+      companyInput.classList.remove('invalid');
+      companyError.hidden = true;
+    }
+  });
+
+  const emailInput = document.getElementById('quote-email');
+  const emailError = document.getElementById('quote-email-error');
+  emailInput.addEventListener('input', () => {
+    if (emailInput.value.trim()) {
+      emailInput.classList.remove('invalid');
+      emailError.hidden = true;
+    }
+  });
+
+  const phoneInput = document.getElementById('quote-phone');
+  const phoneError = document.getElementById('quote-phone-error');
+  phoneInput.addEventListener('input', () => {
+    if (phoneInput.value.trim()) {
+      phoneInput.classList.remove('invalid');
+      phoneError.hidden = true;
+    }
+  });
+
   // "Request a quote" plays the tunnel (capsule flies open, camera dives
   // through it, the Globalquimia logo appears and holds) at the same time
   // as the cotizador request — not one after the other. The backend call
@@ -153,7 +181,34 @@ export function initStepQuote() {
       return;
     }
 
-    const contact = document.getElementById('quote-contact').value.trim();
+    const company = companyInput.value.trim();
+    if (!company) {
+      companyInput.classList.add('invalid');
+      companyError.hidden = false;
+      companyInput.focus();
+      return;
+    }
+
+    const email = emailInput.value.trim();
+    if (!email) {
+      emailInput.classList.add('invalid');
+      emailError.hidden = false;
+      emailInput.focus();
+      return;
+    }
+
+    const phone = phoneInput.value.trim();
+    if (!phone) {
+      phoneInput.classList.add('invalid');
+      phoneError.hidden = false;
+      phoneInput.focus();
+      return;
+    }
+
+    // The cotizador backend still stores a single clientContact string
+    // (see director-globalquimia/src/db/schema.ts) — combine both here
+    // instead of changing that schema just to carry two form fields.
+    const contact = `${email} / ${phone}`;
     const qtyInput = document.getElementById('quote-qty');
     const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
     const summary = renderQuoteSummary();
@@ -162,7 +217,7 @@ export function initStepQuote() {
     submitBtn.disabled = true;
 
     let quoteSettled = null; // stays null while the request is still in flight
-    const quotePromise = submitQuote(name, contact, summary, qty)
+    const quotePromise = submitQuote(name, company, contact, summary, qty)
       .then((quote) => { quoteSettled = quote; return quote; })
       .catch((err) => {
         console.error('Capsula3D: failed to submit the quote to the cotizador', err);

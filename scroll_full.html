@@ -329,8 +329,17 @@
         <input type="text" class="quote-field-input" id="quote-name" placeholder="Full name" autocomplete="name" />
         <p class="quote-field-error" id="quote-name-error" hidden>Enter your name to continue.</p>
 
-        <label class="quote-field-label" for="quote-contact">Email or phone (optional)</label>
-        <input type="text" class="quote-field-input" id="quote-contact" placeholder="you@email.com" autocomplete="email" />
+        <label class="quote-field-label" for="quote-company">Company name</label>
+        <input type="text" class="quote-field-input" id="quote-company" placeholder="Company name" autocomplete="organization" />
+        <p class="quote-field-error" id="quote-company-error" hidden>Enter your company name to continue.</p>
+
+        <label class="quote-field-label" for="quote-email">Email</label>
+        <input type="email" class="quote-field-input" id="quote-email" placeholder="you@email.com" autocomplete="email" />
+        <p class="quote-field-error" id="quote-email-error" hidden>Enter your email to continue.</p>
+
+        <label class="quote-field-label" for="quote-phone">Phone</label>
+        <input type="tel" class="quote-field-input" id="quote-phone" placeholder="Phone number" autocomplete="tel" />
+        <p class="quote-field-error" id="quote-phone-error" hidden>Enter your phone number to continue.</p>
 
         <label class="quote-qty-label" for="quote-qty">Quantity of units</label>
         <input type="number" class="quote-qty-input" id="quote-qty" min="1" step="1" value="1000" />
