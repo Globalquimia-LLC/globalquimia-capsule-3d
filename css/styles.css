@@ -813,15 +813,12 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     max-height: none; overflow-y: visible;
     background: none; backdrop-filter: none; border-radius: 0; box-shadow: none;
   }
-  /* Shrunk further 2026-08-16 (was padding:10px 14px, font-size:15px,
-     min-height:44px) specifically so step 3 (Color) — 4 of these stacked,
-     Traditional's own Pickr widget open by default — fits inside
-     .designer's own scroll area without ever needing it, at the user's
-     request. Still a real ~38px tap target, just under the 44px
-     guideline used elsewhere (.option-row/.size-row) rather than at it —
-     acceptable here because these rows are frequent (4 per step, always
-     visible) and the trade favors the "no inner scroll on step 3" ask. */
-  .acc-header { padding: 6px 12px; font-size: 13px; min-height: 33px; }
+  /* Matches .acc-header.acc-sub's own scale (step 4) — at the user's
+     request 2026-08-16: step 4's density (10px text, ~30-32px rows) is
+     the reference every other step's paddings/margins/font-sizes now
+     follow, not just step 3's own no-scroll requirement that first
+     shrunk this rule. */
+  .acc-header { padding: 6px 10px; font-size: 10px; min-height: 30px; }
   .acc-header.acc-sub { padding: 7px 12px 7px 18px; font-size: 10px; min-height: 32px; }
   .acc-item.open[data-finish] > .acc-body { padding: 0 8px 3px 8px; }
   .piece-tab { font-size: 10px; padding: 3px 8px; }
@@ -869,41 +866,57 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     display: flex; align-items: center; justify-content: center;
   }
 
-  /* Real 44px touch targets (was 34px/26px, well under guideline) and
-     16px-ish body text (was 13px/11.5px, under the mobile-readability
-     minimum) — the previous compressed sizing traded accessibility for
-     "every row fits with no inner scroll", but .designer already scrolls
-     internally on the taller steps (3/4/5, see .acc-menu/.quote-summary
-     above), so steps 1/2 scrolling on the shortest phones when needed is
-     consistent with the rest of the wizard, not a regression. A visible
-     gap between rows (not just the hairline border) keeps adjacent taps
-     from landing on the wrong option. */
-  .option-list { gap: 6px; }
+  /* Was tuned to a real 44px touch-target guideline (padding:12px 10px,
+     font-size:15px) — superseded 2026-08-16 at the user's request to
+     match step 4's own density instead (10px text, compact padding)
+     across every step, .designer's internal scroll on the taller steps
+     (3/4/5, see .acc-menu/.quote-summary above) remaining the fallback
+     for whatever a phone genuinely can't fit rather than a target to
+     lean on. A visible gap between rows (not just the hairline border)
+     still keeps adjacent taps from landing on the wrong option. */
+  .option-list { gap: 5px; }
   .option-row {
-    padding: 12px 10px; font-size: 15px; min-height: 44px;
+    padding: 8px 10px; font-size: 10px; min-height: 34px;
     display: flex; align-items: center;
     border-bottom: none; border-radius: 8px;
     background: rgba(255,255,255,0.5);
   }
-  .size-list { gap: 6px; }
+  .size-list { gap: 5px; }
   .size-row {
-    padding: 8px 10px; font-size: 15px; min-height: 44px; gap: 10px;
+    padding: 6px 10px; font-size: 10px; min-height: 32px; gap: 8px;
     display: flex; align-items: center;
     border-bottom: none; border-radius: 8px;
     background: rgba(255,255,255,0.5);
   }
-  .capsule-icon { height: 16px; }
+  .capsule-icon { height: 14px; }
 
   /* Same reasoning as .acc-menu above: .quote-summary's own card look is
      redundant once .designer .inner already provides the single outer
      card on mobile, and was the other half of why steps 3/4/5 looked
-     inconsistent against 1/2's flat single-card look. */
-  .quote-summary { background: none; backdrop-filter: none; border-radius: 0; box-shadow: none; padding: 0; }
-  /* Same 15px as .option-row/.size-row/.acc-header — step 5's actual
-     "content" is what gets typed here, so it gets the same treatment as
-     every other step's primary text instead of the smaller desktop-tuned
-     12px. min-height keeps it a real 44px touch target too. */
-  .quote-qty-input, .quote-field-input { font-size: 15px; min-height: 44px; box-sizing: border-box; }
+     inconsistent against 1/2's flat single-card look. Padding tightened
+     2026-08-16 (was the desktop 14px 16px, never overridden here before)
+     as part of making step 5's form fit without its own inner scroll —
+     see the field-by-field rules below. */
+  .quote-summary { background: none; backdrop-filter: none; border-radius: 0; box-shadow: none; padding: 6px 0; }
+  /* Step 5 has five label+input pairs (name/company/email/phone/qty) —
+     by far the most content-dense step, so it needed its own real budget
+     shrink (not just a font-size match) to fit without scrolling, same
+     ask as step 3 earlier and now guided by step 4's overall density
+     (10-10.5px text, ~4-7px paddings) rather than step 3's specifically.
+     quote-field-label sizing was never touched on mobile before this. */
+  .quote-qty-label, .quote-field-label { font-size: 9px; margin-bottom: 2px; }
+  .quote-qty-input, .quote-field-input {
+    font-size: 10.5px; min-height: 30px; padding: 5px 7px; margin-bottom: 3px; box-sizing: border-box;
+  }
+  .quote-field-error { font-size: 9px; margin: -1px 0 3px 0; }
+  /* Non-essential disclaimer text — same reasoning as
+     .scroll-more-hint/.pick-hint/.step-instruction above: cut first when
+     a step's real content already needs every pixel available. */
+  .quote-note { display: none; }
+  .quote-estimate { font-size: 11px; }
+  .quote-actions { margin-top: 4px; }
+  .continue-btn { margin-top: 4px; padding: 8px; font-size: 10.5px; }
+  .quote-copy-btn { margin-top: 4px; padding: 6px; font-size: 10px; }
 
   /* Tapa/Cuerpo side by side needs more width than a phone has to stay
      readable — each color-col becomes full-width instead, Tapa first

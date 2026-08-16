@@ -161,25 +161,44 @@ function createColorPicker(target, finishKey, material, initialHex) {
     },
   });
   // Dragging across the gradient square/hue slider fires 'change' on every
-  // pixel of movement — committing each one would re-touch the 3D material
-  // (and re-render everything reading appliedColor) dozens of times per
-  // drag. 'changestop' (source-less variant, fired once on release) is the
-  // fix for THAT — but clicking one of Pickr's own quick swatches is a
-  // discrete pick that only ever emits 'change' with source 'swatch', not
-  // 'changestop' at all (verified in the vendored build), and same for the
-  // hex text input (source 'input', which emits both back to back — the
-  // extra changestop there is a harmless redundant commit). So: 'change'
-  // only commits for those two instant sources; every drag-driven source
-  // is left to 'changestop' alone. Pickr's own cursor still tracks the
-  // finger/mouse in real time regardless of which event this reacts to
-  // (that's its own internal UI) — dragging feels identical, the capsule
-  // and readouts just commit once, on release, instead of mid-drag.
+  // pixel of movement. At the user's request 2026-08-16 the capsule now
+  // follows that live (applyLive below) instead of waiting for release —
+  // but it deliberately does NOT call setPieceColor (full commit) on every
+  // one of those ticks: setPieceColor's refreshDisplay calls
+  // pickr.setColor()/applyColor() back on this SAME instance to keep its
+  // swatch button in sync, and doing that WHILE Pickr is still tracking an
+  // active drag fights the picker's own cursor (it recomputes the
+  // gradient-square/hue-strip position from the round-tripped hex,
+  // fighting wherever the pointer actually is). applyLive updates the 3D
+  // material + hex/rgb readout only, leaving the picker instance itself
+  // alone — 'changestop' (drag release, or the instant swatch/hex-input
+  // picks below) is what runs the full commit once dragging is over. Also
+  // skips updateRunningSummary() specifically (the one part of a full
+  // commit that rebuilds a chip list's innerHTML) — the summary catching
+  // up once on release instead of on every pixel is what keeps a drag
+  // itself smooth.
+  const applyLive = (color) => {
+    const hexStr = '#' + color.toHEXA().toString().replace('#', '').slice(0, 6);
+    material.color.set(hexStr);
+    const props = FINISH_PROPS[finishKey];
+    material.roughness = props.roughness;
+    material.metalness = props.metalness;
+    material.transparent = props.transparent;
+    material.opacity = props.opacity;
+    state.appliedColor[target] = { finish: finishKey, hex: hexStr };
+    const readout = document.getElementById(`readout-${finishKey}-${target}`);
+    if (readout) readout.textContent = hexStr.toUpperCase() + ' · ' + hexToRgbString(hexStr);
+  };
   const commitColor = (color) => {
     const hexStr = '#' + color.toHEXA().toString().replace('#', '').slice(0, 6);
     setPieceColor(target, finishKey, hexStr, material);
   };
   pickr.on('change', (color, source) => {
+    // Swatch clicks and hex-input edits are discrete picks, not a drag in
+    // progress — commit immediately, same as before, rather than routing
+    // them through the live-preview path meant for an active drag.
     if (source === 'swatch' || source === 'input') commitColor(color);
+    else applyLive(color);
   });
   pickr.on('changestop', (_source, instance) => commitColor(instance.getColor()));
   // inline:true only changes how the popup is POSITIONED (in-flow vs a
