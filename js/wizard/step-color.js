@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { PALETTE, METAL_PALETTE, FINISH_PROPS } from '../constants.js';
+import { PALETTE, METAL_PALETTE, TRANSPARENT_PALETTE, FINISH_PROPS } from '../constants.js';
 import { updateRunningSummary } from './wizard.js';
 
 function hexToRgbString(hexStr) {
@@ -36,6 +36,11 @@ function setPieceColor(target, finishKey, hexStr, material) {
   const props = FINISH_PROPS[finishKey];
   material.roughness = props.roughness;
   material.metalness = props.metalness;
+  // Opacity/transparent applied unconditionally (not just for the
+  // Transparent finish) so switching back to Traditional/Matte/Metallic
+  // resets the mesh to fully opaque instead of staying see-through.
+  material.transparent = props.transparent;
+  material.opacity = props.opacity;
   state.appliedColor[target] = { finish: finishKey, hex: hexStr };
   refreshDisplay(target, finishKey, hexStr);
   updateRunningSummary();
@@ -131,6 +136,9 @@ export function buildAllColorControls() {
 
     const metalContainer = document.querySelector(`.quick-swatches[data-finish="metalizados"][data-target="${target}"]`);
     buildSwatchGroup(metalContainer, 'metalizados', target, material, METAL_PALETTE);
+
+    const transparentContainer = document.querySelector(`.quick-swatches[data-finish="transparente"][data-target="${target}"]`);
+    buildSwatchGroup(transparentContainer, 'transparente', target, material, TRANSPARENT_PALETTE);
 
     // The mesh actually starts on Tradicionales at the original default hex.
     setPieceColor(target, 'tradicionales', defaultHex, material);

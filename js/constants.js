@@ -88,6 +88,14 @@ export const PALETTE = [
   { name: 'Beige',             hex: 0xe4d5b7 },
 ];
 
+// Transparent finish — real transparent capsule shells are colorless
+// (no dye added), so this is a single "Clear" swatch rather than a full
+// palette like the other finishes. The material's own see-through look
+// comes from FINISH_PROPS.transparente below, not from this hex.
+export const TRANSPARENT_PALETTE = [
+  { name: 'Clear', hex: 0xffffff },
+];
+
 // Fixed metallic finish set (not the full spectrum — a closed palette, per
 // the reference swatch grid).
 export const METAL_PALETTE = [
@@ -114,13 +122,19 @@ export const METAL_PALETTE = [
 
 // Material response per finish — Traditional keeps the original semi-gloss
 // look, Matte flattens the highlight, Metallic pushes metalness up so the
-// same lighting rig reads as a metallic coat.
+// same lighting rig reads as a metallic coat, Transparent drops opacity so
+// the capsule actually reads as see-through instead of just a pale color.
+// opacity/transparent are set on every entry (not just Transparent's) so
+// setPieceColor can apply them unconditionally when switching finishes —
+// without that, switching AWAY from Transparent back to another finish
+// would leave the mesh stuck partially see-through.
 export const FINISH_PROPS = {
-  tradicionales: { roughness: 0.35, metalness: 0.05 },
-  mate:          { roughness: 0.9,  metalness: 0.02 },
-  metalizados:   { roughness: 0.25, metalness: 0.85 },
+  tradicionales: { roughness: 0.35, metalness: 0.05, opacity: 1,    transparent: false },
+  mate:          { roughness: 0.9,  metalness: 0.02, opacity: 1,    transparent: false },
+  metalizados:   { roughness: 0.25, metalness: 0.85, opacity: 1,    transparent: false },
+  transparente:  { roughness: 0.05, metalness: 0.0,  opacity: 0.35, transparent: true  },
 };
-export const FINISH_LABELS = { tradicionales: 'Traditional', mate: 'Matte', metalizados: 'Metallic' };
+export const FINISH_LABELS = { tradicionales: 'Traditional', mate: 'Matte', metalizados: 'Metallic', transparente: 'Transparent' };
 
 // ---------------------------------------------------------------------
 // 4. Logo & Text.

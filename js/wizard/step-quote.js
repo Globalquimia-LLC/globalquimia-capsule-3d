@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { PRICE_TABLE, FINISH_LABELS, PALETTE, METAL_PALETTE, DIRECTOR_API_URL, DIRECTOR_API_KEY, DIRECTOR_EMPRESA } from '../constants.js';
+import { PRICE_TABLE, FINISH_LABELS, PALETTE, METAL_PALETTE, TRANSPARENT_PALETTE, DIRECTOR_API_URL, DIRECTOR_API_KEY, DIRECTOR_EMPRESA } from '../constants.js';
 import { playTunnelSequence } from '../interaction/tunnel.js';
 
 // Named colors only ever come from PALETTE (tradicionales/mate free-pick
@@ -11,7 +11,7 @@ import { playTunnelSequence } from '../interaction/tunnel.js';
 // just the hex, so plain text (name when there is one) is what's reliable.
 function colorNameFor(hexStr) {
   const target = hexStr.toLowerCase();
-  const match = [...PALETTE, ...METAL_PALETTE].find(
+  const match = [...PALETTE, ...METAL_PALETTE, ...TRANSPARENT_PALETTE].find(
     (c) => '#' + c.hex.toString(16).padStart(6, '0') === target
   );
   return match ? match.name : null;
