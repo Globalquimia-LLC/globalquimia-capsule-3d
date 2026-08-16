@@ -65,9 +65,15 @@ function buildSwatchGroup(container, finishKey, target, material, palette) {
 // Transparent uses checkboxes instead of plain color circles — at the
 // user's request 2026-08-16, so it's unambiguous which option is applied
 // (a lone white "Clear" swatch reads too subtly as selected/unselected on
-// its own). A finish always has exactly one active color, so this behaves
-// like a radio group: checking one forces every sibling back off instead
-// of allowing (or allowing the user to leave) zero/multiple checked.
+// its own). No separate color-dot swatch alongside the checkbox (tried
+// first, dropped 2026-08-16): "Clear"'s own color is white, so the dot
+// rendered as a second, empty-looking circle right next to an already-
+// checked checkbox — read as a confusing extra control rather than the
+// color preview it was meant to be. A finish always has exactly one
+// active color, so this behaves like a radio group: checking one forces
+// every sibling back off instead of allowing (or leaving) zero/multiple
+// checked — same reasoning as why a required radio button can't be
+// clicked back to "none".
 function buildTransparentCheckboxGroup(container, target, material, palette) {
   palette.forEach((c) => {
     const hexStr = '#' + c.hex.toString(16).padStart(6, '0');
@@ -79,15 +85,11 @@ function buildTransparentCheckboxGroup(container, target, material, palette) {
     input.type = 'checkbox';
     input.dataset.hex = hexStr;
 
-    const dot = document.createElement('span');
-    dot.className = 'swatch-checkbox-dot';
-    dot.style.backgroundColor = hexStr;
-
     const name = document.createElement('span');
     name.className = 'swatch-checkbox-name';
     name.textContent = c.name;
 
-    label.append(input, dot, name);
+    label.append(input, name);
     input.addEventListener('change', () => {
       input.checked = true;
       container.querySelectorAll('input[type="checkbox"]').forEach((other) => {

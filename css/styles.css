@@ -389,10 +389,6 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .swatch-checkbox input[type="checkbox"] {
   width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: var(--navy);
 }
-.swatch-checkbox-dot {
-  width: 12px; height: 12px; border-radius: 50%; flex: none;
-  border: 1px solid rgba(28,64,93,0.25);
-}
 .swatch-checkbox-name { font-weight: 600; }
 .color-readout {
   display: block; margin-top: 5px;

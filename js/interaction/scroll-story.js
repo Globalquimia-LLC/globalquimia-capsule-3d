@@ -27,6 +27,25 @@ const BOX_CORNERS = Array.from({ length: 8 }, () => new THREE.Vector3());
 // capsule's current actual screen position (via #canvas-container's own
 // getBoundingClientRect, which already reflects whatever shift is
 // currently applied) rather than assuming where a previous call left it.
+// Midpoint of the gap between the step numeral and the designer panel —
+// i.e. where the capsule is SUPPOSED to end up centered once
+// reapplyDesktopCapsuleShift's own tween settles. Doesn't depend on the
+// capsule's own current box at all, just the two panels around it, so it
+// also works as a stable anchor for anything else that wants to sit
+// "under the capsule" (see repositionNavControlsUnderCapsule below)
+// without waiting for a fresh Box3 projection.
+//
+// Asymmetric on purpose: .step-number is a translucent watermark BEHIND
+// the capsule (z-index:1 vs the canvas's 2) — some overlap there is the
+// original intended "peeking out from behind" look, not a bug, so a
+// small gap is enough. .designer's option list/color panel/etc. is
+// real, opaque, clickable content, so this side gets a wider margin.
+function computeDesktopRestCenterPx() {
+  const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + 24;
+  const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - 40;
+  return (numberRightEdge + designerLeftEdge) / 2;
+}
+
 export function computeDesktopCapsuleShiftPercent() {
   const { camera, capsuleGroup } = state;
   const container = document.getElementById('canvas-container');
@@ -51,18 +70,33 @@ export function computeDesktopCapsuleShiftPercent() {
   }
   const capsuleCenterPx = rect.left + (minScreenX + maxScreenX) / 2;
 
-  // Asymmetric on purpose: .step-number is a translucent watermark BEHIND
-  // the capsule (z-index:1 vs the canvas's 2) — some overlap there is the
-  // original intended "peeking out from behind" look, not a bug, so a
-  // small gap is enough. .designer's option list/color panel/etc. is
-  // real, opaque, clickable content, so this side gets a wider margin.
-  const numberRightEdge = document.getElementById('step-number').getBoundingClientRect().right + 24;
-  const designerLeftEdge = document.getElementById('designer').getBoundingClientRect().left - 40;
-  const desiredCenterPx = (numberRightEdge + designerLeftEdge) / 2;
-
+  const desiredCenterPx = computeDesktopRestCenterPx();
   const currentXPercent = gsap.getProperty(container, 'xPercent') || 0;
   const deltaPx = desiredCenterPx - capsuleCenterPx;
   return currentXPercent + (deltaPx / rect.width) * 100;
+}
+
+// Desktop only, at the user's request 2026-08-16 — the prev/next controls
+// sit below wherever the capsule actually rests instead of a fixed
+// bottom-right corner (mobile keeps that original fixed corner, see the
+// plain CSS rule for .nav-controls). Bundled into reapplyDesktopCapsuleShift
+// below rather than given its own call sites: it needs recomputing at
+// exactly the same moments (step change, resize, the delayed step-1 call)
+// since it depends on the same #step-number/.designer layout.
+function repositionNavControlsUnderCapsule() {
+  const nav = document.getElementById('nav-controls');
+  if (!nav) return;
+  if (!state.isDesktopLayout) {
+    nav.style.left = '';
+    nav.style.right = '';
+    nav.style.transform = '';
+    return;
+  }
+  const designerEl = document.getElementById('designer');
+  if (!designerEl || !designerEl.classList.contains('active')) return;
+  nav.style.left = computeDesktopRestCenterPx() + 'px';
+  nav.style.right = 'auto';
+  nav.style.transform = 'translateX(-50%)';
 }
 
 // Re-centers #canvas-container between the step number and the designer
@@ -75,6 +109,7 @@ export function computeDesktopCapsuleShiftPercent() {
 // panels on some screen sizes. Desktop only — mobile stacks the capsule
 // above the panel instead, nothing to re-center there.
 export function reapplyDesktopCapsuleShift() {
+  repositionNavControlsUnderCapsule();
   if (!state.isDesktopLayout) return;
   const designerEl = document.getElementById('designer');
   if (!designerEl || !designerEl.classList.contains('active')) return;
