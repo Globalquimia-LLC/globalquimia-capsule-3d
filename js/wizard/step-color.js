@@ -18,6 +18,9 @@ function refreshDisplay(target, finishKey, hexStr) {
   document.querySelectorAll(`.quick-swatches[data-finish="${finishKey}"][data-target="${target}"] .swatch`).forEach((s) => {
     s.classList.toggle('selected', s.dataset.hex === hexStr.toLowerCase());
   });
+  document.querySelectorAll(`.quick-swatches[data-finish="${finishKey}"][data-target="${target}"] input[type="checkbox"]`).forEach((cb) => {
+    cb.checked = cb.dataset.hex === hexStr.toLowerCase();
+  });
   const pickr = state.pickrInstances[`${finishKey}-${target}`];
   if (pickr) {
     // silent=true on both: don't re-fire 'change' and loop back into
@@ -56,6 +59,43 @@ function buildSwatchGroup(container, finishKey, target, material, palette) {
     btn.style.backgroundColor = hexStr;
     btn.addEventListener('click', () => setPieceColor(target, finishKey, hexStr, material));
     container.appendChild(btn);
+  });
+}
+
+// Transparent uses checkboxes instead of plain color circles — at the
+// user's request 2026-08-16, so it's unambiguous which option is applied
+// (a lone white "Clear" swatch reads too subtly as selected/unselected on
+// its own). A finish always has exactly one active color, so this behaves
+// like a radio group: checking one forces every sibling back off instead
+// of allowing (or allowing the user to leave) zero/multiple checked.
+function buildTransparentCheckboxGroup(container, target, material, palette) {
+  palette.forEach((c) => {
+    const hexStr = '#' + c.hex.toString(16).padStart(6, '0');
+    const label = document.createElement('label');
+    label.className = 'swatch-checkbox';
+    label.title = c.name;
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.dataset.hex = hexStr;
+
+    const dot = document.createElement('span');
+    dot.className = 'swatch-checkbox-dot';
+    dot.style.backgroundColor = hexStr;
+
+    const name = document.createElement('span');
+    name.className = 'swatch-checkbox-name';
+    name.textContent = c.name;
+
+    label.append(input, dot, name);
+    input.addEventListener('change', () => {
+      input.checked = true;
+      container.querySelectorAll('input[type="checkbox"]').forEach((other) => {
+        if (other !== input) other.checked = false;
+      });
+      setPieceColor(target, 'transparente', hexStr, material);
+    });
+    container.appendChild(label);
   });
 }
 
@@ -138,7 +178,7 @@ export function buildAllColorControls() {
     buildSwatchGroup(metalContainer, 'metalizados', target, material, METAL_PALETTE);
 
     const transparentContainer = document.querySelector(`.quick-swatches[data-finish="transparente"][data-target="${target}"]`);
-    buildSwatchGroup(transparentContainer, 'transparente', target, material, TRANSPARENT_PALETTE);
+    buildTransparentCheckboxGroup(transparentContainer, target, material, TRANSPARENT_PALETTE);
 
     // The mesh actually starts on Tradicionales at the original default hex.
     setPieceColor(target, 'tradicionales', defaultHex, material);

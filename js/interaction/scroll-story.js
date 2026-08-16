@@ -134,7 +134,31 @@ export function initScrollStory(maxDim, camDist) {
         // stale target while the user's just left it dragged.
         state.chaseUntil = performance.now() + ROTATION_CHASE_WINDOW_MS;
         document.getElementById('progress-fill').style.height = (self.progress * 100) + '%';
-        const wizardActive = self.progress > 0.93;
+        let wizardActive = self.progress > 0.93;
+
+        // Once the wizard has been entered there's no legitimate way back
+        // into the pre-wizard cinematic (see scroll-advance.js's own
+        // comment: step 1 is a hard floor) — but wheel events over a
+        // <input type="range"> or .picker-mount are deliberately excluded
+        // from step-navigation interception there (so native "wheel over
+        // the slider" behavior keeps working), which leaves real page
+        // scroll uncaught in that one case. On step 4 (Design), which is
+        // full of range sliders (logo/text rotation, scale, font size),
+        // scrolling back with the cursor over one of them let that
+        // uncaught scroll drag this pinned timeline's own progress back
+        // below the threshold — instantly popping the rotation/dolly/
+        // cap-open cinematic back to life mid-wizard (reported 2026-08-16:
+        // going step 4 -> 3 made the capsule "fall apart" into the
+        // pre-step-1 animation). Once locked in, clamp progress from ever
+        // dropping back below the threshold instead of trusting every
+        // possible scroll source to have been intercepted upstream.
+        if (state.wizardScrollLocked && !wizardActive) {
+          const target = self.start + (self.end - self.start) * 0.94;
+          if (state.scrollNormalizer) state.scrollNormalizer.scrollY(target);
+          else window.scrollTo(0, target);
+          wizardActive = true;
+        }
+
         designerEl.classList.toggle('active', wizardActive);
         document.getElementById('step-number').classList.toggle('visible', wizardActive);
         document.getElementById('step-heading-mobile').classList.toggle('visible', wizardActive);

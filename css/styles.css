@@ -376,6 +376,24 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 }
 .swatch:hover { transform: scale(1.15); }
 .swatch.selected { border-color: var(--navy); }
+
+/* Transparent finish only — checkbox instead of a color circle, see
+   buildTransparentCheckboxGroup (step-color.js). */
+.swatch-checkbox {
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer; font-size: 11px; color: var(--blue);
+  padding: 4px 6px; border-radius: 4px;
+  transition: background 0.15s ease;
+}
+.swatch-checkbox:hover { background: rgba(0,111,158,0.06); }
+.swatch-checkbox input[type="checkbox"] {
+  width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: var(--navy);
+}
+.swatch-checkbox-dot {
+  width: 12px; height: 12px; border-radius: 50%; flex: none;
+  border: 1px solid rgba(28,64,93,0.25);
+}
+.swatch-checkbox-name { font-weight: 600; }
 .color-readout {
   display: block; margin-top: 5px;
   font-size: 10px; font-family: 'Courier New', monospace; color: var(--navy);
@@ -396,10 +414,13 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 .option-row:hover { background: rgba(0,111,158,0.06); padding-left: 10px; }
 .option-row.selected { font-weight: 700; color: var(--navy); }
 
-/* 2. Tamaño — same idea, plus a scaled capsule icon per row and its own
-   scrollbar (real capsule charts list 8 sizes; not all fit at once). */
+/* 2. Tamaño — same idea, plus a scaled capsule icon per row. max-height is
+   set just above the real content height (8 rows × ~33px ≈ 268px,
+   measured live) so it doesn't scroll on a normal viewport — overflow-y
+   stays auto as a fallback for genuinely short screens instead of
+   clipping under #story's own overflow:hidden. */
 .size-list {
-  display: flex; flex-direction: column; max-height: 230px; overflow-y: auto;
+  display: flex; flex-direction: column; max-height: 300px; overflow-y: auto;
   scrollbar-width: thin; scrollbar-color: rgba(28,64,93,0.35) transparent;
 }
 .size-list::-webkit-scrollbar { width: 6px; }
