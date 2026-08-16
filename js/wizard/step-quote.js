@@ -106,21 +106,31 @@ async function submitQuote(clientName, companyName, email, phone, summary, qty) 
   return response.json();
 }
 
-// Tags the Chatwoot conversation with the design summary and (if it's
-// already known — see the call site) the id of the quote, so whoever opens
-// the chat next — here or on globalquimia.us, same widget token/account
-// either way — starts with context instead of asking for it from scratch.
-// quoteId is optional on purpose (see call site: it's only there if the
-// backend already answered by the time we tag).
-function tagChatwootConversation(summary, quoteId) {
+// Identifies the Chatwoot CONTACT (not the conversation — there isn't one
+// yet at this point, nobody has opened the chat) with the email/name/phone
+// just typed into the form. Replaces an earlier attempt that called
+// setConversationCustomAttributes right before navigating: that turned out
+// to do nothing useful two different ways, found 2026-08-15 against a real
+// test conversation — (1) the widget's Chatwoot SDK relays that call to an
+// iframe via postMessage, which gets torn down mid-flight by the
+// window.location.href navigation right after it, same-tick or not; (2)
+// even had it landed, director-globalquimia's bot (core/chat-bot.ts) never
+// reads conversation custom attributes at all, only the message history.
+// setUser is the one that actually matters: it identifies the CONTACT,
+// which is what the bot looks up by email (getContactEmail +
+// findRecentByEmail in chat-bot.ts) once the customer starts typing on
+// globalquimia.us — and unlike the conversation tag, contact identity is
+// meant to persist across page loads (that's how the same visitor's chat
+// history continues after navigating here in the first place). Called
+// right when the form validates, well before the tunnel/navigation instead
+// of right at the edge of it, for the same in-flight-request reason as (1)
+// above — there's no reason to cut it close when we don't have to.
+function identifyChatwootContact(name, email, phone) {
   if (!window.$chatwoot) {
-    console.warn('Capsula3D: window.$chatwoot is not available on this page — could not tag the conversation.');
+    console.warn('Capsula3D: window.$chatwoot is not available on this page — could not identify the contact.');
     return;
   }
-  window.$chatwoot.setConversationCustomAttributes({
-    ...(quoteId ? { capsula3d_quote_id: String(quoteId) } : {}),
-    capsula3d_summary: summary,
-  });
+  window.$chatwoot.setUser(email, { email, name, phone_number: phone });
 }
 
 export function initStepQuote() {
@@ -221,6 +231,12 @@ export function initStepQuote() {
     const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
     const summary = renderQuoteSummary();
 
+    // Called here, right as the form validates — see the comment on
+    // identifyChatwootContact for why this is the identification call that
+    // actually matters (and why it's timed early, not at the edge of the
+    // navigation below).
+    identifyChatwootContact(name, email, phone);
+
     submitError.hidden = true;
     submitBtn.disabled = true;
 
@@ -241,20 +257,6 @@ export function initStepQuote() {
         return;
       }
 
-      // Tag NOW, synchronously, right before navigating — the previous
-      // approach tagged inside the quote request's .then(), which almost
-      // never got the chance to run: quote generation regularly takes
-      // longer than the ~5s tunnel (confirmed against Railway logs: 7+s is
-      // common, Claude drafts the quote), so by the time it resolved the
-      // page had already navigated away — confirmed live 2026-08-15
-      // against a real conversation: custom_attributes came back empty, so
-      // the bot had no idea what the customer had just designed and just
-      // gave a generic greeting instead of continuing the conversation.
-      // summary doesn't need the quote to finish (known synchronously
-      // above); only the quote id is best-effort — included if the
-      // request already resolved by now, omitted otherwise (see
-      // tagChatwootConversation).
-      tagChatwootConversation(summary, quoteSettled ? quoteSettled.id : undefined);
       try {
         sessionStorage.setItem('capsula3d_open_chat', '1');
       } catch (err) {
