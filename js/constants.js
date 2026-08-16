@@ -66,6 +66,12 @@ export const SIZE_WALL_MM = 0.30;
 // The loaded GLB itself IS size "0" — every other size is expressed as a
 // uniform scale of capsuleGroup relative to this reference length.
 export const SIZE_REFERENCE_LENGTH = 21.60;
+// Purely cosmetic multiplier on top of the per-size ratio above (scene.js,
+// step-tamano.js) — shrinks how big the capsule renders on screen without
+// touching the real technical lengths (SIZE_OPTIONS, the mm shown in the
+// size list, or anything sent to the quote). 0.8 = 20% smaller across
+// every size, at the user's request 2026-08-16.
+export const DISPLAY_SCALE = 0.8;
 
 // ---------------------------------------------------------------------
 // 3. Color — brand + common capsule colors, fed into each Pickr instance's

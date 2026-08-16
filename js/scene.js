@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { state } from './state.js';
-import { SPIN_FRICTION, SPIN_MIN_VELOCITY, ROTATION_CHASE_LERP, IDLE_SPIN_BASE, IDLE_SPIN_MAX, SIZE_REFERENCE_LENGTH } from './constants.js';
+import { SPIN_FRICTION, SPIN_MIN_VELOCITY, ROTATION_CHASE_LERP, IDLE_SPIN_BASE, IDLE_SPIN_MAX, SIZE_REFERENCE_LENGTH, DISPLAY_SCALE } from './constants.js';
 import { buildAllColorControls } from './wizard/step-color.js';
 import { initScrollStory } from './interaction/scroll-story.js';
 import { goToStep } from './wizard/wizard.js';
@@ -156,7 +156,7 @@ export function initScene() {
     // matching it instead of always rendering as size "0" regardless of
     // which row the size list shows as selected.
     if (state.selectedSize) {
-      const ratio = state.selectedSize.length / SIZE_REFERENCE_LENGTH;
+      const ratio = (state.selectedSize.length / SIZE_REFERENCE_LENGTH) * DISPLAY_SCALE;
       state.capsuleGroup.scale.setScalar(ratio);
     }
 

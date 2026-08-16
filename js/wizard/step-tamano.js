@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { SIZE_OPTIONS, SIZE_WALL_MM, SIZE_REFERENCE_LENGTH } from '../constants.js';
+import { SIZE_OPTIONS, SIZE_WALL_MM, SIZE_REFERENCE_LENGTH, DISPLAY_SCALE } from '../constants.js';
 import { goToStep } from './wizard.js';
 
 // ---------------------------------------------------------------------
@@ -40,7 +40,7 @@ export function initStepTamano() {
       list.querySelectorAll('.size-row').forEach((row) => row.classList.toggle('selected', row === btn));
       state.selectedSize = opt;
       if (state.capsuleGroup) {
-        const ratio = opt.length / SIZE_REFERENCE_LENGTH;
+        const ratio = (opt.length / SIZE_REFERENCE_LENGTH) * DISPLAY_SCALE;
         gsap.to(state.capsuleGroup.scale, { x: ratio, y: ratio, z: ratio, duration: 1.0, ease: 'back.out(1.15)' });
       }
       goToStep(3);
