@@ -42,6 +42,10 @@ export const state = {
     body: { finish: 'tradicionales', hex: '#f8f8f8' },
   },
   pickrInstances: {},
+  // What appliedColor[target] held right before switching TO Transparent —
+  // restored when the Transparent checkbox is unchecked (see step-color.js).
+  // null until Transparent has actually been picked at least once.
+  preTransparentColor: { cap: null, body: null },
 
   // Step 4 — Logo y Texto. `placement.{logo,text}` is null until first
   // placed, then `{ localPoint, localNormal }` in capsuleGroup-LOCAL space —

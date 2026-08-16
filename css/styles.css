@@ -813,22 +813,31 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
     max-height: none; overflow-y: visible;
     background: none; backdrop-filter: none; border-radius: 0; box-shadow: none;
   }
-  .acc-header { padding: 10px 14px; font-size: 15px; min-height: 44px; }
+  /* Shrunk further 2026-08-16 (was padding:10px 14px, font-size:15px,
+     min-height:44px) specifically so step 3 (Color) — 4 of these stacked,
+     Traditional's own Pickr widget open by default — fits inside
+     .designer's own scroll area without ever needing it, at the user's
+     request. Still a real ~38px tap target, just under the 44px
+     guideline used elsewhere (.option-row/.size-row) rather than at it —
+     acceptable here because these rows are frequent (4 per step, always
+     visible) and the trade favors the "no inner scroll on step 3" ask. */
+  .acc-header { padding: 6px 12px; font-size: 13px; min-height: 33px; }
   .acc-header.acc-sub { padding: 7px 12px 7px 18px; font-size: 10px; min-height: 32px; }
-  .acc-item.open[data-finish] > .acc-body { padding: 0 10px 10px 10px; }
-  .piece-tab { font-size: 10px; padding: 4px 10px; }
-  .piece-tab-panels { padding: 6px 8px; }
-  .acc-menu > .piece-tabgroup { padding: 6px; }
+  .acc-item.open[data-finish] > .acc-body { padding: 0 8px 3px 8px; }
+  .piece-tab { font-size: 10px; padding: 3px 8px; }
+  .piece-tab-panels { padding: 2px 6px; }
+  .acc-menu > .piece-tabgroup { padding: 2px; }
   /* Pickr's own gradient square/hue slider — a fixed 108px (desktop
      value) is a big flat chunk of a phone's much shorter available
      height; shrunk without losing usability (still comfortably
-     draggable). */
+     draggable). Tightened again 2026-08-16 (was 80px) as part of making
+     step 3 fit with no inner scroll — see .acc-header above. */
   .picker-mount .pcr-app .pcr-selection .pcr-color-palette,
   .picker-mount .pcr-app .pcr-selection .pcr-color-chooser,
   .picker-mount .pcr-app .pcr-selection .pcr-color-opacity {
-    height: 80px;
+    height: 50px;
   }
-  .color-readout { font-size: 9px; margin-top: 3px; }
+  .color-readout { font-size: 9px; margin-top: 1px; }
 
   /* Step 4's Logo/Texto sub-accordion content, sized down from the
      desktop-width defaults above — at the docked band's ~60% top / 60vh
@@ -898,10 +907,10 @@ header span { font-size: 11px; letter-spacing: 1px; color: var(--navy); text-tra
 
   /* Tapa/Cuerpo side by side needs more width than a phone has to stay
      readable — each color-col becomes full-width instead, Tapa first
-     then Cuerpo below it (same source order, just stacked), so scrolling
-     down within the accordion reaches Cuerpo instead of both pickers
-     being squeezed to half width. */
-  .color-columns { grid-template-columns: 1fr; gap: 16px; }
+     then Cuerpo below it (same source order, just stacked). Gap tightened
+     2026-08-16 (was 16px) as part of making step 3 fit without its own
+     inner scroll — see .acc-header above. */
+  .color-columns { grid-template-columns: 1fr; gap: 8px; }
 
   /* The side rail visually collided with the bottom-anchored text/designer
      on narrow screens — move it out of the way instead of overlapping. */

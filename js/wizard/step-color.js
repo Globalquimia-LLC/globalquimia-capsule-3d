@@ -21,6 +21,16 @@ function refreshDisplay(target, finishKey, hexStr) {
   document.querySelectorAll(`.quick-swatches[data-finish="${finishKey}"][data-target="${target}"] input[type="checkbox"]`).forEach((cb) => {
     cb.checked = cb.dataset.hex === hexStr.toLowerCase();
   });
+  // Transparent's checkbox lives in its own group (data-finish="transparente"),
+  // separate from whichever finishKey just got applied — keep it in sync
+  // too, or switching to Traditional/Matte/Metallic while Transparent was
+  // checked would leave it looking checked even though the material isn't
+  // transparent anymore (see buildTransparentCheckboxGroup's uncheck path).
+  if (finishKey !== 'transparente') {
+    document.querySelectorAll(`.quick-swatches[data-finish="transparente"][data-target="${target}"] input[type="checkbox"]`).forEach((cb) => {
+      cb.checked = false;
+    });
+  }
   const pickr = state.pickrInstances[`${finishKey}-${target}`];
   if (pickr) {
     // silent=true on both: don't re-fire 'change' and loop back into
@@ -69,11 +79,16 @@ function buildSwatchGroup(container, finishKey, target, material, palette) {
 // first, dropped 2026-08-16): "Clear"'s own color is white, so the dot
 // rendered as a second, empty-looking circle right next to an already-
 // checked checkbox — read as a confusing extra control rather than the
-// color preview it was meant to be. A finish always has exactly one
-// active color, so this behaves like a radio group: checking one forces
-// every sibling back off instead of allowing (or leaving) zero/multiple
-// checked — same reasoning as why a required radio button can't be
-// clicked back to "none".
+// color preview it was meant to be.
+//
+// Unlike Traditional/Matte/Metallic (switching between THOSE always
+// applies a real color, never "none"), Transparent can be unchecked back
+// off — at the user's request 2026-08-16, restoring whichever
+// finish+color was actually active right before Transparent was picked
+// (state.preTransparentColor, stashed the moment it's checked). Checking
+// a DIFFERENT swatch elsewhere still behaves like a radio pick (only one
+// finish is ever live) — refreshDisplay's own transparent-checkbox sync
+// (above) is what un-checks this one when that happens.
 function buildTransparentCheckboxGroup(container, target, material, palette) {
   palette.forEach((c) => {
     const hexStr = '#' + c.hex.toString(16).padStart(6, '0');
@@ -91,11 +106,25 @@ function buildTransparentCheckboxGroup(container, target, material, palette) {
 
     label.append(input, name);
     input.addEventListener('change', () => {
-      input.checked = true;
-      container.querySelectorAll('input[type="checkbox"]').forEach((other) => {
-        if (other !== input) other.checked = false;
-      });
-      setPieceColor(target, 'transparente', hexStr, material);
+      if (input.checked) {
+        if (state.appliedColor[target].finish !== 'transparente') {
+          state.preTransparentColor[target] = { ...state.appliedColor[target] };
+        }
+        container.querySelectorAll('input[type="checkbox"]').forEach((other) => {
+          if (other !== input) other.checked = false;
+        });
+        setPieceColor(target, 'transparente', hexStr, material);
+      } else {
+        const prev = state.preTransparentColor[target];
+        if (prev) {
+          setPieceColor(target, prev.finish, prev.hex, material);
+        } else {
+          // Nothing to fall back to (shouldn't happen — a real finish is
+          // always applied once on load) — stay checked rather than
+          // leaving the mesh with no active finish at all.
+          input.checked = true;
+        }
+      }
     });
     container.appendChild(label);
   });
